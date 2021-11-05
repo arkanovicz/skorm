@@ -1,0 +1,26 @@
+plugins {
+    java
+}
+
+group = "com.republicate.skorm"
+version = "1.0-SNAPSHOT"
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation("org.slf4j:slf4j-api:1.7.32")
+    implementation("org.apache.commons:commons-lang3:3.12.0")
+
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.0")
+    testImplementation("org.mockito:mockito-junit-jupiter:4.0.0")
+
+    testRuntimeOnly("org.slf4j:slf4j-simple:1.7.32")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+    testRuntimeOnly("com.h2database:h2:1.4.200")
+}
+
+tasks.getByName<Test>("test") {
+    useJUnitPlatform()
+}
