@@ -67,16 +67,16 @@ public class StatementPool
     {
         logger.trace("prepare-{}", query);
 
-        PooledStatement statement = null;
+        PooledStatement statement;
         Connection connection = getCurrentTransactionConnection(modelId);
         boolean insideTransaction = false;
         List<PooledStatement> availableStatements = statementsMap.computeIfAbsent(query, (str) -> new ArrayList<>());
 
         if (connection == null)
         {
-            for (Iterator it = availableStatements.iterator(); it.hasNext(); )
+            for (Iterator<PooledStatement> it = availableStatements.iterator(); it.hasNext(); )
             {
-                statement = (PooledStatement) it.next();
+                statement = it.next();
                 if (statement.isValid())
                 {
                     if (!statement.isInUse() && !(connection = statement.getConnection()).isBusy())
@@ -136,38 +136,18 @@ public class StatementPool
     }
 
     /**
-     * cycle through statements to check and recycle them.
-     * 
-     * public void run() {
-     *   while (running) {
-     *       try {
-     *           Thread.sleep(checkDelay);
-     *       } catch (InterruptedException e) {}
-     *       long now = System.currentTimeMillis();
-     *       PooledStatement statement = null;
-     *       for (Iterator it=statementsMap.keySet().iterator();it.hasNext();)
-     *           for (Iterator jt=statementsMap.get(it.next()).iterator();jt.hasNext();) {
-     *               statement = (PooledStatement)jt.next();
-     *               if (statement.isInUse() && now-statement.getTagTime() > timeout)
-     *                   statement.notifyOver();
-     *           }
-     *   }
-     * }
-     */
-
-    /**
      * close all statements.
      */
     public void clear()
     {
         // close all statements
-        for(Iterator it = statementsMap.keySet().iterator(); it.hasNext(); )
+        for(Iterator<String> it = statementsMap.keySet().iterator(); it.hasNext(); )
         {
-            for(Iterator jt = statementsMap.get(it.next()).iterator(); jt.hasNext(); )
+            for(Iterator<PooledStatement> jt = statementsMap.get(it.next()).iterator(); jt.hasNext(); )
             {
                 try
                 {
-                    ((PooledStatement)jt.next()).close();
+                    jt.next().close();
                 }
                 catch(SQLException e)
                 {    // don't care now...
@@ -184,19 +164,19 @@ public class StatementPool
      */
     private void dropConnection(Connection connection)
     {
-        for(Iterator it = statementsMap.keySet().iterator(); it.hasNext(); )
+        for(Iterator<String> it = statementsMap.keySet().iterator(); it.hasNext(); )
         {
-            for(Iterator jt = statementsMap.get(it.next()).iterator(); jt.hasNext(); )
+            for (PooledStatement statement : statementsMap.get(it.next()))
             {
-                PooledStatement statement = (PooledStatement)jt.next();
-
-                if(statement.getConnection() == connection)
+                if (statement.getConnection() == connection)
                 {
                     try
                     {
                         statement.close();
                     }
-                    catch(SQLException sqle) {}
+                    catch (SQLException ignored)
+                    {
+                    }
                     statement.setInvalid();
                 }
             }
@@ -205,14 +185,16 @@ public class StatementPool
         {
             connection.close();
         }
-        catch(SQLException sqle) {}
+        catch(SQLException ignored) {}
     }
 
     /**
      * clear statements on exit.
      */
+    @Override
     protected void finalize()
     {
+        // CB TODO - use Cleaner
         clear();
     }
 
@@ -240,11 +222,11 @@ public class StatementPool
     {
         int[] stats = new int[] { 0, 0 };
 
-        for(Iterator it = statementsMap.keySet().iterator(); it.hasNext(); )
+        for(Iterator<String> it = statementsMap.keySet().iterator(); it.hasNext(); )
         {
-            for(Iterator jt = statementsMap.get(it.next()).iterator(); jt.hasNext(); )
+            for (PooledStatement pooledStatement : statementsMap.get(it.next()))
             {
-                if(!((PooledStatement)jt.next()).isInUse())
+                if (!pooledStatement.isInUse())
                 {
                     stats[0]++;
                 }
@@ -257,7 +239,7 @@ public class StatementPool
     /**
      * connection pool.
      */
-    private ConnectionPool connectionPool;
+    private final ConnectionPool connectionPool;
 
     /**
      * statements getCount.
@@ -267,7 +249,7 @@ public class StatementPool
     /**
      * map queries -&gt; statements.
      */
-    private Map<String,List<PooledStatement>> statementsMap = new HashMap<>();    // query -> PooledStatement
+    private final Map<String,List<PooledStatement>> statementsMap = new HashMap<>();    // query -> PooledStatement
 
     /**
      * running thread.
@@ -287,18 +269,7 @@ public class StatementPool
     /**
      * model id
      */
-    private String modelId = null;
-
-    /**
-     * check delay.
-     */
-
-//  private static final long checkDelay = 30*1000;
-
-    /**
-     * after this timeout, statements are recycled even if not closed.
-     */
-//  private static final long timeout = 60*60*1000;
+    private String modelId;
 
     /**
      * max number of statements.
@@ -308,5 +279,5 @@ public class StatementPool
     /**
      * current transaction connection
      */
-    private static ThreadLocal<Map<String, Connection>> currentTransactionConnection = ThreadLocal.withInitial(() -> new ConcurrentHashMap<>());
+    private static ThreadLocal<Map<String, Connection>> currentTransactionConnection = ThreadLocal.withInitial(ConcurrentHashMap::new);
 }
