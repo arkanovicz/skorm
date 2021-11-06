@@ -29,7 +29,6 @@ import java.sql.Array;
 import java.sql.Blob;
 import java.sql.CallableStatement;
 import java.sql.Clob;
-import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.NClob;
 import java.sql.PreparedStatement;
@@ -52,8 +51,8 @@ import java.util.concurrent.Executor;
  *  @author <a href="mailto:claude.brisson@gmail.com">Claude Brisson</a>
  */
 
-public class ConnectionWrapper
-    implements Connection, Serializable
+public class Connection
+    implements java.sql.Connection, Serializable
 {
 
     protected static Logger logger = LoggerFactory.getLogger("jdbc");
@@ -65,7 +64,7 @@ public class ConnectionWrapper
     private Method lastInsertIdMethod = null;
 
     /** Wrapped connection. */
-    private transient Connection connection = null;
+    private transient java.sql.Connection connection = null;
 
     /** Busy state. */
     private int busy = 0;
@@ -82,10 +81,9 @@ public class ConnectionWrapper
 
     /**
      * Constructor.
-     * @param driverInfos infos on the driver
 -     * @param connection connection to be wrapped
      */
-    public ConnectionWrapper(Connection connection)
+    public Connection(java.sql.Connection connection)
     {
         this.vendor = vendor;
         this.connection = connection;
@@ -95,7 +93,7 @@ public class ConnectionWrapper
      * Unwrap the connection.
      * @return the unwrapped connection
      */
-    public Connection unwrap()
+    public java.sql.Connection unwrap()
     {
         return connection;
     }

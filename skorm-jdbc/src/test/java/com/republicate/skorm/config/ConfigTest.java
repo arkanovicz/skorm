@@ -1,13 +1,12 @@
 package com.republicate.skorm.config;
 
-import com.republicate.skorm.jdbc.ConnectionWrapper;
+import com.republicate.skorm.jdbc.Connection;
 import com.republicate.skorm.jdbc.Vendor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 
@@ -21,8 +20,8 @@ public class ConfigTest
     void testVendorByProperties() throws Exception
     {
         String url = "jdbc:h2:mem:test";
-        Connection connection = DriverManager.getConnection(url);
-        ConnectionWrapper wrapper = new ConnectionWrapper(connection);
+        java.sql.Connection connection = DriverManager.getConnection(url);
+        Connection wrapper = new Connection(connection);
         Vendor vendor = wrapper.getVendor();
         assertEquals("h2", vendor.getTag());
     }
@@ -31,7 +30,7 @@ public class ConfigTest
     DatabaseMetaData mockedDbMetaData;
 
     @Mock
-    Connection mockedConnection;
+    java.sql.Connection mockedConnection;
 
     @Test
     void testVendorByMetaData() throws Exception
@@ -41,7 +40,7 @@ public class ConfigTest
         when(mockedDbMetaData.storesLowerCaseIdentifiers()).thenReturn(true);
         when(mockedDbMetaData.getIdentifierQuoteString()).thenReturn("`");
 
-        ConnectionWrapper wrapper = new ConnectionWrapper(mockedConnection);
+        Connection wrapper = new Connection(mockedConnection);
         Vendor vendor = wrapper.getVendor();
         assertEquals("dummy", vendor.getTag());
         assertEquals(Vendor.CaseSensitivity.LOWERCASE, vendor.getTablesCaseSensitivity());
