@@ -1,0 +1,49 @@
+bookshelf {
+
+  //////////////////
+  // Root attributes
+
+  // the number of books on the bookshelf
+  booksNb: int =
+    SELECT count(*)
+      FROM book;
+
+  // search books by title keyword
+  searchTitle: book[] =
+    SELECT book_id, title,
+           (lending_date != null) lended,
+           (lending_date = null AND reservation_date != null) reserved
+      FROM book
+      LEFT OUTER JOIN borrowing USING (book_id)
+      WHERE title like CONCAT('%', $search, '%')
+      AND restitution_date = null;
+
+  // what is the most wanted book?
+  mostWanted: book? =
+    SELECT book_id, title
+      FROM book
+      LEFT OUTER JOIN borrowing
+      GROUP BY book_id
+      ORDER BY count(*) DESC
+      LIMIT 1;
+
+  //////////////////
+  // Book attributes
+
+  book {
+    // list of borrowers
+    borrowers:  string[] =
+      SELECT name
+        FROM dude
+        JOIN borrowing USING dude_id
+        WHERE book_id = $book_id
+        AND lending_date != null
+
+    // reserve a book for a dude
+    reserve =
+      INSERT INTO borrowing
+        (book_id, dude_id, reservation_date) VALUES
+        ($book_id, $dude_id, NOW();
+
+  }
+}

@@ -22,11 +22,8 @@ kotlin {
     }
     // legacy only for now, since some dependencies aren't IR compatible
     js(IR) {
-        browser {
-            commonWebpackConfig {
-                cssSupport.enabled = true
-            }
-        }
+        nodejs {
+	}
     }
     val hostOs = System.getProperty("os.name")
     val isMingwX64 = hostOs.startsWith("Windows")
@@ -40,7 +37,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                api("com.republicate.kson:essential-kson:1.2")
+	        implementation(project(":skorm-common"))
             }
         }
         val commonTest by getting {

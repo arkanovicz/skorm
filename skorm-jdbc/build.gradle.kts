@@ -1,5 +1,6 @@
 plugins {
     java
+    kotlin("jvm")
 }
 
 group = "com.republicate.skorm"
@@ -10,6 +11,8 @@ repositories {
 }
 
 dependencies {
+    implementation(project(":skorm-common"))
+
     implementation("org.slf4j:slf4j-api:1.7.32")
     implementation("org.apache.commons:commons-lang3:3.12.0")
 
