@@ -5,12 +5,28 @@ class ServerProcessor: Processor {
 
     override fun connect(connector: Connector) {
         this.connector = connector.apply {
-            connect()
+//            connect()
         }
     }
 
-    override fun eval(path: String, vararg params: Any?): Instance? {
+    override fun insert(instance: Instance): GeneratedKey? {
+        TODO("Not yet implemented")
+    }
 
+    override fun update(instance: Instance) {
+        TODO("Not yet implemented")
+    }
+
+    override fun upsert(instance: Instance) {
+        TODO("Not yet implemented")
+    }
+
+    override fun delete(instance: Instance) {
+        TODO("Not yet implemented")
+    }
+
+    override fun eval(path: String, vararg params: Any?): Instance? {
+        TODO("Not yet implemented")
     }
 
     override fun retrieve(path: String, result: Entity?, vararg params: Any?): Instance? {

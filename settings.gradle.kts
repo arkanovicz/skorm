@@ -7,3 +7,5 @@ include("skorm-jdbc")
 include("examples:bookshelf")
 include("skorm-api-client")
 include("skorm-api-server")
+include("skorm-gradle-plugin")
+

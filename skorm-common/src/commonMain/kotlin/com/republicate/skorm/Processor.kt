@@ -1,7 +1,6 @@
 package com.republicate.skorm
 
 typealias GeneratedKey = Long
-typealias Affected = Long
 typealias RowSet = Sequence<Instance>
 
 interface Processor {
@@ -17,8 +16,8 @@ interface Processor {
     fun eval(path: String, vararg params: Any?): Instance?
     fun retrieve(path: String, result: Entity?, vararg params: Any?): Instance?
     fun query(path: String, result: Entity?, vararg params: Any?): RowSet
-    fun perform(path: String, vararg params: Any?): Affected
-    fun attempt(path: String, vararg params: Any?): List<Affected>
+    fun perform(path: String, vararg params: Any?): Int
+    fun attempt(path: String, vararg params: Any?): List<Int>
 
     // transaction
     fun begin()

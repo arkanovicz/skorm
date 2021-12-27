@@ -125,7 +125,7 @@ open class AttributeHolder(val name: String, val parent: AttributeHolder? = null
 // getOrElse assimilates null and missing values
 // See Maps.kt and https://youtrack.jetbrains.com/issue/KT-21392
 // Two lookups in some cases, though.
-internal inline fun <K, V> Map<K, V>.getOrElseNullable(key: K, defaultValue: () -> V): V {
+inline fun <K, V> Map<K, V>.getOrElseNullable(key: K, defaultValue: () -> V): V {
     val value = get(key)
     return if (value == null && !containsKey(key)) {
         defaultValue()

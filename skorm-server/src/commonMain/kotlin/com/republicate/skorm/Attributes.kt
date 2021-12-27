@@ -119,18 +119,3 @@ open class AttributeHolder(val name: String, val parent: AttributeHolder? = null
         parent?.getAttribute(attrName) ?: throw SQLException("attribute $name.$attrName not found")
     }
 }
-
-// Helpers
-
-// getOrElse assimilates null and missing values
-// See Maps.kt and https://youtrack.jetbrains.com/issue/KT-21392
-// Two lookups in some cases, though.
-internal inline fun <K, V> Map<K, V>.getOrElseNullable(key: K, defaultValue: () -> V): V {
-    val value = get(key)
-    return if (value == null && !containsKey(key)) {
-        defaultValue()
-    } else {
-        value as V
-    }
-}
-

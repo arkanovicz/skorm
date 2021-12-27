@@ -1,10 +1,15 @@
 package com.republicate.skorm.bookshelf
 
 import io.ktor.application.*
+import io.ktor.html.*
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.response.*
 import io.ktor.routing.*
+import kotlinx.html.body
+import kotlinx.html.h1
+import kotlinx.html.li
+import kotlinx.html.ul
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger { "server" }
@@ -20,9 +25,9 @@ fun Application.module() {
 
 }
 
-fun Application.configureDatabae() {
-    ExampleDatabase.configure(environment.config.config("skorm"))
-    ExampleDatabase.initialize()z""
+fun Application.configureDatabase() {
+//    ExampleDatabase.configure(environment.config.config("skorm"))
+//    ExampleDatabase.initialize()
 }
 
 fun Application.configureRouting() {
@@ -32,7 +37,7 @@ fun Application.configureRouting() {
         }
 
         get("/") {
-            call.redirect("/index.html")
+            call.respondRedirect("/index.html")
         }
 
         get("/index.html") {
@@ -58,10 +63,10 @@ fun Application.configureRouting() {
 }
 
 fun Application.displayRoutes() {
-    val root = feature(Routing)
-    val allRoutes = listOf(root) + root.children.flatMap { allRoutes(it) }
-    val allRoutesWithMethod = allRoutes.filter { it.selector is HttpMethodRouteSelector }
-    allRoutesWithMethod.forEach {
-        logger.info("route: $it")
-    }
+//    val root = feature(Routing)
+//    val allRoutes = listOf(root) + root.children.flatMap { allRoutes(it) }
+//    val allRoutesWithMethod = allRoutes.filter { it.selector is HttpMethodRouteSelector }
+//    allRoutesWithMethod.forEach {
+//        logger.info("route: $it")
+//    }
 }

@@ -33,11 +33,11 @@ class ApiClient : Processor {
         TODO("Not yet implemented")
     }
 
-    override fun perform(path: String, vararg params: Any?): Affected {
+    override fun perform(path: String, vararg params: Any?): Int {
         TODO("Not yet implemented")
     }
 
-    override fun attempt(path: String, vararg params: Any?): List<Affected> {
+    override fun attempt(path: String, vararg params: Any?): List<Int> {
         TODO("Not yet implemented")
     }
 
