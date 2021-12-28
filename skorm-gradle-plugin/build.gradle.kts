@@ -1,17 +1,18 @@
 plugins {
     kotlin("jvm")
-    id("java-gradle-plugin")
+    `java-gradle-plugin`
+    `maven-publish`
     id("com.gradle.plugin-publish") version ("0.18.0")
 }
 
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.5.31")
-    }
-}
+//buildscript {
+//    repositories {
+//        mavenCentral()
+//    }
+//    dependencies {
+//        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.5.31")
+//    }
+//}
 
 repositories {
     mavenCentral()

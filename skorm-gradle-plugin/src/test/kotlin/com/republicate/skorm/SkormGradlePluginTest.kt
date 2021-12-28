@@ -6,13 +6,13 @@ import org.junit.Assert.assertNotNull
 import org.junit.Test
 import java.io.File
 
-class TemplatePluginTest {
+class SkormGradlePluginTest {
 
     @Test
     fun `plugin is applied correctly to the project`() {
         val project = ProjectBuilder.builder().build()
         project.pluginManager.apply("com.republicate.skorm.skorm-gradle-plugin")
-        assert(project.tasks.getByName("templateExample") is TemplateExampleTask)
+        assert(project.tasks.getByName("SkormCodeGen") is CodeGenTask)
     }
 
     @Test
@@ -20,24 +20,24 @@ class TemplatePluginTest {
         val project = ProjectBuilder.builder().build()
         project.pluginManager.apply("com.republicate.skorm.skorm-gradle-plugin")
 
-        assertNotNull(project.extensions.getByName("templateExampleConfig"))
+        assertNotNull(project.extensions.getByName("SkormCodeGenConfig"))
     }
 
     @Test
     fun `parameters are passed correctly from extension to task`() {
         val project = ProjectBuilder.builder().build()
         project.pluginManager.apply("com.republicate.skorm.skorm-gradle-plugin")
-        val aFile = File(project.projectDir, ".tmp")
-        (project.extensions.getByName("templateExampleConfig") as TemplateExtension).apply {
-            tag.set("a-sample-tag")
-            message.set("just-a-message")
-            outputFile.set(aFile)
+        val aFile = File(project.projectDir, "example.kt")
+        (project.extensions.getByName("SkormCodeGenConfig") as CodeGenParams).apply {
+            source.set("src/test/resources/model.kddl")
+            destPackage.set("com.republicate.skorm.example")
+            destFile.set(aFile)
         }
 
-        val task = project.tasks.getByName("templateExample") as TemplateExampleTask
+        val task = project.tasks.getByName("SkormCodeGen") as CodeGenTask
 
-        assertEquals("a-sample-tag", task.tag.get())
-        assertEquals("just-a-message", task.message.get())
-        assertEquals(aFile, task.outputFile.get().asFile)
+        assertEquals("src/test/resources/model.kddl", task.source.get())
+        assertEquals("com.republicate.skorm.example", task.destPackage.get())
+        assertEquals(aFile, task.destFile.get().asFile)
     }
 }
