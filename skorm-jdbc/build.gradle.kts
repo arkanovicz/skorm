@@ -1,13 +1,5 @@
 plugins {
-    java
     kotlin("jvm")
-}
-
-group = "com.republicate.skorm"
-version = "1.0-SNAPSHOT"
-
-repositories {
-    mavenCentral()
 }
 
 dependencies {
@@ -24,6 +16,19 @@ dependencies {
     testRuntimeOnly("com.h2database:h2:1.4.200")
 }
 
-tasks.getByName<Test>("test") {
-    useJUnitPlatform()
+tasks {
+    withType<org.jetbrains.kotlin.gradle.dsl.KotlinCompile<*>> {
+        kotlinOptions {
+            languageVersion = "1.5"
+            apiVersion = "1.5"
+        }
+    }
+    withType<JavaCompile>().configureEach {
+        sourceCompatibility = JavaVersion.VERSION_1_8.toString()
+        targetCompatibility = JavaVersion.VERSION_1_8.toString()
+    }
+
+    getByName<Test>("test") {
+        useJUnitPlatform()
+    }
 }

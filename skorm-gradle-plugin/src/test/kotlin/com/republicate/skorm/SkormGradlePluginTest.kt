@@ -11,30 +11,30 @@ class SkormGradlePluginTest {
     @Test
     fun `plugin is applied correctly to the project`() {
         val project = ProjectBuilder.builder().build()
-        project.pluginManager.apply("com.republicate.skorm.skorm-gradle-plugin")
-        assert(project.tasks.getByName("SkormCodeGen") is CodeGenTask)
+        project.pluginManager.apply("skorm-gradle-plugin")
+        assert(project.tasks.getByName("skormCodeGeneration") is CodeGenTask)
     }
 
     @Test
     fun `extension templateExampleConfig is created correctly`() {
         val project = ProjectBuilder.builder().build()
-        project.pluginManager.apply("com.republicate.skorm.skorm-gradle-plugin")
+        project.pluginManager.apply("skorm-gradle-plugin")
 
-        assertNotNull(project.extensions.getByName("SkormCodeGenConfig"))
+        assertNotNull(project.extensions.getByName("skorm"))
     }
 
     @Test
     fun `parameters are passed correctly from extension to task`() {
         val project = ProjectBuilder.builder().build()
-        project.pluginManager.apply("com.republicate.skorm.skorm-gradle-plugin")
+        project.pluginManager.apply("skorm-gradle-plugin")
         val aFile = File(project.projectDir, "example.kt")
-        (project.extensions.getByName("SkormCodeGenConfig") as CodeGenParams).apply {
+        (project.extensions.getByName("skorm") as CodeGenParams).apply {
             source.set("src/test/resources/model.kddl")
             destPackage.set("com.republicate.skorm.example")
             destFile.set(aFile)
         }
 
-        val task = project.tasks.getByName("SkormCodeGen") as CodeGenTask
+        val task = project.tasks.getByName("skormCodeGeneration") as CodeGenTask
 
         assertEquals("src/test/resources/model.kddl", task.source.get())
         assertEquals("com.republicate.skorm.example", task.destPackage.get())

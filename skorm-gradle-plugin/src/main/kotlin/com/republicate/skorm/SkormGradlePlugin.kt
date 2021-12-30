@@ -3,8 +3,8 @@ package com.republicate.skorm
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 
-const val EXTENSION_NAME = "SkormCodeGenConfig"
-const val TASK_NAME = "SkormCodeGen"
+const val EXTENSION_NAME = "skorm"
+const val TASK_NAME = "skormCodeGeneration"
 
 abstract class SkormGradlePlugin : Plugin<Project> {
     override fun apply(project: Project) {

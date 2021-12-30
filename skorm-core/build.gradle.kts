@@ -2,28 +2,36 @@ plugins {
     kotlin("multiplatform")
 }
 
-group = "com.republicate.skorm"
-version = "1.0-SNAPSHOT"
+// group = "com.republicate.skorm"
+// version = "1.0-SNAPSHOT"
 
-repositories {
-    mavenCentral()
-    // mavenLocal()
-}
+// repositories {
+//     mavenCentral()
+//     // mavenLocal()
+// }
 
 kotlin {
+
+    sourceSets.all {
+        languageSettings.apply {
+            languageVersion = "1.5"
+            apiVersion = "1.5"
+        }
+    }
+
     jvm {
         compilations.all {
             kotlinOptions.jvmTarget = "1.8"
         }
-        withJava()
+        // withJava()
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
         }
     }
-    // legacy only for now, since some dependencies aren't IR compatible
+
     js(IR) {
         nodejs {
-	}
+	      }
     }
     val hostOs = System.getProperty("os.name")
     val isMingwX64 = hostOs.startsWith("Windows")

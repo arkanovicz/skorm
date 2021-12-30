@@ -77,15 +77,14 @@ val dummyProcessor = object: Processor {
 }
 
 val ExampleDatabase = Database("example", dummyProcessor)
-val BookshelfSchema: Schema by lazy { ExampleDatabase.getSchema("bookshelf") } // alternative: use db.get("schema")
+val BookshelfSchema: Schema by lazy { ExampleDatabase.getSchema("bookshelf") }
 val BookEntity: Entity by lazy {
     BookshelfSchema.getEntity("book").apply {
         factory = { Book() }
     }
 }
 
-class Book(): Instance(BookEntity)
-{
+class Book(): Instance(BookEntity) {
     companion object {
         operator fun get(id: Long) = BookEntity.fetch(id)
         operator fun iterator(): Iterator<Book> = object : Iterator<Book> {

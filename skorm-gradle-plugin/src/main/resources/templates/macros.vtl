@@ -1,0 +1,6 @@
+#macro(pascal $str)$kotlin.pascal($str)#end
+
+#macro(camel $str)$kotlin.camel($str)#end
+
+#macro(args $fields)#foreach($field in $fields)#camel($field.name): $kotlin.type($field.type)#if($foreach.hasNext), #end#end#end
+

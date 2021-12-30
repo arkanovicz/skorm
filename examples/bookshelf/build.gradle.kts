@@ -1,21 +1,40 @@
 plugins {
     kotlin("multiplatform")
     application
+    id("skorm-gradle-plugin") version "0.1"
 }
 
-group = "com.republicate.skorm"
-version = "1.0-SNAPSHOT"
-
-repositories {
-    mavenCentral()
+buildscript {
+    repositories {
+        mavenCentral()
+        mavenLocal()
+        maven("https://jitpack.io") // for antlr-kotlin
+    }
+    dependencies {
+        classpath("com.republicate.skorm:skorm-gradle-plugin:0.1")
+    }
 }
+
+skorm {
+    source.set("src/commonMain/model/bookshelf.kddl")
+    destPackage.set("com.republicate.skorm.bookshelf")
+    destFile.set(File("test.kt"))
+}
+
+val ktor_version: String by project
 
 kotlin {
+    sourceSets.all {
+        languageSettings.apply {
+            languageVersion = "1.5"
+            apiVersion = "1.5"
+        }
+    }
     jvm {
         compilations.all {
             kotlinOptions.jvmTarget = "1.8"
         }
-        withJava()
+        // withJava()
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
         }
@@ -43,8 +62,8 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 implementation(project(":skorm-jdbc"))
-                implementation("io.ktor:ktor-server-netty:1.6.5")
-                implementation("io.ktor:ktor-html-builder:1.6.5")
+                implementation("io.ktor:ktor-server-netty:$ktor_version")
+                implementation("io.ktor:ktor-html-builder:$ktor_version")
                 implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.3")
                 implementation("io.github.microutils:kotlin-logging-jvm:2.0.11")
                 runtimeOnly("org.slf4j:slf4j-simple:1.7.32")
@@ -52,7 +71,7 @@ kotlin {
         }
         val jvmTest by getting {
             dependencies {
-                implementation("io.ktor:ktor-server-tests:1.6.5") {
+                implementation("io.ktor:ktor-server-tests:$ktor_version") {
                     exclude(group = "ch.qos.logback", module="logback-core")
                     exclude(group = "ch.qos.logback", module="logback-classic")
                 }
@@ -81,3 +100,5 @@ tasks.named<JavaExec>("run") {
     dependsOn(tasks.named<Jar>("jvmJar"))
     classpath(tasks.named<Jar>("jvmJar"))
 }
+
+tasks.filter { it.name.startsWith("compileKotlin") }.forEach { it.dependsOn("skormCodeGeneration") }

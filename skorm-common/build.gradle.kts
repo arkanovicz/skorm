@@ -2,25 +2,29 @@ plugins {
     kotlin("multiplatform")
 }
 
-group = "com.republicate.skorm"
-version = "1.0-SNAPSHOT"
+// group = "com.republicate.skorm"
+// version = "1.0-SNAPSHOT"
 
-repositories {
-    mavenCentral()
+// repositories {
+//     mavenCentral()
     // mavenLocal()
-}
+// }
 
 kotlin {
+    sourceSets.all {
+        languageSettings.apply {
+            languageVersion = "1.5"
+            apiVersion = "1.5"
+        }
+    }
     jvm {
         compilations.all {
             kotlinOptions.jvmTarget = "1.8"
         }
-        withJava()
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
         }
     }
-    // legacy only for now, since some dependencies aren't IR compatible
     js(IR) {
         browser {
             commonWebpackConfig {

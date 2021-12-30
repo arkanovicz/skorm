@@ -1,0 +1,60 @@
+#set ($databaseObject = "#pascal($db.name)Database")
+val $databaseObject = Database("$db.name")
+#foreach ($schema in $db.schemas.values)
+/////////////////////////
+// schema $schema.name
+
+//enums
+  #foreach ($table in $schema.tables.values)
+    #foreach ($field in $table.fields)
+      #if($kotlin.isEnum($field))
+class #pascal($field.name)Enum {
+        #foreach($value in $kotlin.enumValues($field.type))
+    $value#if($foreach.hasNext),#end
+        #end
+}
+      #end
+    #end
+  #end
+
+  #set ($schemaObject = "#pascal($schema.name)Schema")
+val $schemaObject: Schema by lazy {
+    $databaseObject.getSchema("$schema.name")
+}
+  #foreach ($table in $schema.tables.values)
+    #set ($entityName = "#pascal($table.name)Entity")
+    #set ($instanceName = "#pascal($table.name)")
+
+// table $table.name
+val $entityName: Entity by lazy {
+    $schemaObject.getEntity("$table.name").apply {
+        factory = { #pascal($table.name)() }
+    }
+}
+class $instanceName(): Instance($entityName) {
+    companion object {
+    #if ($table.primaryKey.size() == 1)
+        #set($pkField = $table.primaryKey.iterator().next())
+        #set($pkFieldName = "#camel($pkField)")
+        operator fun get(pkFieldName: $kotlin.type($pkField.name, $pkField.type)) = ${entityName}.fetch($pkFieldName)
+    #end
+        fun fetch(#args($table.primaryKey)) = ${entityName}.fetch(#args($table.primaryKey))
+        operator fun iterator(): Iterator<$instanceName> = object : Iterator<$instanceName> {
+            private val it = ${entityName}.iterator()
+            override fun next() = it.next() as $instanceName
+            override fun hasNext() = it.hasNext()
+        }
+    }
+    #foreach ($field in $table.fields)
+    var #camel($field.name)
+      #if($kotlin.isEnum($field.type))
+        get() = #pascal($field.name).valueOf(getString("$field.name"))
+        set(v: $kotlin.type($field.type)#if(!$field.nonNull)?#end) { put("$field.name", v.toString()) }
+      #else
+        get() = get$kotlin.type($field.type)("$field.name")
+        set(v: $kotlin.type($field.type)#if(!$field.nonNull)?#end) { put("$field.name", v)) }
+      #end
+    #end
+}
+  #end
+#end
