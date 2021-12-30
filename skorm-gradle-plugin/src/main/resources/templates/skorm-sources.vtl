@@ -1,6 +1,6 @@
-#set ($databaseObject = "#pascal($db.name)Database")
-val $databaseObject = Database("$db.name")
-#foreach ($schema in $db.schemas.values)
+#set ($databaseObject = "#pascal($database.name)Database")
+val $databaseObject = Database("$database.name")
+#foreach ($schema in $database.schemas.values)
 /////////////////////////
 // schema $schema.name
 

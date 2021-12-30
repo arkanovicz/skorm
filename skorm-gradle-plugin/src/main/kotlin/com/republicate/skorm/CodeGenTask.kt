@@ -50,6 +50,7 @@ abstract class CodeGenTask : DefaultTask() {
         prop.put("resource.loaders", "class")
         prop.put("resource.loader.class.class", "org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader")
         prop.put("velocimacro.library.path", "templates/macros.vtl")
+        prop.put("runtime.log.track_location", "true")
         engine.init(prop)
         val context = VelocityContext()
         context.put("kotlin", KotlinTool())
@@ -62,25 +63,16 @@ abstract class CodeGenTask : DefaultTask() {
     }
 
     private fun processSource(input: String): Database {
+        println("@@@@@@@ dependencies: ${project.buildscript.dependencies}")
+        println("@@@@@@@ configurations: ${project.buildscript.configurations}")
         return when {
             input.startsWith("jdbc:") -> {
                 reverse(input)
             }
             else -> {
                 val file = project.file(input) ?: throw RuntimeException("source file not found")
-                println("@@@@@@@@@@ source absolute path: ${file.absolutePath}")
-                try {
-                    val ddl = Utils.getFile(file.absolutePath)
-                    parse(ddl)
-                } catch (t: Throwable) {
-                    println("@@@@@@@@@@@@@@@@@@@@ Damn !")
-                    var e: Throwable? = t
-                    while (e != null) {
-                        e.printStackTrace()
-                        e = e.cause
-                    }
-                    throw t
-                }
+                val ddl = Utils.getFile(file.absolutePath)
+                parse(ddl)
             }
         }
     }
