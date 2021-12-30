@@ -4,6 +4,7 @@ import com.republicate.kddl.*
 import com.republicate.kddl.Utils.getFile
 import org.apache.velocity.VelocityContext
 import org.apache.velocity.app.VelocityEngine
+import org.apache.velocity.tools.generic.LogTool
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
@@ -54,6 +55,7 @@ abstract class CodeGenTask : DefaultTask() {
         engine.init(prop)
         val context = VelocityContext()
         context.put("kotlin", KotlinTool())
+        context.put("log", LogTool())
         context.put("package", destPackage.get())
         context.put("database", database)
         val writer = FileWriter(destFile.get().asFile)
@@ -63,8 +65,6 @@ abstract class CodeGenTask : DefaultTask() {
     }
 
     private fun processSource(input: String): Database {
-        println("@@@@@@@ dependencies: ${project.buildscript.dependencies}")
-        println("@@@@@@@ configurations: ${project.buildscript.configurations}")
         return when {
             input.startsWith("jdbc:") -> {
                 reverse(input)

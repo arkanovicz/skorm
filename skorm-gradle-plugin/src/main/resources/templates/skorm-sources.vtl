@@ -1,6 +1,7 @@
 #set ($databaseObject = "#pascal($database.name)Database")
 val $databaseObject = Database("$database.name")
 #foreach ($schema in $database.schemas.values)
+  $log.debug("@@@ found schema $schema")
 /////////////////////////
 // schema $schema.name
 
