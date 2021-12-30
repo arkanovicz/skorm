@@ -29,14 +29,14 @@ class SkormGradlePluginTest {
         project.pluginManager.apply("skorm-gradle-plugin")
         val aFile = File(project.projectDir, "example.kt")
         (project.extensions.getByName("skorm") as CodeGenParams).apply {
-            source.set("src/test/resources/model.kddl")
+            datasource.set("src/test/resources/model.kddl")
             destPackage.set("com.republicate.skorm.example")
             destFile.set(aFile)
         }
 
         val task = project.tasks.getByName("skormCodeGeneration") as CodeGenTask
 
-        assertEquals("src/test/resources/model.kddl", task.source.get())
+        assertEquals("src/test/resources/model.kddl", task.datasource.get())
         assertEquals("com.republicate.skorm.example", task.destPackage.get())
         assertEquals(aFile, task.destFile.get().asFile)
     }

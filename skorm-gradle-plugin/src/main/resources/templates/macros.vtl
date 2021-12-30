@@ -2,5 +2,9 @@
 
 #macro(camel $str)$kotlin.camel($str)#end
 
-#macro(args $fields)#foreach($field in $fields)#camel($field.name): $kotlin.type($field.type)#if($foreach.hasNext), #end#end#end
+#macro(type $type)$kotlin.type($type.name, $type.type)#end
+
+#macro(args $fields)#foreach($field in $fields)#camel($field.name)#if($foreach.hasNext), #end#end#end
+
+#macro(typedArgs $fields)#foreach($field in $fields)#camel($field.name): #type($field)#if($foreach.hasNext), #end#end#end
 

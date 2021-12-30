@@ -1,20 +1,22 @@
 package com.republicate.skorm
 
-import com.republicate.kddl.*
+import com.republicate.kddl.Database
+import com.republicate.kddl.Utils
 import com.republicate.kddl.Utils.getFile
+import com.republicate.kddl.parse
+import com.republicate.kddl.reverse
 import org.apache.velocity.VelocityContext
 import org.apache.velocity.app.VelocityEngine
 import org.apache.velocity.tools.generic.LogTool
 import org.gradle.api.DefaultTask
+import org.gradle.api.Task
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.*
 import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.OutputFile
-import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.options.Option
 import java.io.FileWriter
-import java.io.StringWriter
 import java.util.*
 
 abstract class CodeGenTask : DefaultTask() {
@@ -24,9 +26,19 @@ abstract class CodeGenTask : DefaultTask() {
         group = "code generation"
     }
 
+    override fun dependsOn(vararg paths: Any?): Task? {
+        return super.dependsOn(*paths)
+    }
+
+    @get:InputFile
+    @get:Option(option = "source", description = "Source kddl model")
+    @get:Optional
+    abstract val source: RegularFileProperty
+
     @get:Input
-    @get:Option(option = "source", description = "Source: kddl relative path or jdbc URL")
-    abstract val source: Property<String>
+    @get:Option(option = "datasource", description = "Datasource JDBC URL with credentials")
+    @get:Optional
+    abstract val datasource: Property<String>
 
     @get:Input
     @get:Option(option = "destPackage", description = "Destination package")
@@ -41,10 +53,28 @@ abstract class CodeGenTask : DefaultTask() {
         val tag = "[skorm]"
 
         logger.lifecycle("$tag source is: ${source.orNull}")
+        logger.lifecycle("$tag datasource is: ${source.orNull}")
         logger.lifecycle("$tag destPackage is: ${destPackage.orNull}")
         logger.lifecycle("$tag destFile is: ${destFile.orNull}")
 
-        val database = processSource(source.get())
+        val foundSource = source.orNull
+        val foundDatasource = datasource.orNull
+
+        if ((foundSource == null) == (foundDatasource == null)) {
+            throw RuntimeException("$tag expecting skorm.source or skorm.datasource")
+        }
+
+        val database = when {
+            foundSource != null -> {
+                val file = project.file(foundSource) ?: throw RuntimeException("source file not found")
+                val ddl = Utils.getFile(file.absolutePath)
+                parse(ddl)
+            }
+            foundDatasource != null -> {
+                reverse(foundDatasource)
+            }
+            else -> throw RuntimeException("this cannot happen")
+        }
 
         val engine = VelocityEngine()
         val prop = Properties()
@@ -62,18 +92,5 @@ abstract class CodeGenTask : DefaultTask() {
         val template = engine.getTemplate("templates/skorm-sources.vtl") ?: throw RuntimeException("template not found")
         template.merge(context, writer)
         writer.close()
-    }
-
-    private fun processSource(input: String): Database {
-        return when {
-            input.startsWith("jdbc:") -> {
-                reverse(input)
-            }
-            else -> {
-                val file = project.file(input) ?: throw RuntimeException("source file not found")
-                val ddl = Utils.getFile(file.absolutePath)
-                parse(ddl)
-            }
-        }
     }
 }

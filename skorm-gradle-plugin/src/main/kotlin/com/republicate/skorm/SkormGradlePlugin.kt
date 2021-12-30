@@ -14,6 +14,7 @@ abstract class SkormGradlePlugin : Plugin<Project> {
         // Add a task that uses configuration from the extension object
         project.tasks.register(TASK_NAME, CodeGenTask::class.java) {
             it.source.set(extension.source)
+            it.datasource.set(extension.datasource)
             it.destPackage.set(extension.destPackage)
             it.destFile.set(extension.destFile)
         }

@@ -16,9 +16,9 @@ buildscript {
 }
 
 skorm {
-    source.set("src/commonMain/model/bookshelf.kddl")
+    source.set(File("src/commonMain/model/bookshelf.kddl"))
     destPackage.set("com.republicate.skorm.bookshelf")
-    destFile.set(File("test.kt"))
+    // destFile.set(File("test.kt"))
 }
 
 val ktor_version: String by project
@@ -51,8 +51,10 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(project(":skorm-common"))
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.1")
 //                implementation("io.github.microutils:kotlin-logging:2.0.11")
             }
+            kotlin.srcDir(file("build/generated-src/kotlin"))
         }
         val commonTest by getting {
             dependencies {

@@ -1,6 +1,6 @@
 package com.republicate.skorm
 
-open class Database(name: String, internal val processor: Processor) : AttributeHolder(name) {
+open class Database(name: String) : AttributeHolder(name) {
     val voidShema = Schema("", this)
     private val schemas = mutableMapOf<String, Schema>()
 

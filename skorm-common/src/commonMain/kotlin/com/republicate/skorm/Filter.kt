@@ -20,7 +20,7 @@ val snakeToCamel = IdentifierFilter { snake ->
         var first = true
         for (part in parts) {
             if (part.length > 0) {
-                builder.append(if (first) part else part.capitalize())
+                builder.append(if (first) part.decapitalize() else part.capitalize())
                 first = false
             }
         }
@@ -43,7 +43,7 @@ val camelToSnake = IdentifierFilter { camel ->
 }
 
 val snakeToPascal = IdentifierFilter { snake ->
-    if (!snake.contains("_")) snake
+    if (!snake.contains("_")) snake.capitalize()
     else {
         val parts = snake.lowercase().split("_") // CB TODO factorize regex building
         val builder = StringBuilder()
