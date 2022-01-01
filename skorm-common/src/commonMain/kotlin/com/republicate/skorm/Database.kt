@@ -1,11 +1,8 @@
 package com.republicate.skorm
 
-open class Database(name: String) : AttributeHolder(name) {
-    val voidShema = Schema("", this)
-    private val schemas = mutableMapOf<String, Schema>()
+open class Database(name: String): AttributeHolder(name) {
+    private val _schemas = mutableMapOf<String, Schema>()
+    private lateinit var processor: Processor
 
-    private lateinit var connector: Connector
-    fun connect(connector: Connector) { this.connector = connector }
-
-    fun getSchema(schemaName: String) = schemas[schemaName] ?: throw SQLException("unknown schema: $schemaName")
+    val schemas: Map<String, Schema> by _schemas
 }

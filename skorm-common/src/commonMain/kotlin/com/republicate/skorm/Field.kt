@@ -1,4 +1,4 @@
 package com.republicate.skorm
 
-class Field {
+open class Field {
 }

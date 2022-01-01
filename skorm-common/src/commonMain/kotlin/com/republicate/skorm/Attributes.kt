@@ -114,7 +114,7 @@ class AttributeProcessor(val attributesHolder: AttributeHolder) : ExposesAttribu
 
 
 open class AttributeHolder(val name: String, val parent: AttributeHolder? = null) {
-    private val attrMap: Map<String, Attribute<*>> = emptyMap()
+    private val attrMap = mutableMapOf<String, Attribute<*>>()
     fun getAttribute(attrName: String): Attribute<*> = attrMap.getOrElseNullable(attrName) {
         parent?.getAttribute(attrName) ?: throw SQLException("attribute $name.$attrName not found")
     }

@@ -4,7 +4,7 @@ open class Schema(name: String, database: Database) : AttributeHolder(name, data
     val database: Database
         get() = parent as Database
 
-    private val entities = mutableMapOf<String, Entity>()
-    fun getEntity(entityName: String) = entities[entityName] ?: throw SQLException("unknown entity: $entityName")
+    private val _entities = mutableMapOf<String, Entity>()
+    val entities: Map<String, Entity> by _entities
 
 }

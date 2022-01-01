@@ -55,6 +55,11 @@ fun Application.configureRouting() {
         }
 
         route("/api") {
+            route("sf") {
+                get("sfq") {
+
+                }
+            }
             //rest("book")
         }
     }

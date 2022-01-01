@@ -3,7 +3,9 @@ package com.republicate.skorm
 open class Entity(name: String, schema: Schema): AttributeHolder(name, schema) {
     internal val processor = AttributeProcessor(this)
     val schema get() = parent as Schema
-    val fields = linkedMapOf<String, Field>()
+
+    private val _fields = mutableMapOf<String, Field>()
+    val fields: Map<String, Field> by _fields
 
     var factory: () -> Instance = { Instance(this) }
 
