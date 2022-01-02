@@ -8,76 +8,66 @@ import kotlinx.datetime.*
 import com.republicate.skorm.*
 
 #set ($databaseObject = "#camel($database.name)Database")
-val $databaseObject = Database("$database.name")
+val $databaseObject = object: Database("$database.name") {
 #foreach ($schema in $database.schemas.values())
-
-/////////////////////////
-// schema $schema.name
-
-//enums
-  ## CB TODO handle redundant names in enum files: even if same enum, it cannot be declared twice
-  #foreach ($table in $schema.tables.values())
-    #foreach ($field in $table.fields.values())
-      #if($kotlin.isEnum($field))
-enum class #pascal($field.name)Enum {
-        #foreach($value in $kotlin.enumValues($field.type))
-    $value#if($foreach.hasNext),#end
-        #end
-}
-      #end
-    #end
-  #end
-
   #set ($schemaObject = "#camel($schema.name)Schema")
-val $schemaObject: Schema by lazy {
-    ${databaseObject}.schemas["$schema.name"] ?: throw SQLException("unknown schmema: $schema.name")
-}
-  #foreach ($table in $schema.tables.values())
-    #set ($entityName = "#camel($table.name)Entity")
-    #set ($instanceName = "#pascal($table.name)")
-
-// table $table.name
-val $entityName: Entity by lazy {
-    ${schemaObject}.entities["$table.name"]?.apply {
-        factory = { #pascal($table.name)() }
-    } ?: throw SQLException("unknown entity: $table.name")
-}
-class $instanceName(): Instance($entityName) {
-    companion object {
-    #if ($table.primaryKey.size() == 1)
+    val $schemaObject = object: Schema("$schema.name", this) {
+  #set ($enums = $kotlin.enums($database))
+  #foreach ($field in $enums)
+        enum inner class #pascal($field.name)Enum {
+    #foreach ($value in $kotlin.enumValues($field.type))
+            $value#if ($foreach.hasNext),#end
+    #end
+        }
+  #end
+    #foreach ($table in $schema.tables.values())
+      #set ($entityName = "#camel($table.name)Entity")
+      #set ($instanceName = "#pascal($table.name)")
+        // table $table.name
+        val $entityName = object: Entity("table.name", this) {
+            init {
+                factory = { #pascal($table.name)() }
+                schema.entities["$table.name"] = this
+            }
+        }
+        inner class $instanceName(): Instance($entityName) {
+            companion object {
+      #if ($table.primaryKey.size() == 1)
         #set($pkField = $table.primaryKey.iterator().next())
         #set($pkFieldName = "#camel($pkField.name)")
-        operator fun get($pkFieldName: #type($pkField)) = ${entityName}.fetch($pkFieldName)
-    #end
-    #if ($table.primaryKey.size() > 0)
-        fun fetch(#typedArgs($table.primaryKey)) = ${entityName}.fetch(#args($table.primaryKey))
-    #end
-        operator fun iterator(): Iterator<$instanceName> = object : Iterator<$instanceName> {
-            private val iterator = ${entityName}.iterator()
-            override fun next() = iterator.next() as $instanceName
-            override fun hasNext() = iterator.hasNext()
+                operator fun get($pkFieldName: #type($pkField)) = ${entityName}.fetch($pkFieldName)
+      #end
+      #if ($table.primaryKey.size() > 0)
+                fun fetch(#typedArgs($table.primaryKey)) = ${entityName}.fetch(#args($table.primaryKey))
+      #end
+                operator fun iterator(): Iterator<$instanceName> = object : Iterator<$instanceName> {
+                    private val iterator = ${entityName}.iterator()
+                    override fun next() = iterator.next() as $instanceName
+                    override fun hasNext() = iterator.hasNext()
+                }
+            }
+      #foreach ($field in $table.fields.values())
+        #set($pk = $field.primaryKey) // pk=$pk
+        #if($pk)
+          #set($def = 'val')
+        #else
+          #set($def = 'var')
+        #end
+            $def #camel($field.name): #type($field)#if(!$field.nonNull)?#end
+        #if($kotlin.isEnum($field.type))
+                get() = #pascal($field.name)Enum.valueOf(getString("$field.name"))#if($field.nonNull)!!#end
+          #if(!$pk)
+                set(v: #type($field)#if(!$field.nonNull)?#end) { put("$field.name", v?.toString() }
+          #end
+        #else
+                get() = get#type($field)("$field.name")#if($field.nonNull)!!#end
+          #if(!$pk)
+                set(v: #type($field)#if(!$field.nonNull)?#end) { put("$field.name", v) }
+          #end
+        #end
+      #end
         }
-    }
-    #foreach ($field in $table.fields.values())
-      #set($pk = $field.primaryKey) // pk=$pk
-      #if($pk)
-        #set($def = 'val')
-      #else
-        #set($def = 'var')
-      #end
-    $def #camel($field.name): #type($field)#if(!$field.nonNull)?#end
-      #if($kotlin.isEnum($field.type))
-        get() = #pascal($field.name)Enum.valueOf(getString("$field.name"))#if($field.nonNull)!!#end
-        #if(!$pk)
-        set(v: #type($field)#if(!$field.nonNull)?#end) { put("$field.name", v?.toString() }
-        #end
-      #else
-        get() = get#type($field)("$field.name")#if($field.nonNull)!!#end
-        #if(!$pk)
-        set(v: #type($field)#if(!$field.nonNull)?#end) { put("$field.name", v) }
-        #end
-      #end
     #end
-}
-  #end
+    }
 #end
+}
