@@ -24,12 +24,6 @@ val $databaseObject = object: Database("$database.name") {
       #set ($entityName = "#camel($table.name)Entity")
       #set ($instanceName = "#pascal($table.name)")
         // table $table.name
-        val $entityName = object: Entity("table.name", this) {
-            init {
-                factory = { #pascal($table.name)() }
-                schema.entities["$table.name"] = this
-            }
-        }
         inner class $instanceName(): Instance($entityName) {
             companion object {
       #if ($table.primaryKey.size() == 1)
@@ -46,7 +40,7 @@ val $databaseObject = object: Database("$database.name") {
                     override fun hasNext() = iterator.hasNext()
                 }
             }
-      #foreach ($field in $table.fields.values())
+#*      #foreach ($field in $table.fields.values())
         #set($pk = $field.primaryKey) // pk=$pk
         #if($pk)
           #set($def = 'val')
@@ -65,7 +59,13 @@ val $databaseObject = object: Database("$database.name") {
                 set(v: #type($field)#if(!$field.nonNull)?#end) { put("$field.name", v) }
           #end
         #end
-      #end
+      #end *#
+        }
+        val $entityName = object: Entity("table.name", this) {
+            init {
+                factory = { #pascal($table.name)() }
+                schema.entities["$table.name"] = this
+            }
         }
     #end
     }

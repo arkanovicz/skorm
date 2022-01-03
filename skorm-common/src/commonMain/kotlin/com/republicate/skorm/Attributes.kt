@@ -65,11 +65,11 @@ class TransactionAttribute(name: String): Attribute<List<Int>>(name) {
  */
 
 interface ExposesAttributes {
-    fun eval(attributeName: String, vararg params: Any?): Any?
-    fun retrieve(attributeName: String, vararg params: Any?): Instance?
-    fun query(attributeName: String, vararg params: Any?): Sequence<Instance>
-    fun perform(attributeName: String, vararg params: Any?): Int
-    fun attempt(attributeName: String, vararg params: Any?): List<Int>
+    fun eval(attrName: String, vararg params: Any?): Any?
+    fun retrieve(attrName: String, vararg params: Any?): Instance?
+    fun query(attrName: String, vararg params: Any?): Sequence<Instance>
+    fun perform(attrName: String, vararg params: Any?): Int
+    fun attempt(attrName: String, vararg params: Any?): List<Int>
 }
 
 /*
