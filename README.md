@@ -2,23 +2,43 @@
 
 *Simple Kotlin Object Relational Mapping*
 
-The nicest Kotlin multiplatform ORM around.
+The nicest Kotlin multiplatform ORM around. Fully multiplatform. Coroutines-enabled.
 
 ## Concepts
 
-*Zero* annotation. Zero <abbr title="Set Query Language">SQL</abbr> code fragmentation.
+*Five* main concepts:
+
++ Database
++ Schema
++ Entity, corresponding to a table or a view
++ Instance, corresponding to a single row in a table or a row set
++ Attribute, corresponding to a custom query, with five variants:
+ 
+     + ScalarAttribute, returning Any?
+     + RowAttribute, returning Instance?
+     + RowSetAttribute, returning Sequence<Instance>
+     + MutationAttribute, returning Long (either the number of modified rows, or the generated serial value)
+     + TransactionAttribute, returning List<Long> (number of modified rows for each comprised mutation statement)
+
+*Four* main methods in the lifecycle of database objects instances (along with transaction handling):
+
++ Instance.insert()
++ Entity.fetch(primaryKey)
++ Instance.update()
++ Instance.delete()
+
+*Three* what ?
+
+*Two* concrete database connectors, one for <abbr title="Java DataBase Connectivity">JDBC</abbr> and one for a service <abbr title="Application Programmable Interface">API</abbr>. More to come, hopefully.
 
 *One* goal: maximum simplicity without conceeding anyting to extensibility.
 
-*Two* concrete database connectors, one for <abbr title="Java DataBase Connectivity">JDBC</abbr> and one for a service <abbr title="Application Programmable Interface">API</abbr>.
+*Zero* annotation. Zero <abbr title="Set Query Language">SQL</abbr> code fragmentation.
 
-*Three* <abbr title="Domain Specific Language">DSL</abbr>:
+## Configuration
 
-+ A <abbr title="Data definition Language">DDL</abbr> dialect for database creation and versionning, as well as UML diagrams and Kotlin classes
++ A <abbr title="Data definition Language">DDL</abbr> dialect, `kddl`, for database creation and versioning, as well as UML diagrams and Kotlin classes generation
 + A <abbr title="Data definition Language">DML</abbr> dialect for custom queries, with automatic undo handling and Kotlin extension functions
-+ An <abbr title="Application Programmable Interface">API</abbr> dialect to define server and client interfaces
-
-*Four* main classes:
 
 ```
 Database ⁎—— Schema ⁎—— Entity ⁎—— Instance

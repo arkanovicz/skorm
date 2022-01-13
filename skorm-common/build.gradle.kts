@@ -10,6 +10,14 @@ plugins {
     // mavenLocal()
 // }
 
+buildscript {
+    val atomicfu_version: String by project
+    dependencies {
+        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:$atomicfu_version")
+    }
+}
+apply(plugin = "kotlinx-atomicfu")
+
 kotlin {
     sourceSets.all {
         languageSettings.apply {
@@ -42,9 +50,11 @@ kotlin {
     }
 
     sourceSets {
+        val atomicfu_version: String by project
         val commonMain by getting {
             dependencies {
-                api("com.republicate.kson:essential-kson:1.2")
+                api("com.republicate.kson:essential-kson:1.3")
+                implementation("org.jetbrains.kotlinx:atomicfu:$atomicfu_version")
             }
         }
         val commonTest by getting {

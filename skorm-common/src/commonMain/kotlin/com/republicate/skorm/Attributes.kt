@@ -4,30 +4,63 @@ package com.republicate.skorm
  * Attributes
  */
 
+// CB TODO - forbidden only on entity
+val reserveAttributeNames = setOf("insert", "fetch", "update", "delete")
+
 sealed class Attribute<out T>(val name: String) {
     private val paramNames = mutableListOf<String>()
-    internal val query : String by lazy { queryBuilder.toString() }
-
-    // building
-    // No, this code is only server side!
-    private val queryBuilder = StringBuilder()
-    fun addParameter(name: String) {
-        paramNames.add(name)
-        queryBuilder.append("?")
+    private val uniqueParamNames: Set<String> by lazy {
+        paramNames.toSet()
     }
+
+    fun addParameter(name: String)  = paramNames.add(name)
 
     /**
      * Match attribute named parameters with values found in provided context parameters
      */
-    internal fun matchParamValues(vararg rawValues: Any?) : Array<Any?> {
-        val ret = arrayOfNulls<Any?>(paramNames.size)
-        paramNames.forEachIndexed { i, p ->
+    internal fun matchParamValues(vararg rawValues: Any?) : Map<String, Any?> {
+        val ret = mutableMapOf<String, Any?>()
+        val consumedParam = BitSet(rawValues.size)
 
+        uniqueParamNames.forEach { p ->
+            params@ for (i in rawValues.indices) {
+                val value = rawValues[i]
+                when(value) {
+                    is Instance -> {
+                        val found = value[p]
+                        if (found != null || value.containsKey(p)) {
+//                            ret[p] = value.entity.fields[p]?.write(found) ?: found
+                            ret[p] = found
+                            break@params
+                        }
+                    }
+                    is Map<*, *> -> {
+                        val found = value[p]
+                        if (found != null || value.containsKey(p)) {
+                            ret[p] = found
+                            break@params
+                        }
+                    }
+                    is GeneratedKeyMarker -> {
+//                        ret[value.colName] = ??
+                    }
+                    else -> if (!consumedParam[i]) {
+                        ret[p] = value
+                        consumedParam.set(i, true)
+                        break@params
+                    }
+                }
+                if (i + 1 == uniqueParamNames.size) {
+                    throw SQLException("attribute $name: parameter $p not found")
+                }
+            }
         }
+        // TODO control that all simple parameters have been consumed
+        // rawValues.filter { it !is Map<*, *> }.size > consumedParam.setBitsCount => error
         return ret
     }
 
-    protected abstract fun execute(): T
+    internal abstract fun execute(): T
 }
 
 class ScalarAttribute(name: String): Attribute<Any?>(name) {
@@ -36,13 +69,13 @@ class ScalarAttribute(name: String): Attribute<Any?>(name) {
     }
 }
 
-class RowAttribute(name: String): Attribute<Instance?>(name) {
-    override fun execute(): Instance {
+class RowAttribute(name: String, val resultEntity: Entity? = null): Attribute<Instance?>(name) {
+    override fun execute(): Instance? {
         TODO("Not yet implemented")
     }
 }
 
-class RowsetAttribute(name: String): Attribute<Sequence<Instance>>(name) {
+class RowSetAttribute(name: String, val resultEntity: Entity? = null): Attribute<Sequence<Instance>>(name) {
     override fun execute(): Sequence<Instance> {
         TODO("Not yet implemented")
     }
@@ -61,25 +94,12 @@ class TransactionAttribute(name: String): Attribute<List<Int>>(name) {
 }
 
 /*
- * Attributes calling API
- */
-
-interface ExposesAttributes {
-    fun eval(attrName: String, vararg params: Any?): Any?
-    fun retrieve(attrName: String, vararg params: Any?): Instance?
-    fun query(attrName: String, vararg params: Any?): Sequence<Instance>
-    fun perform(attrName: String, vararg params: Any?): Int
-    fun attempt(attrName: String, vararg params: Any?): List<Int>
-}
-
-/*
  * Concrete attributes evaluation
- */
 
-class AttributeProcessor(val attributesHolder: AttributeHolder) : ExposesAttributes {
+class AttributeProcessor(val attributesHolder: AttributeHolder) : ExposesAttributes, ChildProcessor(attributesHolder.getProcessor()) {
     val name get() = attributesHolder.name
     private fun getAttribute(attributeName: String): Attribute<*> = attributesHolder.getAttribute(attributeName)
-    override fun eval(attrName: String, vararg params: Any?): Any? {
+    override suspend fun eval(attrName: String, vararg params: Any?): Any? {
         val attr = getAttribute(attrName) as ScalarAttribute
         val paramValues = attr.matchParamValues(*params)
         val nextParam = 0
@@ -87,50 +107,61 @@ class AttributeProcessor(val attributesHolder: AttributeHolder) : ExposesAttribu
         return null
     }
 
-    override fun retrieve(attrName: String, vararg params: Any?): Instance? {
-        val attr =  getAttribute(attrName) as RowAttribute
-        return null
-    }
-
-    override fun query(attrName: String, vararg params: Any?): Sequence<Instance> {
-        val attr =  getAttribute(attrName) as RowsetAttribute
-        return sequenceOf()
-    }
-
-    override fun perform(attrName: String, vararg params: Any?): Int {
-        val attr =  getAttribute(attrName) as MutationAttribute
-        return 0
-    }
-
-    override fun attempt(attrName: String, vararg params: Any?): List<Int> {
-        val attr =  getAttribute(attrName) as TransactionAttribute
-        return emptyList()
-    }
 }
-
+*/
 /*
  * Attributes holder
  */
+abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = null) {
+    abstract val processor: Processor
+//    protected open val entity: Entity? = null
+    private val _attrMap = mutableMapOf<String, Attribute<*>>()
+    private val attrMap: Map<String, Attribute<*>> by _attrMap
+    private val path: String by lazy { (parent?.path ?: "") + "/$name" }
+    private inline fun <reified T: Attribute<*>> getAttribute(attrName: String): Pair<String, T>? {
+        val attr = attrMap[attrName]
+        when (attr) {
+            is T -> return "$path/$attrName" to attr
+            null -> return null
+            else -> throw SQLException("attribute $path.$attrName is not a ${T::class::simpleName}")
+        }
+    }
+    private inline fun <reified T: Attribute<*>> findAttribute(attrName: String): Pair<String, T> {
+        var holder = this
+        while (true) {
+            val pair = holder.getAttribute<T>(attrName)
+            if (pair != null) return pair
+            holder = parent ?: throw SQLException("attribute not found: $path.$attrName")
+        }
+    }
 
+    fun addAttribute(attrName: String, attr: Attribute<*>) {
+        val previous = _attrMap.put(attrName, attr)
+        if (previous != null) throw SQLException("attribute $path.$attrName overwritten")
+    }
 
-open class AttributeHolder(val name: String, val parent: AttributeHolder? = null) {
-    private val attrMap = mutableMapOf<String, Attribute<*>>()
-    fun getAttribute(attrName: String): Attribute<*> = attrMap.getOrElseNullable(attrName) {
-        parent?.getAttribute(attrName) ?: throw SQLException("attribute $name.$attrName not found")
+    suspend fun eval(attrName: String, vararg params: Any?): Any? {
+        val (attrPath, attr) = findAttribute<ScalarAttribute>(attrName)
+        return processor.eval(attrPath, attr.matchParamValues(*params))
+    }
+
+    suspend fun retrieve(attrName: String, vararg params: Any?): Instance? {
+        val (attrPath, attr) = findAttribute<RowAttribute>(attrName)
+        return processor.retrieve(attrPath, attr.matchParamValues(*params), attr.resultEntity)
+    }
+
+    suspend fun query(attrName: String, vararg params: Any?): Sequence<Instance> {
+        val (attrPath, attr) = findAttribute<RowSetAttribute>(attrName)
+        return processor.query(attrPath, attr.matchParamValues(*params), attr.resultEntity)
+    }
+
+    suspend fun perform(attrName: String, vararg params: Any?): Long {
+        val (attrPath, attr) = findAttribute<MutationAttribute>(attrName)
+        return processor.perform(attrPath, attr.matchParamValues(*params))
+    }
+
+    suspend fun attempt(attrName: String, vararg params: Any?): List<Int> {
+        val (attrPath, attr) = findAttribute<TransactionAttribute>(attrName)
+        return processor.attempt(attrPath, attr.matchParamValues(*params))
     }
 }
-
-// Helpers
-
-// getOrElse assimilates null and missing values
-// See Maps.kt and https://youtrack.jetbrains.com/issue/KT-21392
-// Two lookups in some cases, though.
-inline fun <K, V> Map<K, V>.getOrElseNullable(key: K, defaultValue: () -> V): V {
-    val value = get(key)
-    return if (value == null && !containsKey(key)) {
-        defaultValue()
-    } else {
-        value as V
-    }
-}
-

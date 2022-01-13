@@ -1,11 +1,14 @@
 package com.republicate.skorm.bookshelf
 
-import io.ktor.application.*
-import io.ktor.html.*
+import com.republicate.skorm.bookshelf.ExampleDatabase.BookshelfSchema.Book.Companion.new
+import io.ktor.server.application.*
+import io.ktor.server.html.*
 import io.ktor.http.*
 import io.ktor.http.content.*
-import io.ktor.response.*
-import io.ktor.routing.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import io.ktor.server.http.content.*
+import kotlinx.coroutines.runBlocking
 import kotlinx.html.body
 import kotlinx.html.h1
 import kotlinx.html.li
@@ -30,6 +33,8 @@ fun Application.configureDatabase() {
 //    ExampleDatabase.initialize()
 }
 
+typealias Book = ExampleDatabase.BookshelfSchema.Book
+
 fun Application.configureRouting() {
     routing {
         static {
@@ -45,8 +50,10 @@ fun Application.configureRouting() {
                 body {
                     h1 { +"My Bookshelf" }
                     ul {
-                        for (book in Book) {
-                            li { +"book ${book.title}" }
+                        runBlocking {
+                            for (book in Book) {
+                                li { +"book ${book.title}" }
+                            }
                         }
                     }
                 }

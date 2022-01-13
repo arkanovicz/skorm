@@ -5,7 +5,7 @@ plugins {
 
  repositories {
      mavenCentral()
-     mavenLocal() // for now, to get kddl 0.3
+     mavenLocal() // for now, to get kddl 0.4
      maven("https://jitpack.io") // for antlr-kotlin
  }
 
@@ -13,7 +13,7 @@ dependencies {
     implementation(gradleApi())
     implementation("org.apache.velocity:velocity-engine-core:2.3")
     implementation("org.apache.velocity.tools:velocity-tools-generic:3.1")
-    api("com.republicate.kddl:kddl:0.3")
+    api("com.republicate.kddl:kddl:0.4")
     testImplementation(gradleTestKit())
     testImplementation("junit:junit:4.12")
     testImplementation(kotlin("test"))

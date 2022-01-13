@@ -1,24 +1,17 @@
 package com.republicate.skorm
 
-sealed interface Marker
-class StreamMarker<T>(val stream:T)
-class GeneratedKeyMarker(val colName: String)
-
-interface Row {
-
+class QueryResult(
+    val names: Array<String>,
+    val values: Iterator<Array<Any?>>
+) {
+    operator fun component1() = names
+    operator fun component2() = values
 }
 
 interface Connector {
-
     // queries
-    fun query(query: String, vararg params: Any?): Sequence<Row>
+    fun query(query: String, vararg params: Any?): QueryResult
 
     // mutations
     fun mutate(query: String, vararg params: Any?): Long
-
-    // transaction
-    fun begin()
-    fun savePoint(name: String)
-    fun rollback(savePoint: String?)
-    fun commit()
 }

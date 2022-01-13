@@ -8,3 +8,4 @@
 
 #macro(typedArgs $fields)#foreach($field in $fields)#camel($field.name): #type($field)#if($foreach.hasNext), #end#end#end
 
+#macro(propertyType $property)$kotlin.propertyType($property)#end

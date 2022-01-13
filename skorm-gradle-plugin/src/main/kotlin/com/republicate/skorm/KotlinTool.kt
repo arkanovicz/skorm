@@ -1,9 +1,11 @@
 package com.republicate.skorm
 
-import com.republicate.kddl.Database
-import com.republicate.kddl.Field
+import com.republicate.kddl.ASTDatabase
+import com.republicate.kddl.ASTField
+import com.republicate.kddl.ASTSchema
 import groovyjarjarantlr.SemanticException
 import java.util.*
+import com.republicate.skorm.GeneratePropertiesCodeTask.PropertyType.*
 
 fun String.lowercase() = toLowerCase(Locale.ROOT)
 
@@ -22,7 +24,7 @@ class KotlinTool {
             "serial" -> "Int"
             "date" -> "LocalDate"
             "datetime" -> "Instant"
-            "integer" -> "Int"
+            "int", "integer" -> "Int"
             "long" -> "Long"
             "float" -> "Float"
             "double" -> "Double"
@@ -30,10 +32,8 @@ class KotlinTool {
         }
     }
 
-    fun enums(database: Database): List<Field> {
-        return database.schemas.values.flatMap {
-            it.tables.values
-        }.flatMap {
+    fun enums(schema: ASTSchema): List<ASTField> {
+        return schema.tables.values.flatMap {
             it.fields.values
         }.filter {
             it.type.startsWith("enum")
@@ -44,4 +44,11 @@ class KotlinTool {
 
     fun pascal(identifier: String) = snakeToPascal.apply(identifier)
 
+    fun propertyType(property: GeneratePropertiesCodeTask.ObjectProperty): String {
+        return when (property.type) {
+            SCALAR -> "Any?"
+            ROW -> "${pascal(property.entity!!)}${if (property.nullable) "?" else ""}"
+            ROWSET -> "Sequence<${property.entity?.let {pascal(it)} ?: "Instance"}>"
+        }
+    }
 }

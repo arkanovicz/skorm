@@ -12,7 +12,7 @@ class SkormGradlePluginTest {
     fun `plugin is applied correctly to the project`() {
         val project = ProjectBuilder.builder().build()
         project.pluginManager.apply("skorm-gradle-plugin")
-        assert(project.tasks.getByName("skormCodeGeneration") is CodeGenTask)
+        assert(project.tasks.getByName("generateSkormObjectsCode") is GenerateObjectsCodeTask)
     }
 
     @Test
@@ -28,16 +28,16 @@ class SkormGradlePluginTest {
         val project = ProjectBuilder.builder().build()
         project.pluginManager.apply("skorm-gradle-plugin")
         val aFile = File(project.projectDir, "example.kt")
-        (project.extensions.getByName("skorm") as CodeGenParams).apply {
+        (project.extensions.getByName("skorm") as SkormParams).apply {
             datasource.set("src/test/resources/model.kddl")
             destPackage.set("com.republicate.skorm.example")
-            destFile.set(aFile)
+            destStructureFile.set(aFile)
         }
 
-        val task = project.tasks.getByName("skormCodeGeneration") as CodeGenTask
+        val task = project.tasks.getByName("generateSkormObjectsCode") as GenerateObjectsCodeTask
 
         assertEquals("src/test/resources/model.kddl", task.datasource.get())
         assertEquals("com.republicate.skorm.example", task.destPackage.get())
-        assertEquals(aFile, task.destFile.get().asFile)
+        assertEquals(aFile, task.destStructureFile.get().asFile)
     }
 }

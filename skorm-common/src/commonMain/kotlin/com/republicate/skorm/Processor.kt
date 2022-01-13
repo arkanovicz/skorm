@@ -1,29 +1,23 @@
 package com.republicate.skorm
 
-typealias GeneratedKey = Long
-typealias RowSet = Sequence<Instance>
+sealed interface Marker
+class StreamMarker<T>(val stream:T)
+class GeneratedKeyMarker(val colName: String)
 
-interface Processor {
-    fun connect(connector: Connector)
-
-    // instances
-    fun insert(instance: Instance): GeneratedKey?
-    fun update(instance: Instance)
-    fun upsert(instance: Instance)
-    fun delete(instance: Instance)
-
-    // attributes
-    fun eval(path: String, vararg params: Any?): Instance?
-    fun retrieve(path: String, result: Entity?, vararg params: Any?): Instance?
-    fun query(path: String, result: Entity?, vararg params: Any?): RowSet
-    fun perform(path: String, vararg params: Any?): Int
-    fun attempt(path: String, vararg params: Any?): List<Int>
-
-    // transaction
-    fun begin()
-    fun savePoint(name: String)
-    fun rollback(savePoint: String?)
-    fun commit()
-
+interface Transaction {
+    suspend fun savePoint(name: String): Unit
+    suspend fun rollback(savePoint: String?): Unit
+    suspend fun commit(): Unit
 }
 
+interface Processor {
+    // attributes
+    suspend fun eval(path: String, params: Map<String, Any?>): Any?
+    suspend fun retrieve(path: String, params: Map<String, Any?>, result: Entity? = null): Instance?
+    suspend fun query(path: String, params: Map<String, Any?>, result: Entity? = null): Sequence<Instance>
+    suspend fun perform(path: String, params: Map<String, Any?>): Long
+
+    suspend fun attempt(path: String, params: Map<String, Any?>): List<Int>
+    // transaction
+    suspend fun begin(): Transaction
+}

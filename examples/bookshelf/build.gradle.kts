@@ -16,9 +16,12 @@ buildscript {
 }
 
 skorm {
-    source.set(File("src/commonMain/model/bookshelf.kddl"))
+    modelStructure.set(File("src/commonMain/model/bookshelf.kddl"))
+//    modelProperties.set(File("src/commonMain/model/bookshelf.skl"))
     destPackage.set("com.republicate.skorm.bookshelf")
-    // destFile.set(File("test.kt"))
+
+//    destStructureFile.set(File("generated-src/..."))
+//    destPropertiesFile.set(File("generated-src/..."))
 }
 
 val ktor_version: String by project
@@ -64,6 +67,7 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 implementation(project(":skorm-jdbc"))
+                implementation("io.ktor:ktor-server-core-jvm:$ktor_version")
                 implementation("io.ktor:ktor-server-netty:$ktor_version")
                 implementation("io.ktor:ktor-html-builder:$ktor_version")
                 implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.3")
@@ -103,4 +107,7 @@ tasks.named<JavaExec>("run") {
     classpath(tasks.named<Jar>("jvmJar"))
 }
 
-tasks.filter { it.name.startsWith("compileKotlin") }.forEach { it.dependsOn("skormCodeGeneration") }
+tasks.filter { it.name.startsWith("compileKotlin") }.forEach {
+    it.dependsOn("generateSkormObjectsCode")
+    it.dependsOn("generateSkormPropertiesCode")
+}
