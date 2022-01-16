@@ -37,7 +37,7 @@ kotlin {
         compilations.all {
             kotlinOptions.jvmTarget = "1.8"
         }
-        // withJava()
+        withJava()
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
         }
@@ -94,7 +94,7 @@ kotlin {
 }
 
 application {
-    mainClass.set("com.republicate.application.ServerKt")
+    mainClass.set("com.republicate.skorm.bookshelf.ServerKt")
 }
 
 tasks.named<Copy>("jvmProcessResources") {

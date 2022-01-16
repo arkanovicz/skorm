@@ -8,6 +8,10 @@ class QueryResult(
     operator fun component2() = values
 }
 
+interface Accessor {
+    fun connect(authParams: Map<String, String>): Connector
+}
+
 interface Connector {
     // queries
     fun query(query: String, vararg params: Any?): QueryResult

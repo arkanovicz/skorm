@@ -1,6 +1,5 @@
 package com.republicate.skorm
 
-import com.republicate.kddl.ASTDatabase
 import com.republicate.kddl.ASTField
 import com.republicate.kddl.ASTSchema
 import groovyjarjarantlr.SemanticException
