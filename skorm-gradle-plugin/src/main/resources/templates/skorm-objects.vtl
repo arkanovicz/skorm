@@ -9,8 +9,8 @@ import com.republicate.skorm.*
 
 #set ($databaseClass = "#pascal($database.name)Database")
 #set ($databaseObject = "#camel($database.name)Database")
-val $databaseObject = $databaseClass()
-class $databaseClass(): Database("$database.name") {
+open class $databaseClass(): Database("$database.name")
+object $databaseObject: $databaseClass() {
 #foreach ($schema in $database.schemas.values())
   #set ($schemaClass = "#pascal($schema.name)Schema")
   #set ($schemaObject = "#camel($schema.name)")

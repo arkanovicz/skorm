@@ -21,8 +21,6 @@ fun main(args: Array<String>): Unit =
 fun Application.module() {
     configureDatabase()
     configureRouting()
-    val skormConfig = environment.config.config("skorm")
-
 }
 
 fun Application.configureDatabase() {
@@ -36,7 +34,7 @@ fun Application.configureDatabase() {
     }
 }
 
-typealias Book = ExampleDatabase.BookshelfSchema.Book
+typealias Book = exampleDatabase.BookshelfSchema.Book
 
 fun Application.configureRouting() {
     routing {
@@ -50,6 +48,7 @@ fun Application.configureRouting() {
 
         get("/index.html") {
             call.respondHtml {
+                println("responding html")
                 body {
                     h1 { +"My Bookshelf" }
                     ul {
