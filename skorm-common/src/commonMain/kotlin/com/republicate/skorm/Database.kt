@@ -9,7 +9,7 @@ open class Database(name: String): AttributeHolder(name) {
     override lateinit var processor: Processor
 
     private val _schemas = mutableMapOf<String, Schema>()
-    val schemas: Map<String, Schema> by _schemas
+    val schemas: Map<String, Schema> get() = _schemas
     internal fun addSchema(schema: Schema) {
         check(!populated)
         _schemas[schema.name] = schema
@@ -41,7 +41,7 @@ open class Entity(val name: String, schema: Schema) {
     val schema get() = instanceAttributes.parent as Schema
 
     private val _fields = mutableMapOf<String, Field>()
-    val fields: Map<String, Field> by _fields
+    val fields: Map<String, Field> get() = _fields
     fun addField(field: Field) {
         check(!schema.database.populated)
         _fields[field.name] = field

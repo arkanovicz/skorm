@@ -28,7 +28,7 @@ object $databaseObject: $databaseClass() {
     #set ($instanceClass = "#pascal($table.name)")
     #set ($instanceObject = "#camel($table.name)")
         class $instanceClass: Instance(Companion) {
-            companion object: Entity("$instanceObject", ${databaseObject}.$schemaObject) {
+            companion object: Entity("$instanceObject", $schemaObject) {
                 override fun new(): $instanceClass = $instanceClass()
     #if ($table.primaryKey.size() > 0)
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as $instanceClass?
@@ -36,7 +36,8 @@ object $databaseObject: $databaseClass() {
                 override suspend operator fun iterator() = super.iterator() as Iterator<$instanceClass>
             }
     #foreach ($field in $table.fields.values())
-      #set($pk = $field.primaryKey) // pk=$pk
+## TODO output PKs first
+      #set($pk = $field.primaryKey)
       #if($pk)
         #set($def = 'val')
       #else
@@ -46,12 +47,12 @@ object $databaseObject: $databaseClass() {
       #if($kotlin.isEnum($field.type))
                 get() = #pascal($field.name)Enum.valueOf(getString("$field.name"))#if($field.nonNull)!!#end
         #if(!$pk)
-                set(v: #type($field)#if(!$field.nonNull)?#end) { put("$field.name", v?.toString() }
+                set(v) { put("$field.name", v?.toString() }
         #end
       #else
                 get() = get#type($field)("$field.name")#if($field.nonNull)!!#end
         #if(!$pk)
-                set(v: #type($field)#if(!$field.nonNull)?#end) { put("$field.name", v) }
+                set(v) { put("$field.name", v) }
         #end
       #end
     #end

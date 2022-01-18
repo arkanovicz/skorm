@@ -116,7 +116,7 @@ abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = 
     abstract val processor: Processor
 //    protected open val entity: Entity? = null
     private val _attrMap = mutableMapOf<String, Attribute<*>>()
-    private val attrMap: Map<String, Attribute<*>> by _attrMap
+    private val attrMap: Map<String, Attribute<*>> get() = _attrMap
     private val path: String by lazy { (parent?.path ?: "") + "/$name" }
     private inline fun <reified T: Attribute<*>> getAttribute(attrName: String): Pair<String, T>? {
         val attr = attrMap[attrName]

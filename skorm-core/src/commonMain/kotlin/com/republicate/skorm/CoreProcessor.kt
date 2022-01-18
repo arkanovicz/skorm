@@ -14,6 +14,7 @@ class CoreProcessor(val connector: Connector): Processor {
 //            connector.mutate(SqlUtils.getInsertStatement(instance.entity), instance)
 //    }
     override suspend fun eval(path: String, params: Map<String, Any?>): Any? {
+        println("@@@ core-processor eval")
         val qry = queries.getOrElse(path) {
             throw SQLException("scalar attribute not found: $path")
         }

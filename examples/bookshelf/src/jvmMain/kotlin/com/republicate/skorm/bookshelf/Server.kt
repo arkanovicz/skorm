@@ -52,13 +52,22 @@ fun Application.configureRouting() {
                 body {
                     h1 { +"My Bookshelf" }
                     ul {
+                        println("inside ul")
                         runBlocking {
+//                            for (n in 1..10) {
+//                                li { +"$n" }
+//                            }
+                            println("before loop")
                             for (book in Book) {
+                                println("inside loop")
                                 li { +"book ${book.title}" }
                             }
+                            println("after loop")
                         }
+                        println("after runBlocking")
                     }
                 }
+                println("after body")
             }
 
         }
