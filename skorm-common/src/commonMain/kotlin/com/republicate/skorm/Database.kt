@@ -50,69 +50,60 @@ open class Entity(val name: String, schema: Schema) {
     val primaryKey: List<Field> by lazy { _fields.values.filter { it.primary } }
 
     private val fetchAttribute: RowAttribute by lazy {
-        RowAttribute("fetch", this).apply {
+        RowAttribute(instanceAttributes, "fetch", this).apply {
             check(schema.database.populated)
             primaryKey.forEach {
                 addParameter(it.name)
             }
-            // CB TODO - concurrency
-            instanceAttributes.addAttribute("fetch", this)
         }
     }
 
     private val browseAttribute: RowSetAttribute by lazy {
-        RowSetAttribute("browse", this).apply {
+        RowSetAttribute(instanceAttributes, "browse", this).apply {
             check(schema.database.populated)
-            instanceAttributes.addAttribute("fetch", this)
         }
     }
 
     private val insertAttribute: MutationAttribute by lazy {
-        MutationAttribute("insert").apply {
+        MutationAttribute(instanceAttributes, "insert").apply {
             check(schema.database.populated)
             fields.values.filter { !it.generated }.forEach {
                 addParameter(it.name)
             }
-            // CB TODO - concurrency
-            instanceAttributes.addAttribute("insert", this)
         }
     }
 
     private val updateAttribute: MutationAttribute by lazy {
-        MutationAttribute("update").apply {
+        MutationAttribute(instanceAttributes, "update").apply {
             check(schema.database.populated)
             fields.values.filter { !it.primary }.forEach {
                 addParameter(it.name)
             }
-            // CB TODO - concurrency
-            instanceAttributes.addAttribute("update", this)
         }
     }
 
     private val deleteAttribute: MutationAttribute by lazy {
-        MutationAttribute("delete").apply {
+        MutationAttribute(instanceAttributes, "delete").apply {
             check(schema.database.populated)
             primaryKey.forEach {
                 addParameter(it.name)
             }
-            // CB TODO - concurrency
-            instanceAttributes.addAttribute("delete", this)
         }
     }
 
     open fun new() = Instance(this)
 
-    open suspend fun fetch(vararg key: Any): Instance? = instanceAttributes.retrieve("fetch", *key)
-    open suspend operator fun iterator(): Iterator<Instance> = instanceAttributes.query("browse").iterator()
+    open suspend fun fetch(vararg key: Any): Instance? = fetchAttribute.execute(*key)
+    open suspend operator fun iterator() = browseAttribute.execute().iterator()
 
     // Other operations are not visible directly, they are proxied from Instance
-    internal suspend fun insert(instance: Instance): Long? = instanceAttributes.perform("insert", instance)
-    internal suspend fun update(instance: Instance): Long? = instanceAttributes.perform("update", instance)
-    internal suspend fun delete(instance: Instance): Long? = instanceAttributes.perform("delete", instance)
-    internal suspend fun eval(attrName: String, vararg params: Any?): Any? = instanceAttributes.eval(attrName, *params)
-    internal suspend fun retrieve(attrName: String, vararg params: Any?): Instance? = instanceAttributes.retrieve(attrName, *params)
-    internal suspend fun query(attrName: String, vararg params: Any?): Sequence<Instance> = instanceAttributes.query(attrName, *params)
-    internal suspend fun perform(attrName: String, vararg params: Any?): Long? = instanceAttributes.perform(attrName, *params)
+    internal suspend fun insert(instance: Instance) = insertAttribute.execute(instance)
+    internal suspend fun update(instance: Instance) = updateAttribute.execute(instance)
+    internal suspend fun delete(instance: Instance) = deleteAttribute.execute(instance)
+    internal suspend fun eval(attrName: String, vararg params: Any?) = instanceAttributes.eval(attrName, *params)
+    internal suspend fun retrieve(attrName: String, vararg params: Any?) = instanceAttributes.retrieve(attrName, *params)
+    internal suspend fun query(attrName: String, vararg params: Any?) = instanceAttributes.query(attrName, *params)
+    internal suspend fun perform(attrName: String, vararg params: Any?) = instanceAttributes.perform(attrName, *params)
 }
 
 open class Instance(val entity: Entity) : Json.Object() {

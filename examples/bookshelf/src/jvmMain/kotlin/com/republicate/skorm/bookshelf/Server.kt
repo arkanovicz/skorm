@@ -1,10 +1,12 @@
 package com.republicate.skorm.bookshelf
 
+import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.html.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.http.content.*
+import io.ktor.server.plugins.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.html.body
 import kotlinx.html.h1
@@ -19,6 +21,14 @@ fun main(args: Array<String>): Unit =
 
 @Suppress("unused")
 fun Application.module() {
+    install(StatusPages) {
+        exception<Throwable> { call: ApplicationCall, cause ->
+            logger.error(cause) {
+                "unable to render page"
+            }
+            call.respond(HttpStatusCode.InternalServerError)
+        }
+    }
     configureDatabase()
     configureRouting()
 }

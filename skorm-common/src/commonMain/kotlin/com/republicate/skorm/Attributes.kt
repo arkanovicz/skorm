@@ -7,7 +7,7 @@ package com.republicate.skorm
 // CB TODO - forbidden only on entity
 val reserveAttributeNames = setOf("insert", "fetch", "update", "delete")
 
-sealed class Attribute<out T>(val name: String) {
+sealed class Attribute<out T>(val holder: AttributeHolder, val name: String) {
     private val paramNames = mutableListOf<String>()
     private val uniqueParamNames: Set<String> by lazy {
         paramNames.toSet()
@@ -60,37 +60,34 @@ sealed class Attribute<out T>(val name: String) {
         return ret
     }
 
-    internal abstract fun execute(): T
+    internal abstract suspend fun execute(vararg params: Any?): T
 }
 
-class ScalarAttribute(name: String): Attribute<Any?>(name) {
-    override fun execute(): Any? {
-        TODO("Not yet implemented")
-    }
+class ScalarAttribute(holder: AttributeHolder, name: String):
+    Attribute<Any?>(holder, name) {
+    override suspend fun execute(vararg params: Any?) =
+        holder.processor.eval("${holder.path}/$name", matchParamValues(*params))
 }
 
-class RowAttribute(name: String, val resultEntity: Entity? = null): Attribute<Instance?>(name) {
-    override fun execute(): Instance? {
-        TODO("Not yet implemented")
-    }
+class RowAttribute(holder: AttributeHolder, name: String, val resultEntity: Entity? = null):
+    Attribute<Instance?>(holder, name) {
+    override suspend fun execute(vararg params: Any?) =
+        holder.processor.retrieve("${holder.path}/$name", matchParamValues(*params), resultEntity)
 }
 
-class RowSetAttribute(name: String, val resultEntity: Entity? = null): Attribute<Sequence<Instance>>(name) {
-    override fun execute(): Sequence<Instance> {
-        TODO("Not yet implemented")
-    }
+class RowSetAttribute(holder: AttributeHolder, name: String, val resultEntity: Entity? = null): Attribute<Sequence<Instance>>(holder, name) {
+    override suspend fun execute(vararg params: Any?) =
+        holder.processor.query("${holder.path}/$name", matchParamValues(*params), resultEntity)
 }
 
-class MutationAttribute(name: String): Attribute<Int>(name) {
-    override fun execute(): Int {
-        TODO("Not yet implemented")
-    }
+class MutationAttribute(holder: AttributeHolder, name: String): Attribute<Long>(holder, name) {
+    override suspend fun execute(vararg params: Any?) =
+        holder.processor.perform("${holder.path}/$name", matchParamValues(*params))
 }
 
-class TransactionAttribute(name: String): Attribute<List<Int>>(name) {
-    override fun execute(): List<Int> {
-        TODO("Not yet implemented")
-    }
+class TransactionAttribute(holder: AttributeHolder, name: String): Attribute<List<Int>>(holder, name) {
+    override suspend fun execute(vararg params: Any?) =
+        holder.processor.attempt("${holder.path}/$name", matchParamValues(*params))
 }
 
 /*
@@ -114,54 +111,45 @@ class AttributeProcessor(val attributesHolder: AttributeHolder) : ExposesAttribu
  */
 abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = null) {
     abstract val processor: Processor
-//    protected open val entity: Entity? = null
     private val _attrMap = mutableMapOf<String, Attribute<*>>()
     private val attrMap: Map<String, Attribute<*>> get() = _attrMap
-    private val path: String by lazy { (parent?.path ?: "") + "/$name" }
-    private inline fun <reified T: Attribute<*>> getAttribute(attrName: String): Pair<String, T>? {
+    internal val path: String by lazy { (parent?.path ?: "") + "/$name" }
+
+    private inline fun <reified T: Attribute<*>> getAttribute(attrName: String): T? {
         val attr = attrMap[attrName]
         when (attr) {
-            is T -> return "$path/$attrName" to attr
+            is T -> return attr
             null -> return null
             else -> throw SQLException("attribute $path.$attrName is not a ${T::class::simpleName}")
         }
     }
-    private inline fun <reified T: Attribute<*>> findAttribute(attrName: String): Pair<String, T> {
+
+    private inline fun <reified T> findAttribute(attrName: String): Attribute<T> {
         var holder = this
         while (true) {
-            val pair = holder.getAttribute<T>(attrName)
-            if (pair != null) return pair
-            holder = parent ?: throw SQLException("attribute not found: $path.$attrName")
+            val attr = holder.getAttribute<Attribute<T>>(attrName)
+            if (attr != null) return attr
+            holder = holder.parent ?: throw SQLException("attribute not found: $path.$attrName")
         }
     }
 
-    fun addAttribute(attrName: String, attr: Attribute<*>) {
-        val previous = _attrMap.put(attrName, attr)
-        if (previous != null) throw SQLException("attribute $path.$attrName overwritten")
+    fun addAttribute(attr: Attribute<*>) {
+        val previous = _attrMap.put(attr.name, attr)
+        if (previous != null) throw SQLException("attribute $path.${attr.name} overwritten")
     }
 
-    suspend fun eval(attrName: String, vararg params: Any?): Any? {
-        val (attrPath, attr) = findAttribute<ScalarAttribute>(attrName)
-        return processor.eval(attrPath, attr.matchParamValues(*params))
-    }
+    suspend fun eval(attrName: String, vararg params: Any?) =
+        findAttribute<Any?>(attrName).execute(*params)
 
-    suspend fun retrieve(attrName: String, vararg params: Any?): Instance? {
-        val (attrPath, attr) = findAttribute<RowAttribute>(attrName)
-        return processor.retrieve(attrPath, attr.matchParamValues(*params), attr.resultEntity)
-    }
+    suspend fun retrieve(attrName: String, vararg params: Any?) =
+        findAttribute<Instance?>(attrName).execute(*params)
 
-    suspend fun query(attrName: String, vararg params: Any?): Sequence<Instance> {
-        val (attrPath, attr) = findAttribute<RowSetAttribute>(attrName)
-        return processor.query(attrPath, attr.matchParamValues(*params), attr.resultEntity)
-    }
+    suspend fun query(attrName: String, vararg params: Any?) =
+        findAttribute<Sequence<Instance>>(attrName).execute(*params)
 
-    suspend fun perform(attrName: String, vararg params: Any?): Long {
-        val (attrPath, attr) = findAttribute<MutationAttribute>(attrName)
-        return processor.perform(attrPath, attr.matchParamValues(*params))
-    }
+    suspend fun perform(attrName: String, vararg params: Any?) =
+        findAttribute<Long>(attrName).execute(*params)
 
-    suspend fun attempt(attrName: String, vararg params: Any?): List<Int> {
-        val (attrPath, attr) = findAttribute<TransactionAttribute>(attrName)
-        return processor.attempt(attrPath, attr.matchParamValues(*params))
-    }
+    suspend fun attempt(attrName: String, vararg params: Any?) =
+        findAttribute<List<Int>>(attrName)
 }
