@@ -25,7 +25,6 @@ open class Schema(name: String, parent: Database) : AttributeHolder(name, parent
     private val _entities = mutableMapOf<String, Entity>()
     val entities: Map<String, Entity> by _entities
     fun addEntity(entity: Entity) {
-        check(!database.populated)
         _entities[entity.name] = entity
     }
 }

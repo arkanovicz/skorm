@@ -1,7 +1,12 @@
+//@file:JvmName("Utils")
+//@file:JvmMultifileClass
+
 package com.republicate.skorm
 
 import kotlin.reflect.KProperty
 import kotlinx.atomicfu.*
+import kotlin.jvm.JvmMultifileClass
+import kotlin.jvm.JvmName
 
 class MandatoryMap<K, V>(private val map: Map<K, V>) : Map<K, V> by map {
     override operator fun get(key: K): V {
@@ -53,4 +58,23 @@ inline fun <K, V> Map<K, V>.getOrElseNullable(key: K, defaultValue: () -> V): V 
     } else {
         value as V
     }
+}
+
+expect open class SQLException : Exception {
+    constructor()
+    constructor(message: String?)
+    constructor(message: String?, cause: Throwable?)
+    constructor(cause: Throwable?)
+}
+
+// BitSet needs an explicit size for now
+// See https://youtrack.jetbrains.com/issue/KT-42615
+const val MAX_FIELDS = 64
+
+expect class BitSet(size: Int) {
+    operator fun get(index: Int): Boolean
+    fun set(index: Int, value: Boolean)
+    fun clear(index: Int)
+    fun or(another: BitSet)
+    fun clear()
 }

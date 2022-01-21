@@ -8,8 +8,9 @@ class QueryResult(
     operator fun component2() = values
 }
 
-interface Accessor {
-    fun connect(authParams: Map<String, String>): Connector
+interface ConnectorFactory {
+    @Throws(SQLException::class)
+    fun connect(): Connector
 }
 
 interface Connector {

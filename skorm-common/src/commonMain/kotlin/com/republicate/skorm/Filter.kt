@@ -57,3 +57,4 @@ val snakeToPascal = IdentifierFilter { snake ->
 }
 
 val pascalToSnake = camelToSnake
+

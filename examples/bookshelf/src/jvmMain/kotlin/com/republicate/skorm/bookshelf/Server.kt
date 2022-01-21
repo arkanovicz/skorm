@@ -1,7 +1,10 @@
 package com.republicate.skorm.bookshelf
 
+import com.republicate.skorm.ConnectorFactory
+import com.republicate.skorm.jdbc.JdbcProvider
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.config.*
 import io.ktor.server.html.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -33,12 +36,21 @@ fun Application.module() {
     configureRouting()
 }
 
+fun ApplicationConfig.toMap(): Map<String, Any?> =
+    keys().map { key ->
+        key to config(key).toString()
+    }.toMap()
+
 fun Application.configureDatabase() {
     environment.config.config("skorm").apply {
+        val url = property("jdbc.url").toString()
+        val jdbc = JdbcProvider(url)
+        config("jdbc")
+
         keys().forEach { key ->
             val value = property(key)
             println("$key = $value")
-    }
+        }
 //    ExampleDatabase.configure(environment.config.config("skorm"))
 //    ExampleDatabase.initialize()
     }
