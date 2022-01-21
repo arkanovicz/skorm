@@ -11,6 +11,9 @@ import com.republicate.skorm.*
 #set ($databaseObject = "#camel($database.name)Database")
 open class $databaseClass(): Database("$database.name")
 object $databaseObject: $databaseClass() {
+    init {
+        populated = true
+    }
 #foreach ($schema in $database.schemas.values())
   #set ($schemaClass = "#pascal($schema.name)Schema")
   #set ($schemaObject = "#camel($schema.name)")

@@ -9,7 +9,7 @@ class QueryResult(
 }
 
 interface ConnectorFactory {
-    @Throws(SQLException::class)
+    @Throws(SkormException::class)
     fun connect(): Connector
 }
 

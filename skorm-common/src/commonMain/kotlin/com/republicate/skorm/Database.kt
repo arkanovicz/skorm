@@ -11,7 +11,6 @@ open class Database(name: String): AttributeHolder(name) {
     private val _schemas = mutableMapOf<String, Schema>()
     val schemas: Map<String, Schema> get() = _schemas
     internal fun addSchema(schema: Schema) {
-        check(!populated)
         _schemas[schema.name] = schema
     }
 }
@@ -112,7 +111,7 @@ open class Instance(val entity: Entity) : Json.Object() {
     // instance mutations
 
     suspend fun insert() {
-        if (persisted) throw SQLException("cannot insert a persisted instance")
+        if (persisted) throw SkormException("cannot insert a persisted instance")
 
         entity.insert(this)
         persisted = true
@@ -120,7 +119,7 @@ open class Instance(val entity: Entity) : Json.Object() {
     }
 
     suspend fun update() {
-        if (!persisted) throw SQLException("cannot update a volatile instance")
+        if (!persisted) throw SkormException("cannot update a volatile instance")
         entity.update(this)
         setClean()
     }
@@ -128,7 +127,7 @@ open class Instance(val entity: Entity) : Json.Object() {
     suspend fun upsert() = if (persisted) update() else delete()
 
     suspend fun delete() {
-        if (!persisted) throw SQLException("cannot delete a volatile instance")
+        if (!persisted) throw SkormException("cannot delete a volatile instance")
         entity.delete(this)
         persisted = false
     }

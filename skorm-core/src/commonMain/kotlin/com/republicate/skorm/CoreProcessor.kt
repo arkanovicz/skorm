@@ -16,13 +16,13 @@ class CoreProcessor(val connector: Connector): Processor {
     override suspend fun eval(path: String, params: Map<String, Any?>): Any? {
         println("@@@ core-processor eval")
         val qry = queries.getOrElse(path) {
-            throw SQLException("scalar attribute not found: $path")
+            throw SkormException("scalar attribute not found: $path")
         }
         val (names, it) = connector.query(qry, *params.values.toTypedArray())
-        if (names.size != 1) throw SQLException("scalar attribute $path expects only one column")
-        if (!it.hasNext()) throw SQLException("scalar attribute $path has no result row")
+        if (names.size != 1) throw SkormException("scalar attribute $path expects only one column")
+        if (!it.hasNext()) throw SkormException("scalar attribute $path has no result row")
         val ret = it.next()
-        if (it.hasNext()) throw SQLException("scalar attribute $path has more than one result row")
+        if (it.hasNext()) throw SkormException("scalar attribute $path has more than one result row")
         return ret
     }
 

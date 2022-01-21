@@ -51,7 +51,7 @@ sealed class Attribute<out T>(val holder: AttributeHolder, val name: String) {
                     }
                 }
                 if (i + 1 == uniqueParamNames.size) {
-                    throw SQLException("attribute $name: parameter $p not found")
+                    throw SkormException("attribute $name: parameter $p not found")
                 }
             }
         }
@@ -120,7 +120,7 @@ abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = 
         when (attr) {
             is T -> return attr
             null -> return null
-            else -> throw SQLException("attribute $path.$attrName is not a ${T::class::simpleName}")
+            else -> throw SkormException("attribute $path.$attrName is not a ${T::class::simpleName}")
         }
     }
 
@@ -129,13 +129,13 @@ abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = 
         while (true) {
             val attr = holder.getAttribute<Attribute<T>>(attrName)
             if (attr != null) return attr
-            holder = holder.parent ?: throw SQLException("attribute not found: $path.$attrName")
+            holder = holder.parent ?: throw SkormException("attribute not found: $path.$attrName")
         }
     }
 
     fun addAttribute(attr: Attribute<*>) {
         val previous = _attrMap.put(attr.name, attr)
-        if (previous != null) throw SQLException("attribute $path.${attr.name} overwritten")
+        if (previous != null) throw SkormException("attribute $path.${attr.name} overwritten")
     }
 
     suspend fun eval(attrName: String, vararg params: Any?) =

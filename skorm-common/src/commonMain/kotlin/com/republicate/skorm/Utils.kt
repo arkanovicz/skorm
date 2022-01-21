@@ -5,12 +5,10 @@ package com.republicate.skorm
 
 import kotlin.reflect.KProperty
 import kotlinx.atomicfu.*
-import kotlin.jvm.JvmMultifileClass
-import kotlin.jvm.JvmName
 
 class MandatoryMap<K, V>(private val map: Map<K, V>) : Map<K, V> by map {
     override operator fun get(key: K): V {
-        return map[key] ?: throw SQLException("missing key: $key")
+        return map[key] ?: throw SkormException("missing key: $key")
     }
 }
 
@@ -60,13 +58,6 @@ inline fun <K, V> Map<K, V>.getOrElseNullable(key: K, defaultValue: () -> V): V 
     }
 }
 
-expect open class SQLException : Exception {
-    constructor()
-    constructor(message: String?)
-    constructor(message: String?, cause: Throwable?)
-    constructor(cause: Throwable?)
-}
-
 // BitSet needs an explicit size for now
 // See https://youtrack.jetbrains.com/issue/KT-42615
 const val MAX_FIELDS = 64
@@ -78,3 +69,11 @@ expect class BitSet(size: Int) {
     fun or(another: BitSet)
     fun clear()
 }
+
+// No way to access this class from JVM... CB TODO
+//expect open class SQLException : Exception {
+//    constructor()
+//    constructor(message: String?)
+//    constructor(message: String?, cause: Throwable?)
+//    constructor(cause: Throwable?)
+//}
