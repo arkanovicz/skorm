@@ -3,7 +3,7 @@ database example {
   schema bookshelf {
 
     table dude {
-      name varchar(100)
+      !name varchar(100)
     }
 
     table author {

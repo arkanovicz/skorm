@@ -1,6 +1,6 @@
 package com.republicate.skorm.bookshelf
 
-import com.republicate.skorm.ConnectorFactory
+import com.republicate.skorm.CoreProcessor
 import com.republicate.skorm.jdbc.JdbcProvider
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -11,10 +11,7 @@ import io.ktor.server.routing.*
 import io.ktor.server.http.content.*
 import io.ktor.server.plugins.*
 import kotlinx.coroutines.runBlocking
-import kotlinx.html.body
-import kotlinx.html.h1
-import kotlinx.html.li
-import kotlinx.html.ul
+import kotlinx.html.*
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger { "server" }
@@ -42,10 +39,15 @@ fun ApplicationConfig.toMap(): Map<String, Any?> =
     }.toMap()
 
 fun Application.configureDatabase() {
+
     environment.config.config("skorm").apply {
-        val url = property("jdbc.url").toString()
+        val url = property("jdbc.url").getString()
+        println("@@@@ url = $url")
         val jdbc = JdbcProvider(url)
-        config("jdbc")
+        exampleDatabase.processor = CoreProcessor(jdbc)
+
+        // create and populate our example db
+        // exampleDatabase.populate()
 
         keys().forEach { key ->
             val value = property(key)
@@ -71,6 +73,11 @@ fun Application.configureRouting() {
         get("/index.html") {
             call.respondHtml {
                 println("responding html")
+                head {
+                    script {
+                        src = "index.js"
+                    }
+                }
                 body {
                     h1 { +"My Bookshelf" }
                     ul {
@@ -82,7 +89,13 @@ fun Application.configureRouting() {
                             println("before loop")
                             for (book in Book) {
                                 println("inside loop")
-                                li { +"book ${book.title}" }
+                                li {
+                                    +"book ${book.title}"
+                                    button {
+                                        +"reserve"
+                                        onClick = "reserve(${book.bookId})"
+                                    }
+                                }
                             }
                             println("after loop")
                         }

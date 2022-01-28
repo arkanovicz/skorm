@@ -6,8 +6,22 @@ package $package
 
 import com.republicate.skorm.*
 
-fun CoreProcessor.populate() {
-    queries.addAll(
-        "foo" to "bar"
-    )
+class ExampleProcessor(connectorFactory: ConnectorFactory) : CoreProcessor(connectorFactory) {
+    fun populate() {
+        queries.putAll(
+            setOf(
+#foreach ($schema in $database.schemas.values())
+  #foreach($table in $schema.tables.values())
+    #set($prefix = "$database.name/$schema.name")
+              "$prefix/browse" to "SELECT * FROM $table.name;"#if($foreach.hasNext || $table.primaryKey.size()),#end
+      #if ($table.primaryKey.size())
+              "$prefix/insert" to "SELECT * FROM $table.name WHERE#foreach($field in $table.primaryKey) $field.name=?#end;",
+              "$prefix/delete" to "DELETE FROM $table.name WHERE#foreach($field in $table.primaryKey) $field.name=?#end;"#if($foreach.hasNext),#end
+      #end
+  #end
+#end
+            )
+        )
+    }
 }
+

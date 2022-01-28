@@ -26,6 +26,10 @@ open class Schema(name: String, parent: Database) : AttributeHolder(name, parent
     fun addEntity(entity: Entity) {
         _entities[entity.name] = entity
     }
+
+    val defaultEntity: Entity by lazy {
+        Entity("_default", this)
+    }
 }
 
 open class Entity(val name: String, schema: Schema) {
@@ -37,6 +41,7 @@ open class Entity(val name: String, schema: Schema) {
         override val processor get() = schema.processor
     }
     val schema get() = instanceAttributes.parent as Schema
+    val path get() = instanceAttributes.path
 
     private val _fields = mutableMapOf<String, Field>()
     val fields: Map<String, Field> get() = _fields
@@ -142,3 +147,8 @@ open class Instance(val entity: Entity) : Json.Object() {
     suspend fun query(attrName: String, vararg params: Any?) = entity.query(attrName, entity, this, *params)
     suspend fun perform(attrName: String, vararg params: Any?) = entity.perform(attrName, this, *params)
 }
+
+// To be able to return anonymous instances
+val voidDatabase = Database("_")
+val voidSchema = Schema("_", voidDatabase)
+val voidEntity = Entity("_", voidSchema)

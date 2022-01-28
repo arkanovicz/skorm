@@ -17,9 +17,11 @@ buildscript {
 
 skorm {
     modelStructure.set(File("src/commonMain/model/bookshelf.kddl"))
-//    modelProperties.set(File("src/commonMain/model/bookshelf.skl"))
+//    modelProperties.set(File("src/commonMain/model/bookshelf.ksql"))
     destPackage.set("com.republicate.skorm.bookshelf")
 
+//    database("example") {
+//    }
 //    destStructureFile.set(File("generated-src/..."))
 //    destPropertiesFile.set(File("generated-src/..."))
 }
@@ -52,12 +54,12 @@ kotlin {
     }
     sourceSets {
         val commonMain by getting {
+            kotlin.srcDir(file("build/generated-src/common/kotlin"))
             dependencies {
                 implementation(project(":skorm-common"))
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.1")
 //                implementation("io.github.microutils:kotlin-logging:2.0.11")
             }
-            kotlin.srcDir(file("build/generated-src/kotlin"))
         }
         val commonTest by getting {
             dependencies {
@@ -65,14 +67,17 @@ kotlin {
             }
         }
         val jvmMain by getting {
+            kotlin.srcDir(file("build/generated-src/core/kotlin"))
             dependencies {
+                implementation(project(":skorm-core"))
                 implementation(project(":skorm-jdbc"))
                 implementation("io.ktor:ktor-server-core-jvm:$ktor_version")
                 implementation("io.ktor:ktor-server-netty:$ktor_version")
                 implementation("io.ktor:ktor-server-html-builder:$ktor_version")
                 implementation("io.ktor:ktor-server-status-pages:$ktor_version")
-                implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.3")
+                implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.3") // CB TODO - needed?!
                 implementation("io.github.microutils:kotlin-logging-jvm:2.0.11")
+                runtimeOnly("org.hsqldb:hsqldb:2.6.1")
                 runtimeOnly("org.slf4j:slf4j-simple:1.7.32")
             }
         }
@@ -110,5 +115,6 @@ tasks.named<JavaExec>("run") {
 
 tasks.filter { it.name.startsWith("compileKotlin") }.forEach {
     it.dependsOn("generateSkormObjectsCode")
+    it.dependsOn("generateSkormProcessor")
     it.dependsOn("generateSkormPropertiesCode")
 }

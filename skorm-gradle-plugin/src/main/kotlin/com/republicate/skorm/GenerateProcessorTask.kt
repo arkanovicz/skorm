@@ -13,7 +13,7 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.options.Option
 import java.io.FileWriter
 
-abstract class PopulateCoreProcessorTask : DefaultTask() {
+abstract class GenerateProcessorTask : DefaultTask() {
 
     init {
         description = "Skorm queries generation in core processor"
@@ -76,7 +76,7 @@ abstract class PopulateCoreProcessorTask : DefaultTask() {
             put("database", database)
         }
         val writer = FileWriter(destPopulateFile.get().asFile)
-        val template = engine.getTemplate("templates/skorm-populate.vtl") ?: throw RuntimeException("template not found")
+        val template = engine.getTemplate("templates/skorm-processor.vtl") ?: throw RuntimeException("template not found")
         template.merge(context, writer)
         writer.close()
     }
