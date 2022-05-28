@@ -2,7 +2,7 @@ package com.republicate.skorm
 
 import com.republicate.kson.Json
 
-open class Database<T: Processor>(name: String, override val processor: Processor): AttributeHolder(name), Processor by processor {
+open class Database(name: String, override val processor: Processor): AttributeHolder(name), Processor by processor {
     var configured by initOnce(false)
     var populated by initOnce(false)
 
@@ -13,10 +13,10 @@ open class Database<T: Processor>(name: String, override val processor: Processo
     }
 }
 
-open class Schema(name: String, parent: Database<*>) : AttributeHolder(name, parent) {
+open class Schema(name: String, parent: Database) : AttributeHolder(name, parent) {
     init { parent.addSchema(this) }
 
-    val database: Database<*> get() = parent as Database<*>
+    val database: Database get() = parent as Database
     override val processor get() = database.processor
 
     private val _entities = mutableMapOf<String, Entity>()

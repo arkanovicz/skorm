@@ -38,7 +38,7 @@ fun ApplicationConfig.toMap(): Map<String, Any?> =
         key to config(key).toString()
     }.toMap()
 
-lateinit var exampleDatabase: ExampleDatabase<CoreProcessor>
+lateinit var exampleDatabase: ExampleDatabase
 
 fun Application.configureDatabase() {
 

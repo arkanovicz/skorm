@@ -8,9 +8,9 @@ import kotlinx.datetime.*
 import com.republicate.skorm.*
 
 #set ($databaseClass = "#pascal($database.name)Database")
-open class $databaseClass<T: Processor>(processor: T): Database<T>("$database.name", processor) {
+open class $databaseClass(processor: Processor): Database("$database.name", processor) {
     companion object {
-        private lateinit var dbInstance: Database<*>
+        private lateinit var dbInstance: Database
         private fun isInstantiated() = this::dbInstance.isInitialized
 #foreach ($schema in $database.schemas.values())
   #set ($schemaClass = "#pascal($schema.name)Schema")
@@ -25,7 +25,7 @@ open class $databaseClass<T: Processor>(processor: T): Database<T>("$database.na
 #foreach ($schema in $database.schemas.values())
   #set ($schemaClass = "#pascal($schema.name)Schema")
   #set ($schemaObject = "#camel($schema.name)")
-    class $schemaClass(db: Database<*>): Schema("$schema.name", db) {
+    class $schemaClass(db: Database): Schema("$schema.name", db) {
   #set ($enums = $kotlin.enums($schema))
   #foreach ($field in $enums)
         enum class #pascal($field.name)Enum {

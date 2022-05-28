@@ -5,7 +5,7 @@ import kotlinx.browser.window
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
-lateinit var exampleDatabase: ExampleDatabase<ApiClient>
+lateinit var exampleDatabase: ExampleDatabase
 
 fun reserve(bookId: Int) {
     console.log("reserve $bookId")
