@@ -1,6 +1,8 @@
 package com.republicate.skorm
 
-open class CoreProcessor(val connectorFactory: ConnectorFactory): Processor {
+import com.republicate.kson.Json
+
+open class CoreProcessor(private val connectorFactory: ConnectorFactory): Processor {
 
     protected val queries = mutableMapOf<String, String>()
     private val readFilters = mutableMapOf<String, Filter<*>>()
@@ -34,21 +36,31 @@ open class CoreProcessor(val connectorFactory: ConnectorFactory): Processor {
         return ret
     }
 
-    override suspend fun retrieve(path: String, params: Map<String, Any?>, result: Entity?): Instance? {
+    override suspend fun retrieve(path: String, params: Map<String, Any?>, result: Entity?): Json.Object? {
         val (names, it) = getConnector(path).query(getQuery(path), *params.values.toTypedArray())
-        if (!it.hasNext()) return null
-        val ret = result?.new() ?: voidEntity.new()
+        if (!it.hasNext()) return null // CB TODO - non-null result should be specifiable
         val rawValues = it.next()
-        if (it.hasNext()) throw SkormException("raw attribute $path has more than one result row")
-        ret.putInternal(names, rawValues)
-        return ret
+        if (it.hasNext()) throw SkormException("raw attribute $path has more than one result row") // CB TODO - could be relaxed by config
+        return when (result) {
+            null -> Json.Object().apply {
+                putAll(names, rawValues)
+            }
+            else -> result.new().apply {
+                putInternal(names, rawValues)
+            }
+        }
     }
 
-    override suspend fun query(path: String, params: Map<String, Any?>, result: Entity?): Sequence<Instance> {
+    override suspend fun query(path: String, params: Map<String, Any?>, result: Entity?): Sequence<Json.Object> {
         val (names, it) = getConnector(path).query(getQuery(path), *params.values.toTypedArray())
         return it.asSequence().map {
-            (result?.new() ?: voidEntity.new()).apply {
-                putInternal(names, it)
+            when (result) {
+                null -> Json.Object().apply {
+                    putAll(names, it)
+                }
+                else -> result.new().apply {
+                    putInternal(names, it)
+                }
             }
         }
     }
@@ -81,6 +93,12 @@ open class CoreProcessor(val connectorFactory: ConnectorFactory): Processor {
 
     private inline fun getQuery(path: String) = queries.getOrElse(path) {
         throw SkormException("row attribute not found: $path")
+    }
+
+    private fun Json.Object.putAll(names: Array<String>, values: Array<Any?>) {
+        names.zip(values).forEach { (name, value) ->
+            put(name, value)
+        }
     }
 
     private fun Instance.putInternal(names: Array<String>, values: Array<Any?>) {

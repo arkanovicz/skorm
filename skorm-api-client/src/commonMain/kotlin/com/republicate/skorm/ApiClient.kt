@@ -66,11 +66,11 @@ class ApiClient(val baseUrl: String) : Processor {
         return response.body()
     }
 
-    override suspend fun retrieve(path: String, params: Map<String, Any?>, result: Entity?): Instance? {
+    override suspend fun retrieve(path: String, params: Map<String, Any?>, result: Entity?): Json.Object? {
         TODO("Not yet implemented")
     }
 
-    override suspend fun query(path: String, params: Map<String, Any?>, result: Entity?): Sequence<Instance> {
+    override suspend fun query(path: String, params: Map<String, Any?>, result: Entity?): Sequence<Json.Object> {
         TODO("Not yet implemented")
     }
 

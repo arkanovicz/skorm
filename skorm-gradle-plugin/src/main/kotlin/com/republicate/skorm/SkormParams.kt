@@ -5,8 +5,8 @@ import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import javax.inject.Inject
 
-const val DEFAULT_COMMON_OUTPUT_PATH = "generated-src/common/kotlin"
-const val DEFAULT_CORE_OUTPUT_PATH = "generated-src/core/kotlin"
+const val DEFAULT_COMMON_OUTPUT_PATH = "generated-src/commonMain/kotlin"
+const val DEFAULT_JVM_OUTPUT_PATH = "generated-src/jvmMain/kotlin"
 const val DEFAULT_OUTPUT_STRUCTURE_FILE = "skormObjects.kt"
 const val DEFAULT_OUTPUT_POPULATE_FILE = "skormPopulate.kt"
 const val DEFAULT_OUTPUT_PROPERTIES_FILE = "skormProperties.kt"
@@ -16,11 +16,11 @@ abstract class SkormParams @Inject constructor(project: Project) {
 
     private val objects = project.objects
 
-    val modelStructure: RegularFileProperty = objects.fileProperty()
+    val definition: RegularFileProperty = objects.fileProperty()
 
     val datasource: Property<String> = objects.property(String::class.java)
 
-    val modelProperties: RegularFileProperty = objects.fileProperty()
+    val properties: RegularFileProperty = objects.fileProperty()
 
     val destPackage: Property<String> = objects.property(String::class.java)
 
@@ -29,16 +29,10 @@ abstract class SkormParams @Inject constructor(project: Project) {
     )
 
     val destPopulateFile: RegularFileProperty = objects.fileProperty().convention(
-        project.layout.buildDirectory.file("$DEFAULT_CORE_OUTPUT_PATH/$DEFAULT_OUTPUT_POPULATE_FILE")
+        project.layout.buildDirectory.file("$DEFAULT_JVM_OUTPUT_PATH/$DEFAULT_OUTPUT_POPULATE_FILE")
     )
 
     val destPropertiesFile: RegularFileProperty = objects.fileProperty().convention(
         project.layout.buildDirectory.file("$DEFAULT_COMMON_OUTPUT_PATH/$DEFAULT_OUTPUT_PROPERTIES_FILE")
     )
-
-//    fun database(name: String, action: Action<SkormParams>) {
-//        println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ destPackage = ${destPackage.orNull}")
-//        action.execute(this)
-//    }
-
 }

@@ -2,11 +2,9 @@ package com.republicate.skorm
 
 import com.republicate.kson.Json
 
-open class Database(name: String): AttributeHolder(name) {
+open class Database<T: Processor>(name: String, override val processor: Processor): AttributeHolder(name), Processor by processor {
     var configured by initOnce(false)
     var populated by initOnce(false)
-
-    override lateinit var processor: Processor
 
     private val _schemas = mutableMapOf<String, Schema>()
     val schemas: Map<String, Schema> get() = _schemas
@@ -15,10 +13,10 @@ open class Database(name: String): AttributeHolder(name) {
     }
 }
 
-open class Schema(name: String, parent: Database) : AttributeHolder(name, parent) {
+open class Schema(name: String, parent: Database<*>) : AttributeHolder(name, parent) {
     init { parent.addSchema(this) }
 
-    val database: Database get() = parent as Database
+    val database: Database<*> get() = parent as Database<*>
     override val processor get() = database.processor
 
     private val _entities = mutableMapOf<String, Entity>()
@@ -52,8 +50,8 @@ open class Entity(val name: String, schema: Schema) {
 
     val primaryKey: List<Field> by lazy { _fields.values.filter { it.primary } }
 
-    private val fetchAttribute: RowAttribute by lazy {
-        RowAttribute(instanceAttributes, "fetch", this).apply {
+    private val fetchAttribute: InstanceAttribute by lazy {
+        InstanceAttribute(instanceAttributes, "fetch", this).apply {
             check(schema.database.populated)
             primaryKey.forEach {
                 addParameter(it.name)
@@ -61,8 +59,8 @@ open class Entity(val name: String, schema: Schema) {
         }
     }
 
-    private val browseAttribute: RowSetAttribute by lazy {
-        RowSetAttribute(instanceAttributes, "browse", this).apply {
+    private val browseAttribute: BagAttribute by lazy {
+        BagAttribute(instanceAttributes, "browse", this).apply {
             check(schema.database.populated)
         }
     }
@@ -149,6 +147,6 @@ open class Instance(val entity: Entity) : Json.Object() {
 }
 
 // To be able to return anonymous instances
-val voidDatabase = Database("_")
-val voidSchema = Schema("_", voidDatabase)
-val voidEntity = Entity("_", voidSchema)
+//val voidDatabase = Database("_")
+//val voidSchema = Schema("_", voidDatabase)
+//val voidEntity = Entity("_", voidSchema)

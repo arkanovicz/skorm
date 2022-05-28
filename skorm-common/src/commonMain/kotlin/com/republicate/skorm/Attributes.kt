@@ -1,5 +1,7 @@
 package com.republicate.skorm
 
+import com.republicate.kson.Json
+
 /*
  * Attributes
  */
@@ -69,15 +71,26 @@ class ScalarAttribute(holder: AttributeHolder, name: String):
         holder.processor.eval("${holder.path}/$name", matchParamValues(*params))
 }
 
-class RowAttribute(holder: AttributeHolder, name: String, val resultEntity: Entity? = null):
-    Attribute<Instance?>(holder, name) {
+class RowAttribute(holder: AttributeHolder, name: String):
+    Attribute<Json.Object?>(holder, name) {
     override suspend fun execute(vararg params: Any?) =
-        holder.processor.retrieve("${holder.path}/$name", matchParamValues(*params), resultEntity)
+        holder.processor.retrieve("${holder.path}/$name", matchParamValues(*params))
 }
 
-class RowSetAttribute(holder: AttributeHolder, name: String, val resultEntity: Entity? = null): Attribute<Sequence<Instance>>(holder, name) {
+class InstanceAttribute(holder: AttributeHolder, name: String, val resultEntity: Entity):
+    Attribute<Instance?>(holder, name) {
     override suspend fun execute(vararg params: Any?) =
-        holder.processor.query("${holder.path}/$name", matchParamValues(*params), resultEntity)
+        holder.processor.retrieve("${holder.path}/$name", matchParamValues(*params), resultEntity) as Instance?
+}
+
+class RowSetAttribute(holder: AttributeHolder, name: String): Attribute<Sequence<Json.Object>>(holder, name) {
+    override suspend fun execute(vararg params: Any?) =
+        holder.processor.query("${holder.path}/$name", matchParamValues(*params))
+}
+
+class BagAttribute(holder: AttributeHolder, name: String, val resultEntity: Entity): Attribute<Sequence<Instance>>(holder, name) {
+    override suspend fun execute(vararg params: Any?) =
+        holder.processor.query("${holder.path}/$name", matchParamValues(*params), resultEntity) as Sequence<Instance>
 }
 
 class MutationAttribute(holder: AttributeHolder, name: String): Attribute<Long>(holder, name) {

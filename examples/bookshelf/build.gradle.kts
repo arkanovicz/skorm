@@ -16,7 +16,8 @@ buildscript {
 }
 
 skorm {
-    modelStructure.set(File("src/commonMain/model/bookshelf.kddl"))
+//    model.set(File("src/commonMain/model/bookshelf.kddl"))
+    definition.set(File("src/commonMain/model/bookshelf.kddl"))
 //    modelProperties.set(File("src/commonMain/model/bookshelf.ksql"))
     destPackage.set("com.republicate.skorm.bookshelf")
 
@@ -54,7 +55,7 @@ kotlin {
     }
     sourceSets {
         val commonMain by getting {
-            kotlin.srcDir(file("build/generated-src/common/kotlin"))
+            kotlin.srcDir(file("build/generated-src/commonMain/kotlin"))
             dependencies {
                 implementation(project(":skorm-common"))
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.1")
@@ -67,7 +68,7 @@ kotlin {
             }
         }
         val jvmMain by getting {
-            kotlin.srcDir(file("build/generated-src/core/kotlin"))
+            kotlin.srcDir(file("build/generated-src/jvmMain/kotlin"))
             dependencies {
                 implementation(project(":skorm-core"))
                 implementation(project(":skorm-jdbc"))

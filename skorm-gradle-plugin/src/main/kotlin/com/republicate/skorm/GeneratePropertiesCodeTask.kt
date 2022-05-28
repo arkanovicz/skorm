@@ -2,6 +2,7 @@ package com.republicate.skorm
 
 import com.republicate.skorm.GeneratePropertiesCodeTask.PropertyType.*
 import com.republicate.skorm.GeneratePropertiesCodeTask.States.*
+import org.apache.velocity.VelocityContext
 import org.gradle.api.DefaultTask
 import org.gradle.api.Task
 import org.gradle.api.file.RegularFileProperty
@@ -12,58 +13,35 @@ import org.gradle.api.tasks.options.Option
 import java.io.File
 import java.io.FileWriter
 
-abstract class GeneratePropertiesCodeTask : DefaultTask() {
+abstract class GeneratePropertiesCodeTask : GenerateTask() {
 
     init {
         description = "Skorm code generation of database properties extension functions"
         group = "code generation"
     }
 
-    override fun dependsOn(vararg paths: Any?): Task? {
-        return super.dependsOn(*paths)
+    override val templatePath = "templates/skorm-properties.vtl"
+
+    @get:Internal
+    abstract val propertiesFile: RegularFileProperty
+
+    private val properties: ObjectProperties by lazy {
+        parseProperties(propertiesFile.asFile.get() ?: throw RuntimeException("modelProperties file not found"))
     }
-
-    @get:InputFile
-    @get:Option(option = "modelProperties", description = "Source skl model properties")
-    @get:Optional
-    abstract val modelProperties: RegularFileProperty
-
-    @get:Input
-    @get:Option(option = "destPackage", description = "Destination package")
-    @get:Optional
-    abstract val destPackage: Property<String>
-
-    @get:OutputFile
-    abstract val destPropertiesFile: RegularFileProperty
 
     @TaskAction
-    // CB TODO - how to have this task depend on generateObjectsCode() task?
     fun generatePropertiesCode() {
-        val tag = "[skorm]"
-
-        logger.lifecycle("$tag modelProperties is: ${modelProperties.orNull}")
-        logger.lifecycle("$tag destPackage is: ${destPackage.orNull}")
-        logger.lifecycle("$tag destPropertiesFile is: ${destPropertiesFile.orNull}")
-
-        if (!modelProperties.isPresent) {
-            logger.lifecycle("$tag modelProperties file not found. Skipping properties code generation.")
-            return
+        if (propertiesFile.isPresent) {
+            generateCode()
+        } else {
+            logger.lifecycle("$tag . No model properties file found, skipping properties code generation.")
         }
-
-        val propertiesFile = project.file(modelProperties) ?: throw RuntimeException("model properties file not found")
-
-        val properties = parseProperties(propertiesFile)
-
-        val engine = Velocity.engine
-        val context = Velocity.getContext().apply {
-            put("package", destPackage.get())
-            put("root", properties)
-        }
-        val writer = FileWriter(destPropertiesFile.get().asFile)
-        val template = engine.getTemplate("templates/skorm-properties.vtl") ?: throw RuntimeException("template not found")
-        template.merge(context, writer)
-        writer.close()
     }
+
+    override fun populateContext(context: VelocityContext) {
+        context.put("root", properties)
+    }
+
 
     enum class States {
         INITIAL, AFTER_KEYWORD, BEFORE_TYPE, AFTER_TYPE
@@ -95,7 +73,7 @@ abstract class GeneratePropertiesCodeTask : DefaultTask() {
         var keyword: String? = null
         var type: String? = null
         var cardinality: String? = null
-        var query: String? = null
+        var query: String?
         var rootObject: ObjectProperties? = null
         var currentObject: ObjectProperties? = null
         fun reset() { keyword = null; type = null; cardinality = null }
@@ -146,6 +124,7 @@ abstract class GeneratePropertiesCodeTask : DefaultTask() {
                             type = token
                             state = AFTER_TYPE
                         }
+                        else -> throw RuntimeException("unhandled case")
                     }
                 }
             }

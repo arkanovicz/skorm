@@ -38,6 +38,6 @@ class SkormGradlePluginTest {
 
         assertEquals("src/test/resources/model.kddl", task.datasource.get())
         assertEquals("com.republicate.skorm.example", task.destPackage.get())
-        assertEquals(aFile, task.destStructureFile.get().asFile)
+        assertEquals(aFile, task.destFile.get().asFile)
     }
 }

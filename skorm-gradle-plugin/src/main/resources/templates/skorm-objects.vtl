@@ -8,17 +8,24 @@ import kotlinx.datetime.*
 import com.republicate.skorm.*
 
 #set ($databaseClass = "#pascal($database.name)Database")
-#set ($databaseObject = "#camel($database.name)Database")
-open class $databaseClass(): Database("$database.name")
-object $databaseObject: $databaseClass() {
+open class $databaseClass<T: Processor>(processor: T): Database<T>("$database.name", processor) {
+    companion object {
+        private lateinit var dbInstance: Database<*>
+        private fun isInstantiated() = this::dbInstance.isInitialized
+#foreach ($schema in $database.schemas.values())
+  #set ($schemaClass = "#pascal($schema.name)Schema")
+        val $schema.name: $schemaClass by lazy { $schemaClass(dbInstance) }
+#end
+    }
     init {
+        if (isInstantiated()) throw RuntimeException("$databaseClass instance already crated")
+        dbInstance = this
         populated = true
     }
 #foreach ($schema in $database.schemas.values())
   #set ($schemaClass = "#pascal($schema.name)Schema")
   #set ($schemaObject = "#camel($schema.name)")
-    val $schemaObject = $schemaClass()
-    class $schemaClass: Schema("$schema.name", $databaseObject) {
+    class $schemaClass(db: Database<*>): Schema("$schema.name", db) {
   #set ($enums = $kotlin.enums($schema))
   #foreach ($field in $enums)
         enum class #pascal($field.name)Enum {
@@ -36,6 +43,7 @@ object $databaseObject: $databaseClass() {
     #if ($table.primaryKey.size() > 0)
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as $instanceClass?
     #end
+                @Suppress("UNCHECKED_CAST")
                 override suspend operator fun iterator() = super.iterator() as Iterator<$instanceClass>
             }
     #foreach ($field in $table.fields.values())
