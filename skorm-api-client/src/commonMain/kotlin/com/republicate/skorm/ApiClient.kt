@@ -24,6 +24,8 @@ class KsonSerializer(): JsonSerializer {
 
 class ApiClient(val baseUrl: String) : Processor {
 
+    override val config = Configuration()
+
     private val client = HttpClient() {
         install(JsonPlugin) {
             serializer = KsonSerializer()
@@ -32,6 +34,10 @@ class ApiClient(val baseUrl: String) : Processor {
             url(baseUrl)
             headers.appendMissing(HttpHeaders.ContentType, listOf(ContentType.Application.Json.toString()))
         }
+    }
+
+    override fun initialize() {
+
     }
 
     private suspend fun process(url: String, parameters: Map<String, Any?>, httpMethod: HttpMethod): HttpResponse = coroutineScope {

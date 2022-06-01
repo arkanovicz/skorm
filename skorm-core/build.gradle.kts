@@ -21,7 +21,10 @@ kotlin {
 
     jvm {
         compilations.all {
-            kotlinOptions.jvmTarget = "1.8"
+            kotlinOptions {
+                jvmTarget = "1.8"
+                freeCompilerArgs = listOf("-Xjvm-default=all")
+            }
         }
         // withJava()
         testRuns["test"].executionTask.configure {

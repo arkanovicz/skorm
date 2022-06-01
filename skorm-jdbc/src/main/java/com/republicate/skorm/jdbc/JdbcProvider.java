@@ -1,37 +1,47 @@
 package com.republicate.skorm.jdbc;
 
-import com.republicate.skorm.Connector;
-import com.republicate.skorm.ConnectorFactory;
-import com.republicate.skorm.SkormException;
+import com.republicate.skorm.*;
+import kotlin.jvm.Throws;
 import org.jetbrains.annotations.NotNull;
 
 import javax.sql.DataSource;
 import java.sql.SQLException;
 
-public class JdbcProvider implements ConnectorFactory {
+public class JdbcProvider implements ConnectorFactory, Configurable {
 
-    private final String url;
-    private final String login;
-    private final String password;
-    private final String driver;
+    private final Configuration config = new Configuration();
+
+    @NotNull
+    @Override
+    public Configuration getConfig() {
+        return config;
+    }
+
+    @Override
+    public String getConfigTag() {
+        return "jdbc";
+    }
+
+    public String getUrl() {
+        return config.getString("url");
+    }
+
+    public String getLogin() {
+        return config.getString("login");
+    }
+
+    public String getPassword() {
+        return config.getString("password");
+    }
+
+    public String getDriver() {
+        return config.getString("driver");
+    }
+
     private DataSource dataSource = null;
 
-    public JdbcProvider(String url)
+    public JdbcProvider()
     {
-        this(url, null, null);
-    }
-
-    public JdbcProvider(String url, String login, String password)
-    {
-        this(url, login, password, null);
-    }
-
-    public JdbcProvider(String url, String login, String password, String driver)
-    {
-        this.url = url;
-        this.login = login;
-        this.password = password;
-        this.driver = driver;
     }
 
     @NotNull
@@ -41,9 +51,9 @@ public class JdbcProvider implements ConnectorFactory {
         {
             if (dataSource == null) initialize();
             java.sql.Connection connection =
-                    login == null
+                    getLogin() == null
                             ? dataSource.getConnection()
-                            : dataSource.getConnection(login, password);
+                            : dataSource.getConnection(getLogin(), getPassword());
             return new JdbcConnector(connection);
         }
         catch (SQLException sqle)
@@ -52,21 +62,22 @@ public class JdbcProvider implements ConnectorFactory {
         }
     }
 
-    private synchronized void initialize() throws SkormException
+    @Override
+    public synchronized void initialize() throws SkormException
     {
         if (dataSource == null)
         {
-            if (driver != null) {
+            if (getDriver() != null) {
                 try
                 {
-                    Class.forName(driver);
+                    Class.forName(getDriver());
                 }
                 catch (ClassNotFoundException cnfe)
                 {
-                    throw new SkormException("could not load driver " + driver, cnfe);
+                    throw new SkormException("could not load driver " + getDriver(), cnfe);
                 }
             }
-            dataSource = new BasicDataSource(url);
+            dataSource = new BasicDataSource(getUrl());
         }
     }
 }

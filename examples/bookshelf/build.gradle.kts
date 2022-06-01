@@ -29,6 +29,8 @@ skorm {
 
 val ktor_version: String by project
 
+val jvm_target: String by project
+
 kotlin {
     sourceSets.all {
         languageSettings.apply {
@@ -38,7 +40,10 @@ kotlin {
     }
     jvm {
         compilations.all {
-            kotlinOptions.jvmTarget = "1.8"
+            kotlinOptions {
+                jvmTarget = "1.8"
+                freeCompilerArgs = listOf("-Xjvm-default=all")
+            }
         }
         withJava()
         testRuns["test"].executionTask.configure {
@@ -71,12 +76,12 @@ kotlin {
             kotlin.srcDir(file("build/generated-src/jvmMain/kotlin"))
             dependencies {
                 implementation(project(":skorm-core"))
-                implementation(project(":skorm-jdbc"))
+                // implementation(project(":skorm-jdbc"))
                 implementation("io.ktor:ktor-server-core-jvm:$ktor_version")
                 implementation("io.ktor:ktor-server-netty:$ktor_version")
                 implementation("io.ktor:ktor-server-html-builder:$ktor_version")
                 implementation("io.ktor:ktor-server-status-pages:$ktor_version")
-                implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.3") // CB TODO - needed?!
+                implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.3")
                 implementation("io.github.microutils:kotlin-logging-jvm:2.0.11")
                 runtimeOnly("org.hsqldb:hsqldb:2.6.1")
                 runtimeOnly("org.slf4j:slf4j-simple:1.7.32")

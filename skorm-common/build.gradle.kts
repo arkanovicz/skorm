@@ -27,7 +27,10 @@ kotlin {
     }
     jvm {
         compilations.all {
-            kotlinOptions.jvmTarget = "1.8"
+            kotlinOptions {
+                jvmTarget = "1.8"
+                freeCompilerArgs = listOf("-Xjvm-default=all")
+            }
         }
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
@@ -53,7 +56,7 @@ kotlin {
         val atomicfu_version: String by project
         val commonMain by getting {
             dependencies {
-                api("com.republicate.kson:essential-kson:1.3")
+                api("com.republicate.kson:essential-kson:2.0")
                 implementation("org.jetbrains.kotlinx:atomicfu:$atomicfu_version")
             }
         }

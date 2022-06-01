@@ -12,7 +12,8 @@ interface Transaction {
     suspend fun commit(): Unit
 }
 
-interface Processor {
+interface Processor: Configurable {
+
     // attributes
     suspend fun eval(path: String, params: Map<String, Any?>): Any?
     suspend fun retrieve(path: String, params: Map<String, Any?>, result: Entity? = null): Json.Object?
@@ -20,6 +21,7 @@ interface Processor {
     suspend fun perform(path: String, params: Map<String, Any?>): Long
 
     suspend fun attempt(path: String, params: Map<String, Any?>): List<Int>
+
     // transaction
     suspend fun begin(): Transaction
 }

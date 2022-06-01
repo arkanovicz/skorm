@@ -29,7 +29,10 @@ kotlin {
     jvm {
         compilations.all {
             // kotlin compiler compatibility options
-            kotlinOptions.jvmTarget = "1.8"
+            kotlinOptions {
+                jvmTarget = "1.8"
+                freeCompilerArgs = listOf("-Xjvm-default=all")
+            }
         }
     }
     js(IR) {

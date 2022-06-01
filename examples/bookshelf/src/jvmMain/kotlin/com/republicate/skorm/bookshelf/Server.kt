@@ -38,27 +38,15 @@ fun ApplicationConfig.toMap(): Map<String, Any?> =
         key to config(key).toString()
     }.toMap()
 
-lateinit var exampleDatabase: ExampleDatabase
+val exampleDatabase = ExampleDatabase(CoreProcessor(JdbcProvider()))
 
 fun Application.configureDatabase() {
 
+    println("Configuring...")
     environment.config.config("skorm").apply {
-        val url = property("jdbc.url").getString()
-        println("@@@@ url = $url")
-        val jdbc = JdbcProvider(url)
-
-        exampleDatabase = ExampleDatabase(CoreProcessor(jdbc))
-
-        // create and populate our example db
-        // exampleDatabase.populate()
-
-        keys().forEach { key ->
-            val value = property(key)
-            println("$key = $value")
-        }
-//    ExampleDatabase.configure(environment.config.config("skorm"))
-//    ExampleDatabase.initialize()
+        exampleDatabase.configure(toMap())
     }
+    exampleDatabase.initialize()
 }
 
 typealias Book = ExampleDatabase.BookshelfSchema.Book

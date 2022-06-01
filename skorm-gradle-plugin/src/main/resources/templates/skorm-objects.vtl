@@ -20,7 +20,6 @@ open class $databaseClass(processor: Processor): Database("$database.name", proc
     init {
         if (isInstantiated()) throw RuntimeException("$databaseClass instance already crated")
         dbInstance = this
-        populated = true
     }
 #foreach ($schema in $database.schemas.values())
   #set ($schemaClass = "#pascal($schema.name)Schema")

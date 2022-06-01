@@ -5,12 +5,11 @@ import kotlinx.browser.window
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
-lateinit var exampleDatabase: ExampleDatabase
+val exampleDatabase = ExampleDatabase(ApiClient("${window.location.href}/api"))
 
 fun reserve(bookId: Int) {
     console.log("reserve $bookId")
     GlobalScope.launch {
-        exampleDatabase = ExampleDatabase(ApiClient("..."))
         ExampleDatabase.bookshelf.attempt("reserve", bookId)
     }
 }

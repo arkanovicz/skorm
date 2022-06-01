@@ -4,6 +4,13 @@ import com.republicate.kson.Json
 
 open class CoreProcessor(private val connectorFactory: ConnectorFactory): Processor {
 
+    override val configTag = "core"
+    override val config = Configuration()
+
+    override fun initialize() {
+        connectorFactory.initialize(connectorFactory.configTag?.let { config.getObject(it) })
+    }
+
     protected val queries = mutableMapOf<String, String>()
     private val readFilters = mutableMapOf<String, Filter<*>>()
     private val writeFilters = mutableMapOf<String, Filter<Any?>>()
@@ -42,7 +49,7 @@ open class CoreProcessor(private val connectorFactory: ConnectorFactory): Proces
         val rawValues = it.next()
         if (it.hasNext()) throw SkormException("raw attribute $path has more than one result row") // CB TODO - could be relaxed by config
         return when (result) {
-            null -> Json.Object().apply {
+            null -> Json.MutableObject().apply {
                 putAll(names, rawValues)
             }
             else -> result.new().apply {
@@ -55,7 +62,7 @@ open class CoreProcessor(private val connectorFactory: ConnectorFactory): Proces
         val (names, it) = getConnector(path).query(getQuery(path), *params.values.toTypedArray())
         return it.asSequence().map {
             when (result) {
-                null -> Json.Object().apply {
+                null -> Json.MutableObject().apply {
                     putAll(names, it)
                 }
                 else -> result.new().apply {
@@ -95,7 +102,7 @@ open class CoreProcessor(private val connectorFactory: ConnectorFactory): Proces
         throw SkormException("row attribute not found: $path")
     }
 
-    private fun Json.Object.putAll(names: Array<String>, values: Array<Any?>) {
+    private fun Json.MutableObject.putAll(names: Array<String>, values: Array<Any?>) {
         names.zip(values).forEach { (name, value) ->
             put(name, value)
         }

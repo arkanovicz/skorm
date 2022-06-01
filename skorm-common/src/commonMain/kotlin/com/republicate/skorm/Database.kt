@@ -2,19 +2,32 @@ package com.republicate.skorm
 
 import com.republicate.kson.Json
 
-open class Database(name: String, override val processor: Processor): AttributeHolder(name), Processor by processor {
-    var configured by initOnce(false)
-    var populated by initOnce(false)
+open class Database(name: String, override val processor: Processor): AttributeHolder(name), Configurable {
+    var initialized by initOnce(false)
+    override val config = Configuration()
+    override fun configure(cfg: Map<String, Any?>) {
+        if (initialized) throw SkormException("Already initialized")
+        super.configure(cfg)
+    }
 
     private val _schemas = mutableMapOf<String, Schema>()
     val schemas: Map<String, Schema> get() = _schemas
     internal fun addSchema(schema: Schema) {
         _schemas[schema.name] = schema
     }
+
+    override fun initialize() {
+        if (initialized) throw RuntimeException("Already initialized")
+        processor.initialize(processor.configTag?.let { config.getObject(it) })
+        // ...
+        initialized = true
+    }
 }
 
 open class Schema(name: String, parent: Database) : AttributeHolder(name, parent) {
-    init { parent.addSchema(this) }
+    init {
+        parent.addSchema(this)
+    }
 
     val database: Database get() = parent as Database
     override val processor get() = database.processor
@@ -23,10 +36,6 @@ open class Schema(name: String, parent: Database) : AttributeHolder(name, parent
     val entities: Map<String, Entity> by _entities
     fun addEntity(entity: Entity) {
         _entities[entity.name] = entity
-    }
-
-    val defaultEntity: Entity by lazy {
-        Entity("_default", this)
     }
 }
 
@@ -44,7 +53,7 @@ open class Entity(val name: String, schema: Schema) {
     private val _fields = mutableMapOf<String, Field>()
     val fields: Map<String, Field> get() = _fields
     fun addField(field: Field) {
-        check(!schema.database.populated)
+        check(!schema.database.initialized)
         _fields[field.name] = field
     }
 
@@ -52,7 +61,7 @@ open class Entity(val name: String, schema: Schema) {
 
     private val fetchAttribute: InstanceAttribute by lazy {
         InstanceAttribute(instanceAttributes, "fetch", this).apply {
-            check(schema.database.populated)
+            check(schema.database.initialized)
             primaryKey.forEach {
                 addParameter(it.name)
             }
@@ -61,13 +70,13 @@ open class Entity(val name: String, schema: Schema) {
 
     private val browseAttribute: BagAttribute by lazy {
         BagAttribute(instanceAttributes, "browse", this).apply {
-            check(schema.database.populated)
+            check(schema.database.initialized)
         }
     }
 
     private val insertAttribute: MutationAttribute by lazy {
         MutationAttribute(instanceAttributes, "insert").apply {
-            check(schema.database.populated)
+            check(schema.database.initialized)
             fields.values.filter { !it.generated }.forEach {
                 addParameter(it.name)
             }
@@ -76,7 +85,7 @@ open class Entity(val name: String, schema: Schema) {
 
     private val updateAttribute: MutationAttribute by lazy {
         MutationAttribute(instanceAttributes, "update").apply {
-            check(schema.database.populated)
+            check(schema.database.initialized)
             fields.values.filter { !it.primary }.forEach {
                 addParameter(it.name)
             }
@@ -85,7 +94,7 @@ open class Entity(val name: String, schema: Schema) {
 
     private val deleteAttribute: MutationAttribute by lazy {
         MutationAttribute(instanceAttributes, "delete").apply {
-            check(schema.database.populated)
+            check(schema.database.initialized)
             primaryKey.forEach {
                 addParameter(it.name)
             }
@@ -107,7 +116,7 @@ open class Entity(val name: String, schema: Schema) {
     internal suspend fun perform(attrName: String, vararg params: Any?) = instanceAttributes.perform(attrName, *params)
 }
 
-open class Instance(val entity: Entity) : Json.Object() {
+open class Instance(val entity: Entity) : Json.MutableObject() {
     val dirtyFields = BitSet(MAX_FIELDS) // init size needed for multiplatform
     var persisted = false
 
