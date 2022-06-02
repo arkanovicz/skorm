@@ -8,6 +8,7 @@ class TestConfig {
 
     class Foo: Configurable {
         override val config = Configuration()
+        override fun initialize() {}
 
         val noNullNoDef by config<String>()
         val noNullDef by config<String>("noNullDef")
