@@ -2,7 +2,7 @@ package com.republicate.skorm.bookshelf
 
 import com.republicate.kson.toJsonObject
 import com.republicate.skorm.*
-// import com.republicate.skorm.jdbc.JdbcProvider
+import com.republicate.skorm.jdbc.JdbcProvider
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.config.*
@@ -106,21 +106,7 @@ fun ApplicationConfig.toMap(): Map<String, Any> {
     return map
 }
 
-//val exampleDatabase = ExampleDatabase(CoreProcessor(JDBCProvider()))
-
-val exampleDatabase = ExampleDatabase(CoreProcessor(object: ConnectorFactory {
-    override fun connect(): Connector {
-        TODO("Not yet implemented")
-    }
-
-    override val config: Configuration
-        get() = TODO("Not yet implemented")
-
-    override fun initialize() {
-        TODO("Not yet implemented")
-    }
-
-}))
+val exampleDatabase = ExampleDatabase(CoreProcessor(JdbcProvider()))
 
 fun Application.configureDatabase() {
 
