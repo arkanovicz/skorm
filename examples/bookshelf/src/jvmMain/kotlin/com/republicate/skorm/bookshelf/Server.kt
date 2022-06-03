@@ -1,7 +1,8 @@
 package com.republicate.skorm.bookshelf
 
-import com.republicate.skorm.CoreProcessor
-import com.republicate.skorm.jdbc.JdbcProvider
+import com.republicate.kson.toJsonObject
+import com.republicate.skorm.*
+// import com.republicate.skorm.jdbc.JdbcProvider
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.config.*
@@ -33,18 +34,99 @@ fun Application.module() {
     configureRouting()
 }
 
-fun ApplicationConfig.toMap(): Map<String, Any?> =
-    keys().map { key ->
-        key to config(key).toString()
-    }.toMap()
+fun ApplicationConfig.toMap(): Map<String, Any> {
+    val map = mutableMapOf<String, Any>()
+    keys().sorted().forEach { key ->
+        val elems = key.split('.')
+        // elems[n+1] determines the nature (list or map) of container at elems[n]
+        var target: Any = map
+        for (i in 0..elems.size - 2) {
+            val elem = elems[i]
+            val next = elems[i + 1]
+            target = when (val nextIndex = next.toIntOrNull()) {
+                null -> {
+                    when (target) {
+                        is Map<*,*> ->
+                            (target as MutableMap<String, Any>).getOrPut(elem) {
+                                mutableMapOf<String, Any>()
+                            }.also {
+                                if (it !is Map<*,*>) throw SkormException("expecting a map")
+                            }
+                        is List<*> ->
+                            if (next != "size" || i != elems.size - 2) throw SkormException("expecting list size")
+                            else if (tryGetString(key)?.toIntOrNull() == target.size) throw SkormException("list size inconsistency")
+                            else continue // ignoring regular "size" list property
+                        else -> throw SkormException("unhandled case")
+                    }
+                }
+                0 -> {
+                    when (target) {
+                        is Map<*,*> ->
+                            mutableListOf<Any>().also {
+                                (target as MutableMap<String, Any>).put(elem, it)?.also {
+                                    throw SkormException("expecting an empty slot")
+                                }
+                            }
+                        is List<*> ->
+                            mutableListOf<Any>().also {
+                                (target as MutableList<Any>).apply {
+                                    if (size != nextIndex) throw SkormException("wrong list size")
+                                    add(it)
+                                }
+                            }
+                        else -> throw SkormException("unhandled case")
+                    }
+                }
+                else -> {
+                    when (target) {
+                        is Map<*,*> ->
+                            target.get(elem)?.also {
+                                if (it !is List<*>) throw SkormException("epecting a list")
+                                if (it.size != nextIndex) throw SkormException("wrong list size")
+                            } ?: throw SkormException("expecting a list")
+                        is List<*> ->
+                            target.lastOrNull()?.also {
+                                if (it !is List<*>) throw SkormException("epecting a list")
+                                if (it.size != nextIndex) throw SkormException("wrong list size")
+                            } ?: throw SkormException("expecting a list")
+                        else -> throw SkormException("unhandled case")
+                    }
+                }
+            }
+        }
+        val value = property(key).getString()
+        when (target) {
+            is Map<*,*> -> (target as MutableMap<String, Any>).put(elems.last(), value)?.also {
+                throw SkormException("expecting empty slot")
+            }
+            is List<*> -> (target as MutableList<Any>).add(value)
+            else -> throw SkormException("unhandled case")
+        }
+    }
+    return map
+}
 
-val exampleDatabase = ExampleDatabase(CoreProcessor(JdbcProvider()))
+//val exampleDatabase = ExampleDatabase(CoreProcessor(JDBCProvider()))
+
+val exampleDatabase = ExampleDatabase(CoreProcessor(object: ConnectorFactory {
+    override fun connect(): Connector {
+        TODO("Not yet implemented")
+    }
+
+    override val config: Configuration
+        get() = TODO("Not yet implemented")
+
+    override fun initialize() {
+        TODO("Not yet implemented")
+    }
+
+}))
 
 fun Application.configureDatabase() {
 
     println("Configuring...")
     environment.config.config("skorm").apply {
-        exampleDatabase.configure(toMap())
+        exampleDatabase.configure(toMap().toJsonObject())
     }
     exampleDatabase.initialize()
 }

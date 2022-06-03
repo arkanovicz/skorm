@@ -76,7 +76,7 @@ kotlin {
             kotlin.srcDir(file("build/generated-src/jvmMain/kotlin"))
             dependencies {
                 implementation(project(":skorm-core"))
-                // implementation(project(":skorm-jdbc"))
+                implementation(project(":skorm-jdbc"))
                 implementation("io.ktor:ktor-server-core-jvm:$ktor_version")
                 implementation("io.ktor:ktor-server-netty:$ktor_version")
                 implementation("io.ktor:ktor-server-html-builder:$ktor_version")
