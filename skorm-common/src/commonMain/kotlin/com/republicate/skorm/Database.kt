@@ -44,7 +44,7 @@ open class Entity(val name: String, schema: Schema) {
         schema.addEntity(this)
     }
 
-    protected val instanceAttributes = object : AttributeHolder(name, schema) {
+    private val instanceAttributes = object : AttributeHolder(name, schema) {
         override val processor get() = schema.processor
     }
     val schema get() = instanceAttributes.parent as Schema
@@ -154,8 +154,3 @@ open class Instance(val entity: Entity) : Json.MutableObject() {
     suspend fun query(attrName: String, vararg params: Any?) = entity.query(attrName, entity, this, *params)
     suspend fun perform(attrName: String, vararg params: Any?) = entity.perform(attrName, this, *params)
 }
-
-// To be able to return anonymous instances
-//val voidDatabase = Database("_")
-//val voidSchema = Schema("_", voidDatabase)
-//val voidEntity = Entity("_", voidSchema)

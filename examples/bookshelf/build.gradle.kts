@@ -16,9 +16,8 @@ buildscript {
 }
 
 skorm {
-//    model.set(File("src/commonMain/model/bookshelf.kddl"))
     definition.set(File("src/commonMain/model/bookshelf.kddl"))
-//    modelProperties.set(File("src/commonMain/model/bookshelf.ksql"))
+    properties.set(File("src/commonMain/model/bookshelf.ksql"))
     destPackage.set("com.republicate.skorm.bookshelf")
 
 //    database("example") {
@@ -121,6 +120,6 @@ tasks.named<JavaExec>("run") {
 
 tasks.filter { it.name.startsWith("compileKotlin") }.forEach {
     it.dependsOn("generateSkormObjectsCode")
-    it.dependsOn("generateSkormProcessor")
+    // it.dependsOn("generateSkormProcessor")
     it.dependsOn("generateSkormPropertiesCode")
 }

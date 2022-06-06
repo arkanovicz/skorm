@@ -49,7 +49,7 @@ bookshelf {
         LIMIT 1;
 
     // reserve a book for a dude
-    reserve ->
+    reserve =
       INSERT INTO borrowing
         (book_id, dude_id, reservation_date) VALUES
         ($book_id, $dude_id, NOW());

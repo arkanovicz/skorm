@@ -69,7 +69,7 @@ abstract class GeneratePropertiesCodeTask : GenerateTask() {
         // for now, very basic parsing while waiting for a true antlr parsing - TODO
         val content = file.readText()
         var state = INITIAL
-        val regex = Regex("\\s*(\\w+|[:?{}*]|=[^;]+;)", RegexOption.DOT_MATCHES_ALL)
+        val regex = Regex("\\s*(\\w+|[:?{}*]|=\\s*sql\\s*\\{[^}]+\\s*)", RegexOption.DOT_MATCHES_ALL)
         var keyword: String? = null
         var type: String? = null
         var cardinality: String? = null
@@ -102,7 +102,7 @@ abstract class GeneratePropertiesCodeTask : GenerateTask() {
                 }
                 token.startsWith("=") -> {
                     check(state == AFTER_KEYWORD || state == AFTER_TYPE) { "Unexpected '=' at pos $pos" }
-                    query = token.substring(1)
+                    query = token.substring(1).trim()
                     val property = ObjectProperty(
                         keyword!!,
                         if (type == null) SCALAR
