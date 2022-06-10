@@ -18,6 +18,13 @@ actual class BitSet actual constructor(size: Int) {
     }
 }
 
+actual fun Any.hasGenericGetter(): Boolean {
+    // everything in JS has a generic getter...
+    return true
+}
+
+actual fun Any.callGenericGetter(key: String) = js("this[key]")
+
 //actual open class SQLException actual constructor(message: String?, cause: Throwable?): Exception(message, cause) {
 //    actual constructor(): this(null, null)
 //    actual constructor(message: String?): this(message, null)

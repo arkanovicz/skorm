@@ -8,12 +8,7 @@ class QueryResult(
     operator fun component2() = values
 }
 
-interface ConnectorFactory: Configurable {
-    @Throws(SkormException::class)
-    fun connect(): Connector
-}
-
-interface Connector {
+interface Connector: Configurable {
     // queries
     @Throws(SkormException::class)
     fun query(query: String, vararg params: Any?): QueryResult
@@ -21,4 +16,17 @@ interface Connector {
     // mutations
     @Throws(SkormException::class)
     fun mutate(query: String, vararg params: Any?): Long
+
+    // transactions
+    @Throws(SkormException::class)
+    fun begin(): TransactionConnector
+}
+
+interface TransactionConnector: Connector {
+    @Throws(SkormException::class)
+    fun commit()
+
+    @Throws(SkormException::class)
+    fun rollback()
+
 }

@@ -19,7 +19,9 @@ tasks {
 }
 
 dependencies {
+    implementation(project(":skorm-common"))
     implementation(project(":skorm-core"))
+    implementation("io.ktor:ktor-server-core-jvm:$ktor_version")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 }

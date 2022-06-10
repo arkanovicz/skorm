@@ -17,7 +17,7 @@ buildscript {
 
 skorm {
     definition.set(File("src/commonMain/model/bookshelf.kddl"))
-    properties.set(File("src/commonMain/model/bookshelf.ksql"))
+//    properties.set(File("src/commonMain/model/bookshelf.ksql"))
     destPackage.set("com.republicate.skorm.bookshelf")
 
 //    database("example") {
@@ -27,8 +27,6 @@ skorm {
 }
 
 val ktor_version: String by project
-
-val jvm_target: String by project
 
 kotlin {
     sourceSets.all {
@@ -74,6 +72,7 @@ kotlin {
         val jvmMain by getting {
             kotlin.srcDir(file("build/generated-src/jvmMain/kotlin"))
             dependencies {
+                implementation(project(":skorm-api-server"))
                 implementation(project(":skorm-core"))
                 implementation(project(":skorm-jdbc"))
                 implementation("io.ktor:ktor-server-core-jvm:$ktor_version")

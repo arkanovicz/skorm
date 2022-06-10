@@ -11,7 +11,7 @@ open class Database(name: String, override val processor: Processor): AttributeH
     }
 
     private val _schemas = mutableMapOf<String, Schema>()
-    val schemas: Map<String, Schema> get() = _schemas
+    val schemas: Collection<Schema> get() = _schemas.values
     internal fun addSchema(schema: Schema) {
         _schemas[schema.name] = schema
     }
@@ -33,7 +33,7 @@ open class Schema(name: String, parent: Database) : AttributeHolder(name, parent
     override val processor get() = database.processor
 
     private val _entities = mutableMapOf<String, Entity>()
-    val entities: Map<String, Entity> by _entities
+    val entities: Collection<Entity> get() = _entities.values
     fun addEntity(entity: Entity) {
         _entities[entity.name] = entity
     }
@@ -104,7 +104,8 @@ open class Entity(val name: String, schema: Schema) {
     open fun new() = Instance(this)
 
     open suspend fun fetch(vararg key: Any): Instance? = fetchAttribute.execute(*key)
-    open suspend operator fun iterator() = browseAttribute.execute().iterator()
+    open suspend fun browse() = browseAttribute.execute()
+    open suspend operator fun iterator() = browse().iterator()
 
     // Other operations are not visible directly, they are proxied from Instance
     internal suspend fun insert(instance: Instance) = insertAttribute.execute(instance)
@@ -142,6 +143,12 @@ open class Instance(val entity: Entity) : Json.MutableObject() {
         if (!persisted) throw SkormException("cannot delete a volatile instance")
         entity.delete(this)
         persisted = false
+    }
+
+    suspend fun refresh() {
+        if (!persisted) throw SkormException("cannot refresh a volatile instance")
+        val self = entity.fetch(this) ?: throw SkormException("cannot refresh instance, it doesn't exist")
+        putAll(self)
     }
 
     // dirty flags handling

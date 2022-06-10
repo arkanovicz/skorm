@@ -1,8 +1,13 @@
 package $package
 
-#set ($databaseObject = "#camel($root.name)Database")
+#set ($schemaObject = "#camel($root.name)Schema")
 
 #foreach($property in $root.properties)
 fun ${databaseObject}.${property.name}(): #propertyType($property) {
+
 }
+#end
+
+#foreach($child in $root.children)
+fun
 #end

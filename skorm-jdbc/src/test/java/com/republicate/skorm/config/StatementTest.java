@@ -13,7 +13,7 @@ public class StatementTest extends ConnectionTest
     @Test
     public void testBasicStatement() throws Exception
     {
-        StatementPool statementPool = new StatementPool("test", testConnectionPool());
+        StatementPool statementPool = new StatementPool(testConnectionPool());
         PooledStatement statement = statementPool.prepareQuery("SELECT 1");
         ResultSet rs = statement.executeQuery();
         assertTrue(rs.next());
@@ -27,7 +27,7 @@ public class StatementTest extends ConnectionTest
     @Test
     public void testStatementReuse() throws Exception
     {
-        StatementPool statementPool = new StatementPool("test", testConnectionPool());
+        StatementPool statementPool = new StatementPool(testConnectionPool());
         PooledStatement statement = statementPool.prepareQuery("SELECT 1");
         ResultSet rs = statement.executeQuery();
         assertTrue(rs.next());
@@ -43,7 +43,7 @@ public class StatementTest extends ConnectionTest
     @Test
     public void testStatementInUse() throws Exception
     {
-        StatementPool statementPool = new StatementPool("test", testConnectionPool());
+        StatementPool statementPool = new StatementPool( testConnectionPool());
         PooledStatement statement = statementPool.prepareQuery("SELECT 1");
         ResultSet rs = statement.executeQuery();
         assertTrue(rs.next());

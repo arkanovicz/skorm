@@ -39,9 +39,9 @@ public class StatementPool
 {
     protected Logger logger = LoggerFactory.getLogger("jdbc");
 
-    public StatementPool(String modelId, ConnectionPool connectionPool)
+    public StatementPool(ConnectionPool connectionPool)
     {
-        this(modelId, connectionPool, -1);
+        this(connectionPool, -1);
     }
 
     /**
@@ -49,9 +49,8 @@ public class StatementPool
      *
      * @param connectionPool connection pool
      */
-    public StatementPool(String modelId, ConnectionPool connectionPool, long connectionsCheckInterval)
+    public StatementPool(ConnectionPool connectionPool, long connectionsCheckInterval)
     {
-        this.modelId = modelId;
         this.connectionPool = connectionPool;
         this.connectionsCheckInterval = connectionsCheckInterval;
     }
@@ -63,17 +62,16 @@ public class StatementPool
      * @exception SQLException thrown by the database engine
      * @return a valid statement
      */
-    protected synchronized PooledStatement prepareStatement(String query, boolean update) throws SQLException
+    protected synchronized PooledStatement prepareStatement(String query, boolean update, Connection connection) throws SQLException
     {
         logger.trace("prepare-{}", query);
 
         PooledStatement statement;
-        Connection connection = getCurrentTransactionConnection(modelId);
-        boolean insideTransaction = false;
-        List<PooledStatement> availableStatements = statementsMap.computeIfAbsent(query, (str) -> new ArrayList<>());
-
-        if (connection == null)
+        List<PooledStatement> availableStatements = null;
+        boolean sharedStatement = connection == null;
+        if (sharedStatement)
         {
+            availableStatements = statementsMap.computeIfAbsent(query, (str) -> new ArrayList<>());
             for (Iterator<PooledStatement> it = availableStatements.iterator(); it.hasNext(); )
             {
                 statement = it.next();
@@ -105,10 +103,6 @@ public class StatementPool
             }
             connection = connectionPool.getConnection();
         }
-        else
-        {
-            insideTransaction = true;
-        }
 
         statement = new PooledStatement(connection,
                 update ?
@@ -117,7 +111,7 @@ public class StatementPool
                                     Statement.RETURN_GENERATED_KEYS :
                                     Statement.NO_GENERATED_KEYS) :
                     connection.prepareStatement(query, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY));
-        if (!insideTransaction)
+        if (sharedStatement)
         {
             availableStatements.add(statement);
         }
@@ -127,12 +121,22 @@ public class StatementPool
 
     public synchronized PooledStatement prepareQuery(String query) throws SQLException
     {
-        return prepareStatement(query, false);
+        return prepareStatement(query, false, null);
+    }
+
+    public synchronized PooledStatement prepareQuery(String query, Connection txConnection) throws SQLException
+    {
+        return prepareStatement(query, false, txConnection);
     }
 
     public synchronized PooledStatement prepareUpdate(String query) throws SQLException
     {
-        return prepareStatement(query, true);
+        return prepareStatement(query, true, null);
+    }
+
+    public synchronized PooledStatement prepareUpdate(String query, Connection txConnection) throws SQLException
+    {
+        return prepareStatement(query, true, txConnection);
     }
 
     /**
@@ -198,21 +202,6 @@ public class StatementPool
         clear();
     }
 
-    public static void setCurrentTransactionConnection(String modelId, Connection connection)
-    {
-        currentTransactionConnection.get().put(modelId, connection);
-    }
-
-    public static void resetCurrentTransactionConnection(String modelId)
-    {
-        currentTransactionConnection.get().remove(modelId);
-    }
-
-    public static Connection getCurrentTransactionConnection(String modelId)
-    {
-        return currentTransactionConnection.get().get(modelId);
-    }
-
     /**
      * debug - get usage statistics.
      *
@@ -267,17 +256,7 @@ public class StatementPool
     private long connectionsCheckInterval;
 
     /**
-     * model id
-     */
-    private String modelId;
-
-    /**
      * max number of statements.
      */
     private static final int maxStatements = 50;
-
-    /**
-     * current transaction connection
-     */
-    private static ThreadLocal<Map<String, Connection>> currentTransactionConnection = ThreadLocal.withInitial(ConcurrentHashMap::new);
 }

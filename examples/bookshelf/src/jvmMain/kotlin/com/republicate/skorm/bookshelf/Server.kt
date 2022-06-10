@@ -2,7 +2,7 @@ package com.republicate.skorm.bookshelf
 
 import com.republicate.kson.toJsonObject
 import com.republicate.skorm.*
-import com.republicate.skorm.jdbc.JdbcProvider
+import com.republicate.skorm.jdbc.JdbcConnector
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.config.*
@@ -106,7 +106,7 @@ fun ApplicationConfig.toMap(): Map<String, Any> {
     return map
 }
 
-val exampleDatabase = ExampleDatabase(CoreProcessor(JdbcProvider()))
+val exampleDatabase = ExampleDatabase(CoreProcessor(JdbcConnector()))
 
 fun Application.configureDatabase() {
 
@@ -167,23 +167,18 @@ fun Application.configureRouting() {
         }
 
         route("/api") {
-            route("sf") {
-                get("sfq") {
-
-                }
-            }
-            //rest("book")
+            rest(ExampleDatabase.bookshelf)
         }
     }
 
-    displayRoutes()
+//    displayRoutes()
 }
 
-fun Application.displayRoutes() {
+//fun Application.displayRoutes() {
 //    val root = feature(Routing)
 //    val allRoutes = listOf(root) + root.children.flatMap { allRoutes(it) }
 //    val allRoutesWithMethod = allRoutes.filter { it.selector is HttpMethodRouteSelector }
 //    allRoutesWithMethod.forEach {
 //        logger.info("route: $it")
 //    }
-}
+//}

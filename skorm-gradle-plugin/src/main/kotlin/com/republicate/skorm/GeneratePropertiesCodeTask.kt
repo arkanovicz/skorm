@@ -95,6 +95,7 @@ abstract class GeneratePropertiesCodeTask : GenerateTask() {
                     check(state == AFTER_KEYWORD) { "Unexpected '{' at pos $pos" }
                     currentObject = ObjectProperties(keyword!!, currentObject)
                     if (rootObject == null) rootObject = currentObject
+                    else rootObject!!.children.add(currentObject!!)
                     reset()
                 }
                 token == "}" -> {

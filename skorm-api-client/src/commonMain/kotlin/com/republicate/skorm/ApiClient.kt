@@ -73,19 +73,18 @@ class ApiClient(val baseUrl: String) : Processor {
     }
 
     override suspend fun retrieve(path: String, params: Map<String, Any?>, result: Entity?): Json.Object? {
-        TODO("Not yet implemented")
+        val response = get(path, params)
+        return response.body()
     }
 
     override suspend fun query(path: String, params: Map<String, Any?>, result: Entity?): Sequence<Json.Object> {
-        TODO("Not yet implemented")
+        val response = get(path, params)
+        return response.body()
     }
 
     override suspend fun perform(path: String, params: Map<String, Any?>): Long {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun attempt(path: String, params: Map<String, Any?>): List<Int> {
-        TODO("Not yet implemented")
+        val response = post(path, params)
+        return response.body()
     }
 
     override suspend fun begin(): Transaction {

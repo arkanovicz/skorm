@@ -153,11 +153,11 @@ public class PooledStatement // TODO implements RowValues
         }
     }
 
-    public synchronized int executeUpdate(Serializable... paramValues) throws SQLException
+    public synchronized long executeUpdate(Serializable... paramValues) throws SQLException
     {
         try
         {
-            int count = 0;
+            long count = 0;
             setParamValues(paramValues);
             getConnection().enterBusyState();
             if (!preparedStatement.execute())

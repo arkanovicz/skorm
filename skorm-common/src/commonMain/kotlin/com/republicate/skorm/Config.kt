@@ -14,6 +14,7 @@ open class Configuration private constructor(private val config: Json.MutableObj
     constructor(initial: Map<String, Any?>) : this(Json.MutableObject().apply { putAll(initial) })
     constructor(vararg initial: Pair<String, Any?>) : this(initial.toMap())
 
+    fun configure(key: String, value: Any?) = config.put(key, value)
     fun configure(values: Map<String, Any?>) = config.putAll(values)
 
     fun getString(key: String) = values.getString(key)
@@ -25,12 +26,16 @@ open class Configuration private constructor(private val config: Json.MutableObj
 
 interface Configurable {
     val configTag: String? get() = null
+
     val config: Configuration
+
     fun configure(cfg: Map<String, Any?>) {
         config.configure(cfg)
     }
     @Throws(SkormException::class)
-    fun initialize()
+    fun initialize() {}
+
+    @Throws(SkormException::class)
     fun initialize(cfg: Map<String, Any?>?) {
         if (cfg != null) configure(cfg)
         initialize()

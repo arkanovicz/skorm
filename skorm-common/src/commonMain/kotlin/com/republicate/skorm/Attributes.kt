@@ -1,5 +1,6 @@
 package com.republicate.skorm
 
+import kotlin.reflect.KClass
 import com.republicate.kson.Json
 
 /*
@@ -9,11 +10,11 @@ import com.republicate.kson.Json
 // CB TODO - forbidden only on entity
 val reserveAttributeNames = setOf("insert", "fetch", "update", "delete")
 
+expect fun Any.hasGenericGetter(): Boolean
+expect fun Any.callGenericGetter(key: String): Any?
+
 sealed class Attribute<out T>(val holder: AttributeHolder, val name: String) {
-    private val paramNames = mutableListOf<String>()
-    private val uniqueParamNames: Set<String> by lazy {
-        paramNames.toSet()
-    }
+    private val paramNames = mutableSetOf<String>()
 
     fun addParameter(name: String)  = paramNames.add(name)
 
@@ -24,7 +25,7 @@ sealed class Attribute<out T>(val holder: AttributeHolder, val name: String) {
         val ret = mutableMapOf<String, Any?>()
         val consumedParam = BitSet(rawValues.size)
 
-        uniqueParamNames.forEach { p ->
+        paramNames.forEach { p ->
             params@ for (i in rawValues.indices) {
                 val value = rawValues[i]
                 when(value) {
@@ -43,6 +44,13 @@ sealed class Attribute<out T>(val holder: AttributeHolder, val name: String) {
                             break@params
                         }
                     }
+                    hasGenericGetter() -> {
+                        val found = value.callGenericGetter(p)
+                        if (found != null) {
+                            ret[p] = found
+                            break@params
+                        }
+                    }
                     is GeneratedKeyMarker -> {
 //                        ret[value.colName] = ??
                     }
@@ -52,7 +60,7 @@ sealed class Attribute<out T>(val holder: AttributeHolder, val name: String) {
                         break@params
                     }
                 }
-                if (i + 1 == uniqueParamNames.size) {
+                if (i + 1 == paramNames.size) {
                     throw SkormException("attribute $name: parameter $p not found")
                 }
             }
@@ -96,11 +104,6 @@ class BagAttribute(holder: AttributeHolder, name: String, val resultEntity: Enti
 class MutationAttribute(holder: AttributeHolder, name: String): Attribute<Long>(holder, name) {
     override suspend fun execute(vararg params: Any?) =
         holder.processor.perform("${holder.path}/$name", matchParamValues(*params))
-}
-
-class TransactionAttribute(holder: AttributeHolder, name: String): Attribute<List<Int>>(holder, name) {
-    override suspend fun execute(vararg params: Any?) =
-        holder.processor.attempt("${holder.path}/$name", matchParamValues(*params))
 }
 
 /*
@@ -155,10 +158,10 @@ abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = 
         findAttribute<Any?>(attrName).execute(*params)
 
     suspend fun retrieve(attrName: String, vararg params: Any?) =
-        findAttribute<Instance?>(attrName).execute(*params)
+        findAttribute<Json.Object?>(attrName).execute(*params)
 
     suspend fun query(attrName: String, vararg params: Any?) =
-        findAttribute<Sequence<Instance>>(attrName).execute(*params)
+        findAttribute<Sequence<Json.Object>>(attrName).execute(*params)
 
     suspend fun perform(attrName: String, vararg params: Any?) =
         findAttribute<Long>(attrName).execute(*params)
