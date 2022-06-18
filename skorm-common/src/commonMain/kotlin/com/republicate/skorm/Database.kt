@@ -2,7 +2,7 @@ package com.republicate.skorm
 
 import com.republicate.kson.Json
 
-open class Database(name: String, override val processor: Processor): AttributeHolder(name), Configurable {
+open class Database protected constructor(name: String, override val processor: Processor): AttributeHolder(name), Configurable {
     var initialized by initOnce(false)
     override val config = Configuration()
     override fun configure(cfg: Map<String, Any?>) {
@@ -19,12 +19,11 @@ open class Database(name: String, override val processor: Processor): AttributeH
     override fun initialize() {
         if (initialized) throw RuntimeException("Already initialized")
         processor.initialize(processor.configTag?.let { config.getObject(it) })
-        // ...
         initialized = true
     }
 }
 
-open class Schema(name: String, parent: Database) : AttributeHolder(name, parent) {
+open class Schema protected constructor(name: String, parent: Database) : AttributeHolder(name, parent) {
     init {
         parent.addSchema(this)
     }
@@ -35,11 +34,12 @@ open class Schema(name: String, parent: Database) : AttributeHolder(name, parent
     private val _entities = mutableMapOf<String, Entity>()
     val entities: Collection<Entity> get() = _entities.values
     fun addEntity(entity: Entity) {
+        if (database.initialized) throw RuntimeException("Already initialized")
         _entities[entity.name] = entity
     }
 }
 
-open class Entity(val name: String, schema: Schema) {
+open class Entity protected constructor(val name: String, schema: Schema) {
     init {
         schema.addEntity(this)
     }
@@ -53,7 +53,7 @@ open class Entity(val name: String, schema: Schema) {
     private val _fields = mutableMapOf<String, Field>()
     val fields: Map<String, Field> get() = _fields
     fun addField(field: Field) {
-        check(!schema.database.initialized)
+        if (schema.database.initialized) throw RuntimeException("Already initialized")
         _fields[field.name] = field
     }
 

@@ -8,18 +8,25 @@ import kotlinx.datetime.*
 import com.republicate.skorm.*
 
 #set ($databaseClass = "#pascal($database.name)Database")
-open class $databaseClass(processor: Processor): Database("$database.name", processor) {
+class $databaseClass(processor: Processor): Database("$database.name", processor) {
     companion object {
         private lateinit var dbInstance: Database
         private fun isInstantiated() = this::dbInstance.isInitialized
 #foreach ($schema in $database.schemas.values())
-  #set ($schemaClass = "#pascal($schema.name)Schema")
-        val $schema.name: $schemaClass by lazy { $schemaClass(dbInstance) }
+        val #camel($schema.name): #pascal($schema.name)Schema by lazy { #pascal($schema.name)Schema(dbInstance) }
 #end
     }
     init {
         if (isInstantiated()) throw RuntimeException("$databaseClass instance already crated")
         dbInstance = this
+    }
+    override fun initialize() {
+  #foreach ($schema in $database.schemas.values())
+    #foreach ($table in $schema.tables.values())
+        #pascal($schema.name)Schema.#pascal($table.name).initialize()
+    #end
+  #end
+        super.initialize()
     }
 #foreach ($schema in $database.schemas.values())
   #set ($schemaClass = "#pascal($schema.name)Schema")
@@ -44,9 +51,16 @@ open class $databaseClass(processor: Processor): Database("$database.name", proc
     #end
                 @Suppress("UNCHECKED_CAST")
                 override suspend operator fun iterator() = super.iterator() as Iterator<$instanceClass>
+                fun initialize() {
+      #foreach ($field in $table.fields.values())
+        #set($generated = "$field.type" == "serial")
+                    addField(Field("$field.name", $field.primaryKey, $generated))
+      #end
+                }
             }
     #foreach ($field in $table.fields.values())
 ## TODO output PKs first
+## TODO use delegates
       #set($pk = $field.primaryKey)
       #if($pk)
         #set($def = 'val')
