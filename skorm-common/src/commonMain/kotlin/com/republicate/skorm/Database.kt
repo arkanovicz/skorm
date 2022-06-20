@@ -20,6 +20,9 @@ open class Database protected constructor(name: String, override val processor: 
         if (initialized) throw RuntimeException("Already initialized")
         processor.initialize(processor.configTag?.let { config.getObject(it) })
         initialized = true
+        for (entity in schemas.flatMap { it.entities }) {
+            processor.register(entity)
+        }
     }
 }
 

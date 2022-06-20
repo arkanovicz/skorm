@@ -80,7 +80,7 @@ abstract class GenerateTask: DefaultTask() {
     }
 
     @get:Internal
-    protected abstract val templatePath: String
+    protected open val templatePath = ""
 
     private val context: VelocityContext by lazy {
         VelocityContext().apply {
@@ -98,7 +98,7 @@ abstract class GenerateTask: DefaultTask() {
         logger.lifecycle("$tag modelStructure is: ${model.orNull}")
         logger.lifecycle("$tag datasource is: ${datasource.orNull}")
         logger.lifecycle("$tag destPackage is: ${destPackage.orNull}")
-        logger.lifecycle("$tag destStructureFile is: ${destFile.orNull}")
+        logger.lifecycle("$tag destFile is: ${destFile.orNull}")
 
         destFile.get().asFile.parentFile.mkdirs()
         val writer = FileWriter(destFile.get().asFile)

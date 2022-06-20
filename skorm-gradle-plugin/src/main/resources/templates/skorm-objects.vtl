@@ -23,7 +23,7 @@ class $databaseClass(processor: Processor): Database("$database.name", processor
     override fun initialize() {
   #foreach ($schema in $database.schemas.values())
     #foreach ($table in $schema.tables.values())
-        #pascal($schema.name)Schema.#pascal($table.name).initialize()
+#*        *##pascal($schema.name)Schema.#pascal($table.name).initialize()
     #end
   #end
         super.initialize()

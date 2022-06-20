@@ -23,7 +23,6 @@ package com.republicate.skorm.jdbc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Serializable;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -139,7 +138,7 @@ public class PooledStatement // TODO implements RowValues
         return preparedStatement != null && valid;
     }
 
-    public synchronized ResultSet executeQuery(Serializable... paramValues) throws SQLException
+    public synchronized ResultSet executeQuery(Object... paramValues) throws SQLException
     {
         try
         {
@@ -153,7 +152,7 @@ public class PooledStatement // TODO implements RowValues
         }
     }
 
-    public synchronized long executeUpdate(Serializable... paramValues) throws SQLException
+    public synchronized long executeUpdate(Object... paramValues) throws SQLException
     {
         try
         {
@@ -173,7 +172,7 @@ public class PooledStatement // TODO implements RowValues
     }
 
 
-    private void setParamValues(Serializable[] paramValues) throws SQLException
+    private void setParamValues(Object[] paramValues) throws SQLException
     {
         if (logger.isTraceEnabled())
         {
@@ -196,8 +195,8 @@ public class PooledStatement // TODO implements RowValues
     {
         try
         {
-            Serializable arrParams[] = new Serializable[params.size()];
-            setParamValues((Serializable[])params.toArray(arrParams));
+            Object arrParams[] = new Object[params.size()];
+            setParamValues((Object[])params.toArray(arrParams));
             connection.enterBusyState();
 
             int rows = preparedStatement.executeUpdate();

@@ -108,6 +108,8 @@ fun ApplicationConfig.toMap(): Map<String, Any> {
 
 val exampleDatabase = ExampleDatabase(CoreProcessor(JdbcConnector()))
 
+const val CREATION_SCRIPT = "create-script.sql"
+
 fun Application.configureDatabase() {
 
     println("Configuring...")
@@ -115,6 +117,17 @@ fun Application.configureDatabase() {
         exampleDatabase.configure(toMap().toJsonObject())
     }
     exampleDatabase.initialize()
+
+    println("Creating database...")
+    val creationScript = Application::class.java.getResource("/${CREATION_SCRIPT}").readText()
+
+    // CB TODO: parent-child relationship between attribute and holder is redundant in the next THREE lines!!!
+    val createMutation = MutationAttribute(exampleDatabase, "create")
+    exampleDatabase.addAttribute(createMutation)
+    createMutation.register(creationScript)
+    runBlocking {
+        exampleDatabase.perform("create")
+    }
 }
 
 typealias Book = ExampleDatabase.BookshelfSchema.Book

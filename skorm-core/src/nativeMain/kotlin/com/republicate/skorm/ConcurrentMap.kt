@@ -44,3 +44,7 @@ actual class ConcurrentMap<K, V> actual constructor() : MutableMap<K, V> {
     }
 
 }
+
+actual fun <K, V> concurrentMapOf(vararg elements: Pair<K, V>): ConcurrentMap<K, V> {
+    TODO("Not yet implemented")
+}

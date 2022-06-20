@@ -18,7 +18,8 @@ data class Query(val stmt: String, val params: List<String>) {
         }
         val stateMap = ParserState.values().associateBy { it.start }.toMap()
         fun parse(qry: String): List<Query> {
-            val raw = if (qry.endsWith((';'))) qry  else "$qry;"
+            val trimmed = qry.trim()
+            val raw = if (trimmed.endsWith((';'))) trimmed else "$trimmed;"
             val ret = mutableListOf<Query>()
             val states = mutableListOf(INITIAL)
             fun state() = states.last()
@@ -62,8 +63,30 @@ data class Query(val stmt: String, val params: List<String>) {
                 }
                 pos = match.range.last + 1
             }
-            if (pos < qry.length) throw SkormException("inconsistency")
+            if (pos < trimmed.length) throw SkormException("inconsistency")
             return ret
         }
+    }
+}
+
+sealed interface QueryDef {
+    fun queries(params: Collection<String>): List<Query>
+}
+
+class SimpleQuery(val query: Query): QueryDef {
+    override fun queries(params: Collection<String>) = listOf(query)
+}
+
+class MultipleQuery(val queries: List<Query>): QueryDef {
+    override fun queries(params: Collection<String>) = queries
+}
+
+class DynamicQuery(val generator: (Collection<String>)-> Query): QueryDef {
+    private val queryCache = concurrentMapOf<String, Query>()
+    override fun queries(params: Collection<String>): List<Query> {
+        val key = params.sorted().joinToString("#")
+        return listOf(queryCache.getOrPut(key) {
+            generator(params)
+        })
     }
 }

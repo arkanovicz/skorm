@@ -12,6 +12,11 @@ interface Transaction : Processor {
 }
 
 interface Processor: Configurable {
+    // configuration
+    fun register(entity: Entity) {}
+
+    // TODO - review
+    // fun register(path: String, definition: QueryDef ) {}
 
     // attributes
     suspend fun eval(path: String, params: Map<String, Any?>): Any?

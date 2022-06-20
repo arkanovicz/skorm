@@ -7,6 +7,7 @@ const val EXTENSION_NAME = "skorm"
 const val GEN_OBJECTS_TASK_NAME = "generateSkormObjectsCode"
 const val GEN_PROPERTIES_TASK_NAME = "generateSkormPropertiesCode"
 const val POPULATE_CORE_PROCESSOR_TASK_NAME = "generateSkormProcessor"
+const val GEN_DATABASE_CREATION_SCRIPT_TASK_NAME = "generateDatabaseCreationScript"
 
 abstract class SkormGradlePlugin : Plugin<Project> {
 
@@ -38,6 +39,12 @@ abstract class SkormGradlePlugin : Plugin<Project> {
             it.propertiesFile.set(extension.properties)
             it.destPackage.set(extension.destPackage)
             it.destFile.set(extension.destPropertiesFile)
+        }
+
+        // Generate database creation script
+        project.tasks.register(GEN_DATABASE_CREATION_SCRIPT_TASK_NAME, GenerateCreationScriptTask::class.java) {
+            it.model.set(extension.definition)
+            it.destFile.set(extension.destCreationScriptFile)
         }
     }
 }

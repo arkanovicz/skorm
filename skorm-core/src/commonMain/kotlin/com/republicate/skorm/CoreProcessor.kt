@@ -7,15 +7,33 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     override val configTag = "core"
     override val config = Configuration()
 
+    private val queries = mutableMapOf<String, QueryDef>() // CB TODO - or concurrent?
+    private val readFilters = mutableMapOf<String, Filter<*>>()
+    private val writeFilters = mutableMapOf<String, Filter<Any?>>()
+
+    // CB TODO - register() should make calls to define()
+    override fun register(entity: Entity) {
+        queries["${entity.path}/browse"] = SimpleQuery(entity.generateBrowseStatement())
+        if (entity.primaryKey.isNotEmpty()) {
+            queries["${entity.path}/delete"] = SimpleQuery(entity.generateDeleteStatement())
+            queries["${entity.path}/fetch"] = SimpleQuery(entity.generateFetchStatement())
+            queries["${entity.path}/insert"] = SimpleQuery(entity.generateInsertStatement())
+            queries["${entity.path}/update"] = DynamicQuery {
+                entity.generateUpdateStatement(it)
+            }
+        }
+    }
+
+    internal fun define(path: String, definition: QueryDef) {
+        queries.put(path, definition)?.let {
+            throw SkormException("attribute $path already defined")
+        }
+    }
+
     override fun initialize() {
         connector.initialize(connector.configTag?.let {config.getObject(it)})
     }
 
-    private val queries = mutableMapOf<String, List<Query>>()
-    private val readFilters = mutableMapOf<String, Filter<*>>()
-    private val writeFilters = mutableMapOf<String, Filter<Any?>>()
-
-    private val connectors = ConcurrentMap<String, Connector>()
 
 //
 //    override suspend fun insert(instance: Instance): GeneratedKey? {
@@ -27,7 +45,7 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
 //    }
 
     override suspend fun eval(path: String, params: Map<String, Any?>): Any? {
-        val query = getSingleQuery(path)
+        val query = getSingleQuery(path, params.keys)
         val (names, it) = connector.query(query.stmt, *query.params.map { params[it] }.toTypedArray())
         if (names.size != 1) throw SkormException("scalar attribute $path expects only one column")
         if (!it.hasNext()) throw SkormException("scalar attribute $path has no result row")
@@ -37,7 +55,7 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     }
 
     override suspend fun retrieve(path: String, params: Map<String, Any?>, result: Entity?): Json.Object? {
-        val query = getSingleQuery(path)
+        val query = getSingleQuery(path, params.keys)
         val (names, it) = connector.query(query.stmt, *query.params.map { params[it] }.toTypedArray())
         if (!it.hasNext()) return null // CB TODO - non-null result should be specifiable
         val rawValues = it.next()
@@ -53,8 +71,13 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     }
 
     override suspend fun query(path: String, params: Map<String, Any?>, result: Entity?): Sequence<Json.Object> {
-        val query = getSingleQuery(path)
-        val (names, it) = connector.query(query.stmt, *query.params.map { params[it] }.toTypedArray())
+        val query = getSingleQuery(path, params.keys)
+        val (names, it) = connector.query(query.stmt, *query.params.map {
+            params[it]
+                ?:
+                if (params.containsKey(it)) null
+                else throw SkormException("Missing parameter: $it")
+        }.toTypedArray())
         return it.asSequence().map {
             when (result) {
                 null -> Json.MutableObject().apply {
@@ -67,23 +90,12 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
         }
     }
 
-//    private fun getUpdateQueryWhereClause(path: String, params: Map<String, Any?>): String {
-//        val keySuffix = params.keys.sorted().joinToString("/")
-//        return queries.getOrPut("$path/$keySuffix") {
-//            val whereClause = params.keys.joinToString(", ") {
-//                "$it=?"
-//            }
-//            // Nope... we need sql names! CB TODO
-//            "UPDATE ... SET $whereClause WHERE ..."
-//        }
-//    }
-
     override suspend fun perform(path: String, params: Map<String, Any?>): Long {
-        val queries = getMutationQueries(path)
+        val queries = getMutationQueries(path, params.keys)
         if (queries.size > 1) {
             var totalChanged = 0L
             transaction {
-                with (this as TransactionCoreProcessor) {
+                with (this as CoreProcessorTransaction) {
                     for (query in queries) {
                         totalChanged += connector.mutate(query.stmt, *query.params.map { params[it] }.toTypedArray())
                     }
@@ -97,16 +109,16 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     }
 
     override suspend fun begin(): Transaction {
-        TODO("Not yet implemented")
+        return CoreProcessorTransaction(connector)
     }
 
-    private inline fun getSingleQuery(path: String) = queries.getOrElse(path) {
+    private inline fun getSingleQuery(path: String, params: Collection<String>) = queries.getOrElse(path) {
         throw SkormException("attribute not found: $path")
-    }.firstOrNull() ?: throw SkormException("single query excpected: $path")
+    }.queries(params).firstOrNull() ?: throw SkormException("single query excpected: $path")
 
-    private inline fun getMutationQueries(path: String) = queries.getOrElse(path) {
+    private inline fun getMutationQueries(path: String, params: Collection<String>) = queries.getOrElse(path) {
         throw SkormException("attribute not found: $path")
-    }
+    }.queries(params)
 
     private fun Json.MutableObject.putAll(names: Array<String>, values: Array<Any?>) {
         names.zip(values).forEach { (name, value) ->
@@ -122,7 +134,7 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     }
 }
 
-class TransactionCoreProcessor(parentConnector: Connector) : CoreProcessor(parentConnector.begin()), Transaction {
+class CoreProcessorTransaction(parentConnector: Connector) : CoreProcessor(parentConnector.begin()), Transaction {
     val txConnector: TransactionConnector get() = connector as TransactionConnector
 
     override suspend fun rollback() {

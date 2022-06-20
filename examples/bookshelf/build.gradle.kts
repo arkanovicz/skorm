@@ -117,8 +117,14 @@ tasks.named<JavaExec>("run") {
     classpath(tasks.named<Jar>("jvmJar"))
 }
 
+tasks.named<Jar>("jvmJar") {
+    dependsOn("generateDatabaseCreationScript")
+    from (
+        fileTree(baseDir="build/generated-src/jvmMain/resources") { include("*.sql") }
+    )
+}
+
 tasks.filter { it.name.startsWith("compileKotlin") }.forEach {
     it.dependsOn("generateSkormObjectsCode")
-    // it.dependsOn("generateSkormProcessor")
-    it.dependsOn("generateSkormPropertiesCode")
+    // it.dependsOn("generateSkormPropertiesCode")
 }

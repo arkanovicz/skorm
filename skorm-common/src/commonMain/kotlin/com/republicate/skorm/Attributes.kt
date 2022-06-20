@@ -129,7 +129,7 @@ abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = 
     abstract val processor: Processor
     private val _attrMap = mutableMapOf<String, Attribute<*>>()
     private val attrMap: Map<String, Attribute<*>> get() = _attrMap
-    internal val path: String by lazy { (parent?.path ?: "") + "/$name" }
+    val path: String by lazy { (parent?.path ?: "") + "/$name" }
 
     private inline fun <reified T: Attribute<*>> getAttribute(attrName: String): T? {
         val attr = attrMap[attrName]
@@ -151,7 +151,7 @@ abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = 
 
     fun addAttribute(attr: Attribute<*>) {
         val previous = _attrMap.put(attr.name, attr)
-        if (previous != null) throw SkormException("attribute $path.${attr.name} overwritten")
+        if (previous != null) throw SkormException("attribute $path.${attr.name} cannot be overwritten")
     }
 
     suspend fun eval(attrName: String, vararg params: Any?) =

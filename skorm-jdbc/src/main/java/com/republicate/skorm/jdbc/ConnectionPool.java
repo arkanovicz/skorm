@@ -22,20 +22,17 @@ package com.republicate.skorm.jdbc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Serializable;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import javax.sql.DataSource;
 
 /**
  *  Connection pool.
  *
  *  @author <a href="mailto:claude.brisson@gmail.com">Claude Brisson</a>
  */
-public class ConnectionPool implements Serializable
+public class ConnectionPool
 {
     protected static Logger logger = LoggerFactory.getLogger("sql");
 

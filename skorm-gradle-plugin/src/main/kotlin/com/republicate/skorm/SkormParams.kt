@@ -7,9 +7,11 @@ import javax.inject.Inject
 
 const val DEFAULT_COMMON_OUTPUT_PATH = "generated-src/commonMain/kotlin"
 const val DEFAULT_JVM_OUTPUT_PATH = "generated-src/jvmMain/kotlin"
+const val DEFAULT_JVM_RESOURCES_PATH = "generated-src/jvmMain/resources"
 const val DEFAULT_OUTPUT_STRUCTURE_FILE = "skormObjects.kt"
 const val DEFAULT_OUTPUT_POPULATE_FILE = "skormPopulate.kt"
 const val DEFAULT_OUTPUT_PROPERTIES_FILE = "skormProperties.kt"
+const val DEFAULT_OUTPUT_CREATION_SCRIPT_FILE = "create-script.sql"
 
 @Suppress("UnnecessaryAbstractClass")
 abstract class SkormParams @Inject constructor(project: Project) {
@@ -34,5 +36,9 @@ abstract class SkormParams @Inject constructor(project: Project) {
 
     val destPropertiesFile: RegularFileProperty = objects.fileProperty().convention(
         project.layout.buildDirectory.file("$DEFAULT_COMMON_OUTPUT_PATH/$DEFAULT_OUTPUT_PROPERTIES_FILE")
+    )
+
+    val destCreationScriptFile: RegularFileProperty = objects.fileProperty().convention(
+        project.layout.buildDirectory.file("$DEFAULT_JVM_RESOURCES_PATH/$DEFAULT_OUTPUT_CREATION_SCRIPT_FILE")
     )
 }
