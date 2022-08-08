@@ -22,6 +22,6 @@ pluginManagement {
     repositories {
         gradlePluginPortal()
         mavenCentral()
-        mavenLocal() // to be able to access skorm-gradle-plugin during development
+        mavenLocal() // to be able to access skorm-gradle-plugin and essential-kson during development
     }
 }

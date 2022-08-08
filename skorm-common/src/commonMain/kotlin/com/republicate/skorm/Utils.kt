@@ -68,6 +68,7 @@ expect class BitSet(size: Int) {
     fun clear(index: Int)
     fun or(another: BitSet)
     fun clear()
+    fun nextSetBit(startIndex: Int = 0): Int
 }
 
 // No way to access this class from JVM... CB TODO

@@ -2,13 +2,12 @@ plugins {
     kotlin("multiplatform")
 }
 
-// group = "com.republicate.skorm"
-// version = "1.0-SNAPSHOT"
-
-// repositories {
-//     mavenCentral()
-    // mavenLocal()
-// }
+/*
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+ */
 
 buildscript {
     val atomicfu_version: String by project
@@ -21,8 +20,8 @@ apply(plugin = "kotlinx-atomicfu")
 kotlin {
     sourceSets.all {
         languageSettings.apply {
-            languageVersion = "1.5"
-            apiVersion = "1.5"
+            languageVersion = "1.7"
+            apiVersion = "1.7"
         }
     }
     jvm {
@@ -56,7 +55,7 @@ kotlin {
         val atomicfu_version: String by project
         val commonMain by getting {
             dependencies {
-                api("com.republicate.kson:essential-kson:2.0")
+                api("com.republicate.kson:essential-kson:2.1")
                 implementation("org.jetbrains.kotlinx:atomicfu:$atomicfu_version")
             }
         }

@@ -5,7 +5,7 @@ plugins {
 
  repositories {
      mavenCentral()
-     mavenLocal() // for now, to get kddl 0.6.1
+     mavenLocal() // for now, to get latest kddl version
      maven("https://jitpack.io") // for antlr-kotlin
  }
 
@@ -13,7 +13,7 @@ dependencies {
     implementation(gradleApi())
     implementation("org.apache.velocity:velocity-engine-core:2.3")
     implementation("org.apache.velocity.tools:velocity-tools-generic:3.1")
-    api("com.republicate.kddl:kddl:0.7")
+    api("com.republicate.kddl:kddl:0.7.4")
     testImplementation(gradleTestKit())
     testImplementation("junit:junit:4.12")
     testImplementation(kotlin("test"))
@@ -23,8 +23,8 @@ dependencies {
 tasks {
     withType<org.jetbrains.kotlin.gradle.dsl.KotlinCompile<*>> {
         kotlinOptions {
-            languageVersion = "1.5"
-            apiVersion = "1.5"
+            languageVersion = "1.7"
+            apiVersion = "1.7"
         }
     }
     withType<JavaCompile>().configureEach {

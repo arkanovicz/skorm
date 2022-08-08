@@ -1,9 +1,12 @@
 package com.republicate.skorm.bookshelf
 
+import com.republicate.kson.Json
 import com.republicate.kson.toJsonObject
 import com.republicate.skorm.*
 import com.republicate.skorm.jdbc.JdbcConnector
 import io.ktor.http.*
+import io.ktor.http.content.*
+import io.ktor.serialization.*
 import io.ktor.server.application.*
 import io.ktor.server.config.*
 import io.ktor.server.html.*
@@ -11,7 +14,15 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.http.content.*
 import io.ktor.server.plugins.*
+import io.ktor.server.plugins.statuspages.*
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.util.reflect.*
+import io.ktor.utils.io.*
+import io.ktor.utils.io.charsets.*
+import io.ktor.utils.io.jvm.javaio.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.html.*
 import mu.KotlinLogging
 
@@ -30,10 +41,14 @@ fun Application.module() {
             call.respond(HttpStatusCode.InternalServerError)
         }
     }
+    install(ContentNegotiation) {
+        register(ContentType.Application.Json, KsonConverter)
+    }
     configureDatabase()
     configureRouting()
 }
 
+// white waiting for ktor 2.0
 fun ApplicationConfig.toMap(): Map<String, Any> {
     val map = mutableMapOf<String, Any>()
     keys().sorted().forEach { key ->
@@ -120,11 +135,7 @@ fun Application.configureDatabase() {
 
     println("Creating database...")
     val creationScript = Application::class.java.getResource("/${CREATION_SCRIPT}").readText()
-
-    // CB TODO: parent-child relationship between attribute and holder is redundant in the next THREE lines!!!
-    val createMutation = MutationAttribute(exampleDatabase, "create")
-    exampleDatabase.addAttribute(createMutation)
-    createMutation.register(creationScript)
+    exampleDatabase.mutationAttribute("create", creationScript)
     runBlocking {
         exampleDatabase.perform("create")
     }
@@ -195,3 +206,21 @@ fun Application.configureRouting() {
 //        logger.info("route: $it")
 //    }
 //}
+
+// ktor essential-kson converter ; here for now, but should move elsewhere
+
+object KsonConverter: ContentConverter {
+    override suspend fun deserialize(charset: Charset, typeInfo: TypeInfo, content: ByteReadChannel): Any? {
+        val input = object: Json.Input {
+            val reader = content.toInputStream().reader(charset)
+            override fun read() = reader.read().toChar()
+        }
+        return Json.parseValue(input)
+    }
+    override suspend fun serialize(
+        contentType: ContentType,
+        charset: Charset,
+        typeInfo: TypeInfo,
+        value: Any
+    ): OutgoingContent? = TextContent(value.toString(), contentType.withCharsetIfNeeded(charset))
+}

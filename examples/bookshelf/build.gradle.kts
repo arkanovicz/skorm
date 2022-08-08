@@ -31,8 +31,8 @@ val ktor_version: String by project
 kotlin {
     sourceSets.all {
         languageSettings.apply {
-            languageVersion = "1.5"
-            apiVersion = "1.5"
+            languageVersion = "1.7"
+            apiVersion = "1.7"
         }
     }
     jvm {
@@ -60,7 +60,7 @@ kotlin {
             kotlin.srcDir(file("build/generated-src/commonMain/kotlin"))
             dependencies {
                 implementation(project(":skorm-common"))
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.1")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.3")
 //                implementation("io.github.microutils:kotlin-logging:2.0.11")
             }
         }
@@ -79,7 +79,8 @@ kotlin {
                 implementation("io.ktor:ktor-server-netty:$ktor_version")
                 implementation("io.ktor:ktor-server-html-builder:$ktor_version")
                 implementation("io.ktor:ktor-server-status-pages:$ktor_version")
-                implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.3")
+                implementation("io.ktor:ktor-server-content-negotiation:$ktor_version")
+                implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.5")
                 implementation("io.github.microutils:kotlin-logging-jvm:2.0.11")
                 runtimeOnly("org.hsqldb:hsqldb:2.6.1")
                 runtimeOnly("org.slf4j:slf4j-simple:1.7.32")

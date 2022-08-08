@@ -2,10 +2,14 @@ package com.republicate.skorm
 
 import com.republicate.skorm.Query.Companion.ParserState.*
 
-data class Query(val stmt: String, val params: List<String>) {
+data class QueryDefinition(val stmt: String, val params: List<String>) {
+}
+
+sealed interface Query {
+
     companion object {
         // CB TODO - this is driver specific, but we try to have a kinda generic handling
-        val lexer = Regex("\\{|\\}|\\bbegin\\b|\\bend\\b|'|\\\"|\\[|\\]|;", RegexOption.IGNORE_CASE)
+        private val lexer = Regex("\\{|\\}|\\bbegin\\b|\\bend\\b|'|\\\"|\\[|\\]|;", RegexOption.IGNORE_CASE)
         enum class ParserState(val start: String, val end: String = start, val allowParams: Boolean = false) {
             INITIAL(start="", allowParams=true),
             PARAMETER(start="{", end="}", allowParams=false),
@@ -16,11 +20,11 @@ data class Query(val stmt: String, val params: List<String>) {
             ERROR(start="?", allowParams=false),
             END(start=";")
         }
-        val stateMap = ParserState.values().associateBy { it.start }.toMap()
-        fun parse(qry: String): List<Query> {
+        private val stateMap = ParserState.values().associateBy { it.start }.toMap()
+        fun parse(qry: String): Query {
             val trimmed = qry.trim()
             val raw = if (trimmed.endsWith((';'))) trimmed else "$trimmed;"
-            val ret = mutableListOf<Query>()
+            val queries = mutableListOf<QueryDefinition>()
             val states = mutableListOf(INITIAL)
             fun state() = states.last()
             fun push(state: ParserState) = states.add(state)
@@ -51,9 +55,10 @@ data class Query(val stmt: String, val params: List<String>) {
                             val nextState = stateMap[match.value.lowercase()] ?: throw SkormException("unhandled case")
                             when (nextState) {
                                 BLOCK, QUOTED, DOUBLE_QUOTED, BRACKETED -> push(nextState)
+                                INITIAL, PARAMETER -> throw SkormException("unexpected case")
                                 ERROR -> throw SkormException("provided queries should not have '?' markers")
                                 END -> {
-                                    ret.add(Query(queryPart.toString(), params))
+                                    queries.add(QueryDefinition(queryPart.toString(), params))
                                     queryPart.clear()
                                     params.clear()
                                 }
@@ -64,29 +69,36 @@ data class Query(val stmt: String, val params: List<String>) {
                 pos = match.range.last + 1
             }
             if (pos < trimmed.length) throw SkormException("inconsistency")
-            return ret
+            return when (queries.size) {
+                0 -> throw SkormException("could not parse statement")
+                1 -> SimpleQuery(queries.first())
+                else -> MultipleQuery(queries)
+            }
         }
     }
+
+    fun queries(params: Collection<String>): List<QueryDefinition>
+    fun parameters(): Set<String>
 }
 
-sealed interface QueryDef {
-    fun queries(params: Collection<String>): List<Query>
+class SimpleQuery(val queryDefinition: QueryDefinition): Query {
+    override fun queries(params: Collection<String>) = listOf(queryDefinition)
+    override fun parameters() = queryDefinition.params.toSet()
 }
 
-class SimpleQuery(val query: Query): QueryDef {
-    override fun queries(params: Collection<String>) = listOf(query)
-}
-
-class MultipleQuery(val queries: List<Query>): QueryDef {
+class MultipleQuery(val queries: List<QueryDefinition>): Query {
     override fun queries(params: Collection<String>) = queries
+    override fun parameters() = queries.flatMap { it.params }.toSet()
 }
 
-class DynamicQuery(val generator: (Collection<String>)-> Query): QueryDef {
-    private val queryCache = concurrentMapOf<String, Query>()
-    override fun queries(params: Collection<String>): List<Query> {
+class DynamicQuery(val generator: (Collection<String>)-> QueryDefinition): Query {
+    private val queryCache = concurrentMapOf<String, QueryDefinition>()
+    override fun queries(params: Collection<String>): List<QueryDefinition> {
         val key = params.sorted().joinToString("#")
         return listOf(queryCache.getOrPut(key) {
             generator(params)
         })
     }
+
+    override fun parameters(): Set<String> { throw SkormException("cannot get parameters of a dynamic query") }
 }

@@ -1,20 +1,35 @@
 package com.republicate.skorm
 
 actual class BitSet actual constructor(size: Int) {
-    actual operator fun get(index: Int): Boolean {
-        TODO("Not yet implemented")
-    }
 
+    private val bits = Array(size) { false }
+
+    actual operator fun get(index: Int) = bits[index]
     actual fun set(index: Int, value: Boolean) {
+        bits[index] = value
     }
 
     actual fun clear(index: Int) {
+        bits[index] = false
     }
 
     actual fun or(another: BitSet) {
+        for (index in 0..bits.size - 1) {
+            bits[index] =  bits[index] || another.bits[index]
+        }
     }
 
     actual fun clear() {
+        for (index in 0..bits.size - 1) {
+            bits[index] = false
+        }
+    }
+
+    actual fun nextSetBit(startIndex: Int): Int {
+        for (index in startIndex .. bits.size - 1) {
+            if (bits[index]) return index
+        }
+        return -1
     }
 }
 

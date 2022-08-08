@@ -47,7 +47,7 @@ open class Entity protected constructor(val name: String, schema: Schema) {
         schema.addEntity(this)
     }
 
-    private val instanceAttributes = object : AttributeHolder(name, schema) {
+    /*private*/ val instanceAttributes = object : AttributeHolder(name, schema) {
         override val processor get() = schema.processor
     }
     val schema get() = instanceAttributes.parent as Schema
@@ -55,6 +55,9 @@ open class Entity protected constructor(val name: String, schema: Schema) {
 
     private val _fields = mutableMapOf<String, Field>()
     val fields: Map<String, Field> get() = _fields
+    val fieldNames: List<String> by lazy {
+        _fields.map { it.key }
+    }
     fun addField(field: Field) {
         if (schema.database.initialized) throw RuntimeException("Already initialized")
         _fields[field.name] = field
@@ -63,44 +66,32 @@ open class Entity protected constructor(val name: String, schema: Schema) {
     val primaryKey: List<Field> by lazy { _fields.values.filter { it.primary } }
 
     private val fetchAttribute: InstanceAttribute by lazy {
-        InstanceAttribute(instanceAttributes, "fetch", this).apply {
+        InstanceAttribute(instanceAttributes, "fetch", primaryKey.map { it.name }.toSet(), this).apply {
             check(schema.database.initialized)
-            primaryKey.forEach {
-                addParameter(it.name)
-            }
         }
     }
 
     private val browseAttribute: BagAttribute by lazy {
-        BagAttribute(instanceAttributes, "browse", this).apply {
+        BagAttribute(instanceAttributes, "browse", emptySet(), this).apply {
             check(schema.database.initialized)
         }
     }
 
     private val insertAttribute: MutationAttribute by lazy {
-        MutationAttribute(instanceAttributes, "insert").apply {
+        MutationAttribute(instanceAttributes, "insert", useDirtyFields = true).apply {
             check(schema.database.initialized)
-            fields.values.filter { !it.generated }.forEach {
-                addParameter(it.name)
-            }
         }
     }
 
     private val updateAttribute: MutationAttribute by lazy {
-        MutationAttribute(instanceAttributes, "update").apply {
+        MutationAttribute(instanceAttributes, "update", useDirtyFields = true).apply {
             check(schema.database.initialized)
-            fields.values.filter { !it.primary }.forEach {
-                addParameter(it.name)
-            }
         }
     }
 
     private val deleteAttribute: MutationAttribute by lazy {
-        MutationAttribute(instanceAttributes, "delete").apply {
+        MutationAttribute(instanceAttributes, "delete", parameters = primaryKey.map { it.name }.toSet()).apply {
             check(schema.database.initialized)
-            primaryKey.forEach {
-                addParameter(it.name)
-            }
         }
     }
 
@@ -114,9 +105,9 @@ open class Entity protected constructor(val name: String, schema: Schema) {
     internal suspend fun insert(instance: Instance) = insertAttribute.execute(instance)
     internal suspend fun update(instance: Instance) = updateAttribute.execute(instance)
     internal suspend fun delete(instance: Instance) = deleteAttribute.execute(instance)
-    internal suspend fun eval(attrName: String, vararg params: Any?) = instanceAttributes.eval(attrName, *params)
-    internal suspend fun retrieve(attrName: String, vararg params: Any?) = instanceAttributes.retrieve(attrName, *params)
-    internal suspend fun query(attrName: String, vararg params: Any?) = instanceAttributes.query(attrName, *params)
+    /*internal*/ suspend inline fun <reified T: Any?> eval(attrName: String, vararg params: Any?) = instanceAttributes.eval<T>(attrName, *params)
+    /*internal*/ suspend inline fun <reified T: Json.Object?> retrieve(attrName: String, vararg params: Any?) = instanceAttributes.retrieve<T>(attrName, *params)
+    /*internal*/ suspend inline fun <reified T: Json.Object> query(attrName: String, vararg params: Any?) = instanceAttributes.query<T>(attrName, *params)
     internal suspend fun perform(attrName: String, vararg params: Any?) = instanceAttributes.perform(attrName, *params)
 }
 
@@ -159,8 +150,19 @@ open class Instance(val entity: Entity) : Json.MutableObject() {
         dirtyFields
     }
 
-    suspend fun eval(attrName: String, vararg params: Any?) = entity.eval(attrName, this, *params)
-    suspend fun retrieve(attrName: String, vararg params: Any?) = entity.retrieve(attrName, entity, this, *params)
-    suspend fun query(attrName: String, vararg params: Any?) = entity.query(attrName, entity, this, *params)
+    suspend inline fun <reified T: Any?> eval(attrName: String, vararg params: Any?) = entity.eval<T>(attrName, this, *params)
+    suspend inline fun <reified T: Json.Object?> retrieve(attrName: String, vararg params: Any?) = entity.retrieve<T>(attrName, entity, this, *params)
+    suspend inline fun <reified T: Json.Object> query(attrName: String, vararg params: Any?) = entity.query<T>(attrName, entity, this, *params)
     suspend fun perform(attrName: String, vararg params: Any?) = entity.perform(attrName, this, *params)
+
+    internal fun dirtyFieldNames(): Iterator<String> = object: Iterator<String> {
+        var index = dirtyFields.nextSetBit(0)
+
+        override operator fun hasNext() = (index != -1)
+        override operator fun next(): String {
+            return entity.fieldNames[index].also {
+                index = dirtyFields.nextSetBit(index)
+            }
+        }
+    }
 }

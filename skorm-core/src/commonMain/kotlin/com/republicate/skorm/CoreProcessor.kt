@@ -7,7 +7,7 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     override val configTag = "core"
     override val config = Configuration()
 
-    private val queries = mutableMapOf<String, QueryDef>() // CB TODO - or concurrent?
+    private val queries = mutableMapOf<String, Query>() // CB TODO - or concurrent?
     private val readFilters = mutableMapOf<String, Filter<*>>()
     private val writeFilters = mutableMapOf<String, Filter<Any?>>()
 
@@ -17,14 +17,16 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
         if (entity.primaryKey.isNotEmpty()) {
             queries["${entity.path}/delete"] = SimpleQuery(entity.generateDeleteStatement())
             queries["${entity.path}/fetch"] = SimpleQuery(entity.generateFetchStatement())
-            queries["${entity.path}/insert"] = SimpleQuery(entity.generateInsertStatement())
+            queries["${entity.path}/insert"] = DynamicQuery {
+                entity.generateInsertStatement(it)
+            }
             queries["${entity.path}/update"] = DynamicQuery {
                 entity.generateUpdateStatement(it)
             }
         }
     }
 
-    internal fun define(path: String, definition: QueryDef) {
+    fun define(path: String, definition: Query) {
         queries.put(path, definition)?.let {
             throw SkormException("attribute $path already defined")
         }
