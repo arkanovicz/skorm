@@ -58,6 +58,9 @@ open class Entity protected constructor(val name: String, schema: Schema) {
     val fieldNames: List<String> by lazy {
         _fields.map { it.key }
     }
+    val fieldIndices: Map<String, Int> by lazy {
+        _fields.entries.mapIndexed { index, entry -> entry.key to index }.toMap()
+    }
     fun addField(field: Field) {
         if (schema.database.initialized) throw RuntimeException("Already initialized")
         _fields[field.name] = field
@@ -146,9 +149,26 @@ open class Instance(val entity: Entity) : Json.MutableObject() {
     }
 
     // dirty flags handling
+
     private fun setClean() {
-        dirtyFields
+        dirtyFields.clear()
     }
+
+    fun isDirty() = dirtyFields.nextSetBit(0) != -1
+
+    override fun putAll(from: Map<out String, Any?>) {
+        from.entries.filter { entity.fields.contains(it.key) }.forEach { put(it.key, it.value) }
+    }
+
+    override fun put(key: String, value: Any?): Any? {
+        val ret = super.put(key, value)
+        val field = entity.fields[key] ?: throw SkormException("${entity.name} has no field named $key")
+        if (persisted && field.primary && ret != value) // CB TODO - since 'value' type is lax, 'value' may need a proper conversion before the comparison
+                persisted = false
+        dirtyFields.set(entity.fieldIndices[key]!!, true)
+        return ret
+    }
+
 
     suspend inline fun <reified T: Any?> eval(attrName: String, vararg params: Any?) = entity.eval<T>(attrName, this, *params)
     suspend inline fun <reified T: Json.Object?> retrieve(attrName: String, vararg params: Any?) = entity.retrieve<T>(attrName, entity, this, *params)
@@ -161,7 +181,7 @@ open class Instance(val entity: Entity) : Json.MutableObject() {
         override operator fun hasNext() = (index != -1)
         override operator fun next(): String {
             return entity.fieldNames[index].also {
-                index = dirtyFields.nextSetBit(index)
+                index = dirtyFields.nextSetBit(index + 1)
             }
         }
     }

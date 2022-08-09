@@ -1,18 +1,10 @@
 package com.republicate.skorm
 
-fun interface Filter<T>  {
-    companion object {
-        fun <U> identity() = Filter<U> { it }
-    }
-    fun apply(s: T): T
-    fun compose(other: Filter<T>): Filter<T>? {
-        return Filter<T> { apply(other.apply(it)) }
-    }
-}
+typealias IdentifierMapper = (String) -> String
 
-typealias IdentifierFilter = Filter<String>
+val identityMapper: IdentifierMapper = { it }
 
-val snakeToCamel = IdentifierFilter { snake ->
+val snakeToCamel:  IdentifierMapper = { snake ->
     if (!snake.contains("_")) snake
     else {
         val parts = snake.lowercase().split("_") // CB TODO factorize regex building
@@ -28,7 +20,7 @@ val snakeToCamel = IdentifierFilter { snake ->
     }
 }
 
-val camelToSnake = IdentifierFilter { camel ->
+val camelToSnake: IdentifierMapper = { camel ->
     val parts = camel.split("(?<=[a-z])(?=[A-Z])") // CB TODO factorize regex building
     val builder = StringBuilder()
     var first = true
@@ -42,7 +34,7 @@ val camelToSnake = IdentifierFilter { camel ->
     builder.toString()
 }
 
-val snakeToPascal = IdentifierFilter { snake ->
+val snakeToPascal: IdentifierMapper = { snake ->
     if (!snake.contains("_")) snake.capitalize()
     else {
         val parts = snake.lowercase().split("_") // CB TODO factorize regex building
@@ -58,3 +50,10 @@ val snakeToPascal = IdentifierFilter { snake ->
 
 val pascalToSnake = camelToSnake
 
+fun IdentifierMapper.compose(other: IdentifierMapper): IdentifierMapper {
+    return when {
+        this === identityMapper -> other
+        other === identityMapper -> this
+        else -> { it -> this(other(it)) }
+    }
+}

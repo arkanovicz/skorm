@@ -48,7 +48,8 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-	        implementation(project(":skorm-common"))
+	            implementation(project(":skorm-common"))
+                implementation("io.github.microutils:kotlin-logging:2.1.23")
             }
         }
         val commonTest by getting {

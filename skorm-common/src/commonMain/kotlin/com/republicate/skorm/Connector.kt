@@ -8,7 +8,16 @@ class QueryResult(
     operator fun component2() = values
 }
 
+interface MetaInfos {
+    val identifierQuoteChar: Char
+    val identifierInternalCase: Char // 'U'ppercase, 'L'owercase, 'S'ensitive
+}
+
 interface Connector: Configurable {
+    // meta
+    @get:Throws(SkormException::class)
+    val metaInfos: MetaInfos
+
     // queries
     @Throws(SkormException::class)
     fun query(query: String, vararg params: Any?): QueryResult

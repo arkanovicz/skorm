@@ -79,16 +79,20 @@ sealed interface Query {
 
     fun queries(params: Collection<String>): List<QueryDefinition>
     fun parameters(): Set<String>
+
+    override fun toString(): String
 }
 
 class SimpleQuery(val queryDefinition: QueryDefinition): Query {
     override fun queries(params: Collection<String>) = listOf(queryDefinition)
     override fun parameters() = queryDefinition.params.toSet()
+    override fun toString() = "(${queryDefinition.params.joinToString(", ")}) -> [${queryDefinition.stmt}]"
 }
 
 class MultipleQuery(val queries: List<QueryDefinition>): Query {
     override fun queries(params: Collection<String>) = queries
     override fun parameters() = queries.flatMap { it.params }.toSet()
+    override fun toString() = "(${parameters().joinToString(", ")}) -> [${queries.joinToString("; ") { it.stmt }}]"
 }
 
 class DynamicQuery(val generator: (Collection<String>)-> QueryDefinition): Query {
@@ -101,4 +105,5 @@ class DynamicQuery(val generator: (Collection<String>)-> QueryDefinition): Query
     }
 
     override fun parameters(): Set<String> { throw SkormException("cannot get parameters of a dynamic query") }
+    override fun toString() = "[dynamic query]"
 }

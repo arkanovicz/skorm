@@ -1,6 +1,9 @@
 package com.republicate.skorm
 
 import com.republicate.kson.Json
+import mu.KotlinLogging
+
+private val logger = KotlinLogging.logger("core")
 
 open class CoreProcessor(protected open val connector: Connector): Processor {
 
@@ -8,21 +11,33 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     override val config = Configuration()
 
     private val queries = mutableMapOf<String, Query>() // CB TODO - or concurrent?
-    private val readFilters = mutableMapOf<String, Filter<*>>()
-    private val writeFilters = mutableMapOf<String, Filter<Any?>>()
+    // TODO
+//    private val readFilters = mutableMapOf<String, Mapper<*>>()
+//    private val writeFilters = mutableMapOf<String, Mapper<Any?>>()
+
+    private val identifierQuoteChar: Char by lazy { connector.metaInfos.identifierQuoteChar }
+    private val identifierInternalCase: Char by lazy { connector.metaInfos.identifierInternalCase }
+
+    // var readMapper: IdentifierMapper = identityMapper UNUSED
+    internal var writeMapper: IdentifierMapper = identityMapper
+
+    private fun register(path: String, query: Query) {
+        logger.trace { "registering $path to $query" }
+        queries[path] = query
+    }
 
     // CB TODO - register() should make calls to define()
     override fun register(entity: Entity) {
-        queries["${entity.path}/browse"] = SimpleQuery(entity.generateBrowseStatement())
+        register("${entity.path}/browse", SimpleQuery(entity.generateBrowseStatement()))
         if (entity.primaryKey.isNotEmpty()) {
-            queries["${entity.path}/delete"] = SimpleQuery(entity.generateDeleteStatement())
-            queries["${entity.path}/fetch"] = SimpleQuery(entity.generateFetchStatement())
-            queries["${entity.path}/insert"] = DynamicQuery {
+            register("${entity.path}/delete", SimpleQuery(entity.generateDeleteStatement()))
+            register("${entity.path}/fetch", SimpleQuery(entity.generateFetchStatement()))
+            register("${entity.path}/insert", DynamicQuery {
                 entity.generateInsertStatement(it)
-            }
-            queries["${entity.path}/update"] = DynamicQuery {
+            })
+            register("${entity.path}/update", DynamicQuery {
                 entity.generateUpdateStatement(it)
-            }
+            })
         }
     }
 
@@ -33,18 +48,13 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     }
 
     override fun initialize() {
-        connector.initialize(connector.configTag?.let {config.getObject(it)})
+        connector.initialize(connector.configTag?.let { config.getObject(it) })
+        writeMapper = when (identifierInternalCase) {
+            'U' -> {{ "$identifierQuoteChar${it.uppercase()}$identifierQuoteChar" }}
+            'L' -> {{ "$identifierQuoteChar${it.lowercase()}$identifierQuoteChar" }}
+            else -> { identityMapper }
+        }
     }
-
-
-//
-//    override suspend fun insert(instance: Instance): GeneratedKey? {
-//        val pk = instance.entity.primaryKey
-//        return if (pk.size == 1 && pk[0].generated)
-//            connector.mutate(SqlUtils.getInsertStatement(instance.entity), instance, GeneratedKeyMarker(pk[0].sqlName))
-//        else
-//            connector.mutate(SqlUtils.getInsertStatement(instance.entity), instance)
-//    }
 
     override suspend fun eval(path: String, params: Map<String, Any?>): Any? {
         val query = getSingleQuery(path, params.keys)
@@ -130,14 +140,56 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
 
     private fun Instance.putInternal(names: Array<String>, values: Array<Any?>) {
         names.zip(values).forEach { (name, value) ->
-            val filterKey = "${entity.path}/$name"
-            put(name, writeFilters[filterKey]?.apply(value) ?: value)
+            // TODO
+//            val filterKey = "${entity.path}/$name"
+//            put(name, writeFilters[filterKey]?.apply(value) ?: value)
+            put(name, value)
         }
+    }
+
+    // sql utils
+    private fun Entity.generateBrowseStatement(): QueryDefinition {
+        val stmt = "SELECT ${
+            fields.values.joinToString(", ") { writeMapper(it.name) }
+        } FROM ${schema.name}.$name;"
+        return QueryDefinition(stmt, emptyList())
+    }
+
+    private fun Entity.generateFetchStatement(): QueryDefinition {
+        val stmt = "SELECT ${
+            fields.values.joinToString(", ") { writeMapper(it.name) }
+        } FROM ${schema.name}.$name WHERE ${
+            primaryKey.joinToString(" AND ") { "${writeMapper(it.name)} = ?" }
+        };"
+        return QueryDefinition(stmt, primaryKey.map { it.name })
+    }
+
+    private fun Entity.generateInsertStatement(params: Collection<String>): QueryDefinition {
+        val names = params.joinToString(",") { writeMapper(it) }
+        val values = Array(params.size) { "?" }.joinToString(",")
+        val stmt = "INSERT INTO ${schema.name}.${writeMapper(name)} ($names) VALUES ($values);"
+        return QueryDefinition(stmt, params.toList())
+    }
+
+    private fun Entity.generateDeleteStatement(): QueryDefinition {
+        val stmt = "DELETE FROM ${schema.name}.${writeMapper(name)} WHERE ${
+            primaryKey.joinToString(" AND ") { "${writeMapper(it.name)} = ?" }
+        };"
+        return QueryDefinition(stmt, primaryKey.map { it.name })
+    }
+
+    private fun Entity.generateUpdateStatement(params: Collection<String>): QueryDefinition {
+        val stmt = "UPDATE ${schema.name}.${writeMapper(name)} SET ${
+            params.joinToString(", ") { "${writeMapper(it)} = ?" }
+        } WHERE ${
+            primaryKey.map { "${writeMapper(it.name)} = ?" }.joinToString(" AND ")
+        };"
+        return QueryDefinition(stmt, primaryKey.map { it.name })
     }
 }
 
 class CoreProcessorTransaction(parentConnector: Connector) : CoreProcessor(parentConnector.begin()), Transaction {
-    val txConnector: TransactionConnector get() = connector as TransactionConnector
+    private val txConnector: TransactionConnector get() = connector as TransactionConnector
 
     override suspend fun rollback() {
         txConnector.rollback()

@@ -1,5 +1,6 @@
 package com.republicate.skorm.jdbc;
 
+import com.republicate.skorm.MetaInfos;
 import com.republicate.skorm.config.ConfigDigester;
 import com.republicate.skorm.config.ConfigurationException;
 import org.slf4j.Logger;
@@ -13,7 +14,7 @@ import java.util.*;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 
-public class Vendor
+public class Vendor implements MetaInfos
 {
     private static Map<String, Vendor> vendorMap = new HashMap<>();
 
@@ -111,9 +112,21 @@ public class Vendor
     private String pingQuery = null;
 
     /** case-sensivity */
-    public enum CaseSensitivity { UNKNOWN, SENSITIVE, LOWERCASE, UPPERCASE }
+    public enum CaseSensitivity {
+        UNKNOWN('X'),
+        SENSITIVE('S'),
+        LOWERCASE('L'),
+        UPPERCASE('U');
+        public char code;
+        CaseSensitivity(char code) { this.code = code; }
+    }
     private CaseSensitivity tablesCaseSensitivity = null;
     private UnaryOperator<String> filterTableName = t -> t;
+
+    @Override
+    public char getIdentifierInternalCase() {
+        return tablesCaseSensitivity.code;
+    }
 
     /** SQL query to set the current schema */
     private String schemaQuery = null;
@@ -269,7 +282,8 @@ public class Vendor
         }
     }
 
-    public Character getIdentifierQuoteChar()
+    @Override
+    public char getIdentifierQuoteChar()
     {
         return identifierQuoteChar;
     }

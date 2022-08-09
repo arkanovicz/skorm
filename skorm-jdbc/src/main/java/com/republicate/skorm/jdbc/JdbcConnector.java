@@ -123,6 +123,19 @@ public class JdbcConnector implements Connector
                 throw new SkormException("could not commit transaction", sqle);
             }
         }
+
+        @Override
+        public MetaInfos getMetaInfos() throws SkormException
+        {
+            try
+            {
+                return txConnection.getVendor();
+            }
+            catch (SQLException sqle)
+            {
+                throw new SkormException("could not get meta infos", sqle);
+            }
+        }
     }
 
     @NotNull
@@ -185,6 +198,18 @@ public class JdbcConnector implements Connector
 
     public JdbcConnector()
     {
+    }
+
+    @Override
+    public MetaInfos getMetaInfos() throws SkormException {
+        try
+        {
+            return connectionPool.getConnection().getVendor();
+        }
+        catch (SQLException sqle)
+        {
+            throw new SkormException("could not get meta infos", sqle);
+        }
     }
 
     public JdbcConnector(DataSource dataSource)

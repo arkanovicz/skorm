@@ -137,11 +137,28 @@ fun Application.configureDatabase() {
     val creationScript = Application::class.java.getResource("/${CREATION_SCRIPT}").readText()
     exampleDatabase.mutationAttribute("create", creationScript)
     runBlocking {
-        exampleDatabase.perform("create")
+        exampleDatabase.perform("create") // or execute attribute directly...
+
+        // test data
+        val author = Author().apply {
+          name = "Motoki Noguchi"
+          insert()
+        }
+        val book = Book().apply {
+            title = "Le Language des Pierres"
+            insert()
+        }
+        AuthorBook().apply {
+            authorId = author.authorId
+            bookId = book.bookId
+            insert()
+        }
     }
 }
 
+typealias Author = ExampleDatabase.BookshelfSchema.Author
 typealias Book = ExampleDatabase.BookshelfSchema.Book
+typealias AuthorBook = ExampleDatabase.BookshelfSchema.AuthorBook
 
 fun Application.configureRouting() {
     routing {

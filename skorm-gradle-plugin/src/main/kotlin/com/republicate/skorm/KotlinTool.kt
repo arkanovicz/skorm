@@ -39,9 +39,9 @@ class KotlinTool {
         }
     }
 
-    fun camel(identifier: String) = snakeToCamel.apply(identifier)
+    fun camel(identifier: String) = snakeToCamel(identifier)
 
-    fun pascal(identifier: String) = snakeToPascal.apply(identifier)
+    fun pascal(identifier: String) = snakeToPascal(identifier)
 
     fun propertyType(property: GeneratePropertiesCodeTask.ObjectProperty): String {
         return when (property.type) {
