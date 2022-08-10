@@ -105,7 +105,13 @@ open class Entity protected constructor(val name: String, schema: Schema) {
     open suspend operator fun iterator() = browse().iterator()
 
     // Other operations are not visible directly, they are proxied from Instance
-    internal suspend fun insert(instance: Instance) = insertAttribute.execute(instance)
+    internal suspend fun insert(instance: Instance): Long {
+        return if (primaryKey.size == 1 && primaryKey.first().generated) {
+            insertAttribute.execute(instance, GeneratedKeyMarker(primaryKey.first().name))
+        } else {
+            insertAttribute.execute(instance)
+        }
+    }
     internal suspend fun update(instance: Instance) = updateAttribute.execute(instance)
     internal suspend fun delete(instance: Instance) = deleteAttribute.execute(instance)
     /*internal*/ suspend inline fun <reified T: Any?> eval(attrName: String, vararg params: Any?) = instanceAttributes.eval<T>(attrName, *params)
@@ -116,14 +122,17 @@ open class Entity protected constructor(val name: String, schema: Schema) {
 
 open class Instance(val entity: Entity) : Json.MutableObject() {
     val dirtyFields = BitSet(MAX_FIELDS) // init size needed for multiplatform
+    val generatedPrimaryKey: Boolean get() = entity.primaryKey.size == 1 && entity.primaryKey.first().generated
     var persisted = false
 
     // instance mutations
 
     suspend fun insert() {
         if (persisted) throw SkormException("cannot insert a persisted instance")
-
-        entity.insert(this)
+        if (generatedPrimaryKey && containsKey(entity.primaryKey.first().name)) throw SkormException("generated primary key value cannot be specified at insertion")
+        val ret = entity.insert(this)
+        if (generatedPrimaryKey) put(entity.primaryKey.first().name, ret)
+        else if (ret != 1L) throw SkormException("unexpected number of changed rows, expected 1, found $ret")
         persisted = true
         setClean()
     }

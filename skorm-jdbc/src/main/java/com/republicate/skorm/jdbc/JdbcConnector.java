@@ -71,7 +71,9 @@ public class JdbcConnector implements Connector
             {
                 PooledStatement stmt = statementPool.prepareUpdate(query, txConnection);
                 long changed = stmt.executeUpdate(params);
-                return changed;
+                return params.length > 0 && params[params.length - 1] instanceof GeneratedKeyMarker
+                        ? stmt.getLastInsertID(((GeneratedKeyMarker) params[params.length - 1]).getColName())
+                        : changed;
             }
             catch (SQLException sqle)
             {
@@ -255,7 +257,9 @@ public class JdbcConnector implements Connector
         {
             PooledStatement stmt = statementPool.prepareUpdate(query);
             long changed = stmt.executeUpdate(params);
-            return changed;
+            return params.length > 0 && params[params.length - 1] instanceof GeneratedKeyMarker
+                    ? stmt.getLastInsertID(((GeneratedKeyMarker) params[params.length - 1]).getColName())
+                    : changed;
         }
         catch (SQLException sqle)
         {

@@ -4,7 +4,13 @@ import com.republicate.kson.Json
 
 sealed interface Marker
 class StreamMarker<T>(val stream:T)
-class GeneratedKeyMarker(val colName: String)
+class GeneratedKeyMarker(val colName: String) {
+    companion object {
+        const val PARAM_KEY = "__generated_key__"
+    }
+
+    override fun toString() = "out:generated_key($colName)"
+}
 
 interface Transaction : Processor {
     suspend fun rollback(): Unit

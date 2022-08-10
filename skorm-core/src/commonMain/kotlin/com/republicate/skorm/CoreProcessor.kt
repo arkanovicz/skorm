@@ -29,12 +29,12 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     // CB TODO - register() should make calls to define()
     override fun register(entity: Entity) {
         register("${entity.path}/browse", SimpleQuery(entity.generateBrowseStatement()))
+        register("${entity.path}/insert", DynamicQuery {
+            entity.generateInsertStatement(it)
+        })
         if (entity.primaryKey.isNotEmpty()) {
             register("${entity.path}/delete", SimpleQuery(entity.generateDeleteStatement()))
             register("${entity.path}/fetch", SimpleQuery(entity.generateFetchStatement()))
-            register("${entity.path}/insert", DynamicQuery {
-                entity.generateInsertStatement(it)
-            })
             register("${entity.path}/update", DynamicQuery {
                 entity.generateUpdateStatement(it)
             })
@@ -49,11 +49,12 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
 
     override fun initialize() {
         connector.initialize(connector.configTag?.let { config.getObject(it) })
-        writeMapper = when (identifierInternalCase) {
+        writeMapper =  when (identifierInternalCase) {
             'U' -> {{ "$identifierQuoteChar${it.uppercase()}$identifierQuoteChar" }}
             'L' -> {{ "$identifierQuoteChar${it.lowercase()}$identifierQuoteChar" }}
             else -> { identityMapper }
         }
+        writeMapper = writeMapper.compose(camelToSnake)
     }
 
     override suspend fun eval(path: String, params: Map<String, Any?>): Any? {
@@ -103,7 +104,7 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     }
 
     override suspend fun perform(path: String, params: Map<String, Any?>): Long {
-        val queries = getMutationQueries(path, params.keys)
+        val queries = getMutationQueries(path, params.keys.filter { it !== GeneratedKeyMarker.PARAM_KEY })
         if (queries.size > 1) {
             var totalChanged = 0L
             transaction {
@@ -116,6 +117,11 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
             return totalChanged
         } else {
             val query = queries.first()
+//            return connector.mutate(query.stmt, *query.params.map { params[it] }.toMutableList().also { list ->
+//                if (query.params.isNotEmpty() && query.params.last() === GeneratedKeyMarker.PARAM_KEY) {
+//                    list.add(GeneratedKeyMarker.PARAM_KEY)
+//                }
+//            }.toTypedArray())
             return connector.mutate(query.stmt, *query.params.map { params[it] }.toTypedArray())
         }
     }
@@ -168,7 +174,11 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
         val names = params.joinToString(",") { writeMapper(it) }
         val values = Array(params.size) { "?" }.joinToString(",")
         val stmt = "INSERT INTO ${schema.name}.${writeMapper(name)} ($names) VALUES ($values);"
-        return QueryDefinition(stmt, params.toList())
+        var queryParams = params.toMutableList()
+        if (primaryKey.size == 1 && primaryKey.first().generated) {
+            queryParams.add(GeneratedKeyMarker.PARAM_KEY)
+        }
+        return QueryDefinition(stmt, queryParams)
     }
 
     private fun Entity.generateDeleteStatement(): QueryDefinition {

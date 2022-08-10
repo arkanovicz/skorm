@@ -28,10 +28,15 @@ sealed class Attribute<out T>(val holder: AttributeHolder, val name: String, val
 
         val params: Set<String> =
             if (useDirtyFields) {
-                if (rawValues.size != 1 || rawValues.first() !is Instance) {
+                if (rawValues.isEmpty() ||
+                    rawValues.first() !is Instance ||
+                    rawValues.size > 2 ||
+                    rawValues.size == 2 && rawValues.last() !is GeneratedKeyMarker
+                ) {
                     throw SkormException("Attributes based on dirty fields are only valid with a single instance parameter or receiver")
                 }
                 val instance = rawValues.first() as Instance
+                if (rawValues.size == 2) ret[GeneratedKeyMarker.PARAM_KEY] = rawValues.last()
                 instance.dirtyFieldNames().asSequence().toSet()
             } else {
                 parameters
@@ -66,7 +71,7 @@ sealed class Attribute<out T>(val holder: AttributeHolder, val name: String, val
                         }
                     }
                     is GeneratedKeyMarker -> {
-//                        ret[value.colName] = ??
+                        ret[GeneratedKeyMarker.PARAM_KEY] = value
                     }
                     else -> if (!consumedParam[i]) {
                         ret[p] = value

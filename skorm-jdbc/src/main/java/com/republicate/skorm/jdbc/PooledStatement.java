@@ -20,6 +20,7 @@ package com.republicate.skorm.jdbc;
  */
 
 
+import com.republicate.skorm.GeneratedKeyMarker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -180,7 +181,9 @@ public class PooledStatement // TODO implements RowValues
         }
         for (int i = 0; i < paramValues.length; ++i)
         {
-            preparedStatement.setObject(i + 1, paramValues[i]);
+            Object value = paramValues[i];
+            if (value instanceof GeneratedKeyMarker) break;
+            preparedStatement.setObject(i + 1, value);
         }
     }
 

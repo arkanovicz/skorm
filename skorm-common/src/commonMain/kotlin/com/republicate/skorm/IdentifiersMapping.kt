@@ -20,8 +20,10 @@ val snakeToCamel:  IdentifierMapper = { snake ->
     }
 }
 
+private val camelBoundary = Regex("(?<=[a-z])(?=[A-Z])")
+
 val camelToSnake: IdentifierMapper = { camel ->
-    val parts = camel.split("(?<=[a-z])(?=[A-Z])") // CB TODO factorize regex building
+    val parts = camel.split(camelBoundary) // CB TODO factorize regex building
     val builder = StringBuilder()
     var first = true
     for (part in parts) {
