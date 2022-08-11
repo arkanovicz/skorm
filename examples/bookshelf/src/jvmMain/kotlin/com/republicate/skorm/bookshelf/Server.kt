@@ -35,7 +35,7 @@ fun main(args: Array<String>): Unit =
 fun Application.module() {
     install(StatusPages) {
         exception<Throwable> { call: ApplicationCall, cause ->
-            logger.error(cause) {
+                logger.error(cause) {
                 "unable to render page"
             }
             call.respond(HttpStatusCode.InternalServerError)
@@ -162,8 +162,12 @@ typealias AuthorBook = ExampleDatabase.BookshelfSchema.AuthorBook
 
 fun Application.configureRouting() {
     routing {
-        static {
-            resources("web")
+        // TODO - web package
+        // static {
+        //     resources("web")
+        // }
+        static("/static") {
+            resources()
         }
 
         get("/") {
@@ -175,39 +179,31 @@ fun Application.configureRouting() {
                 println("responding html")
                 head {
                     script {
-                        src = "index.js"
+                        src = "/static/bookshelf.js"
                     }
                 }
                 body {
                     h1 { +"My Bookshelf" }
                     ul {
-                        println("inside ul")
                         runBlocking {
-//                            for (n in 1..10) {
-//                                li { +"$n" }
-//                            }
-                            println("before loop")
                             for (book in Book) {
-                                println("inside loop")
                                 li {
-                                    +"book ${book.title}"
-                                    button {
+                                    +book.title
+                                    +" " // CB TODO nbsp
+                                    button(type=ButtonType.submit, classes = "reserve") {
+                                        attributes["data-book_id"] = "${book.bookId}"
                                         +"reserve"
-                                        onClick = "reserve(${book.bookId})"
                                     }
                                 }
                             }
-                            println("after loop")
                         }
-                        println("after runBlocking")
                     }
                 }
-                println("after body")
             }
 
         }
 
-        route("/api") {
+        route("/api/example") {
             rest(ExampleDatabase.bookshelf)
         }
     }

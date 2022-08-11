@@ -15,11 +15,19 @@ import io.ktor.utils.io.core.*
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.*
+import mu.KotlinLogging
+
+private val logger = KotlinLogging.logger("skorm.client")
+
 
 /* CB TODO - deprecated in ktor-2.x ; but documentation is still not ready */
 class KsonSerializer(): JsonSerializer {
     override fun write(data: Any, contentType: ContentType) = TextContent(data.toString(), contentType)
-    override fun read(type: TypeInfo, body: Input) = Json.parseValue(body.toString()) ?: "null"
+    override fun read(type: TypeInfo, body: Input): Any {
+        val str = body.readText()
+        logger.info { "received: <$str>"}
+        return Json.parseValue(str) ?: "null"
+    }
 }
 
 class ApiClient(val baseUrl: String) : Processor {
@@ -41,7 +49,8 @@ class ApiClient(val baseUrl: String) : Processor {
     }
 
     private suspend fun process(url: String, parameters: Map<String, Any?>, httpMethod: HttpMethod): HttpResponse = coroutineScope {
-        client.request("https://ktor.io/") {
+        logger.info { "$httpMethod $url" }
+        client.request("$baseUrl$url") {
             method = httpMethod
             parametersOf(parameters.filterValues { it != null }.mapValues { listOf(it.value?.toString() ?: "") })
         }
@@ -73,13 +82,45 @@ class ApiClient(val baseUrl: String) : Processor {
     }
 
     override suspend fun retrieve(path: String, params: Map<String, Any?>, result: Entity?): Json.Object? {
-        val response = get(path, params)
-        return response.body()
+        var restPath = path
+        var restParams = params
+        if (result != null) {
+            val name = path.split("/").last()
+            when (name) {
+                "fetch" -> {
+                    restPath = restPath.substring(0, restPath.length - name.length) + params.entries.joinToString("/") { it.value.toString() }
+                    restParams = emptyMap()
+                }
+            }
+        }
+        val response = get(restPath, restParams)
+        val json = response.body<Json.Object>()
+        return result?.new()?.also {
+            it.putAll(json)
+            it.setClean()
+        } ?: json
     }
 
     override suspend fun query(path: String, params: Map<String, Any?>, result: Entity?): Sequence<Json.Object> {
-        val response = get(path, params)
-        return response.body()
+        var restPath = path
+        var restParams = params
+        if (result != null) {
+            val name = path.split("/").last()
+            when (name) {
+                "browse" -> {
+                    restPath = restPath.substring(0, restPath.length - name.length)
+                    restParams = emptyMap()
+                }
+            }
+        }
+        val response = get(restPath, restParams)
+        val sequence = response.body<Sequence<Json.Object>>()
+        return result?.let { sequence.map { obj ->
+            result.new().also {
+                it.putAll(obj)
+                it.setClean()
+            }
+        } }?.asSequence() ?: sequence
     }
 
     override suspend fun perform(path: String, params: Map<String, Any?>): Long {

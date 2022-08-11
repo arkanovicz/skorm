@@ -159,7 +159,7 @@ open class Instance(val entity: Entity) : Json.MutableObject() {
 
     // dirty flags handling
 
-    private fun setClean() {
+    fun setClean() {
         dirtyFields.clear()
     }
 

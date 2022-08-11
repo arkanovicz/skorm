@@ -46,6 +46,8 @@ kotlin {
                 }
             }
         }
+        compilations.all { compileKotlinTask.kotlinOptions.freeCompilerArgs += listOf("-Xir-minimized-member-names=false") }
+
         // nodejs() what?!
     }
 
@@ -59,6 +61,7 @@ kotlin {
                 implementation("io.ktor:ktor-client-serialization:$ktor_version")
                 implementation("io.ktor:ktor-client-logging:$ktor_version")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.2")
+                implementation("io.github.microutils:kotlin-logging:2.0.11")
             }
         }
         val commonTest by getting {

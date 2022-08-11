@@ -53,6 +53,10 @@ kotlin {
             commonWebpackConfig {
                 cssSupport.enabled = true
             }
+            dceTask {
+                dceOptions.devMode = true
+            }
+            compilations.all { compileKotlinTask.kotlinOptions.freeCompilerArgs += listOf("-Xir-minimized-member-names=false") }
         }
     }
     sourceSets {

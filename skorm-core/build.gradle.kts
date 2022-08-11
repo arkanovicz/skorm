@@ -35,6 +35,7 @@ kotlin {
     js(IR) {
         nodejs {
 	      }
+        compilations.all { compileKotlinTask.kotlinOptions.freeCompilerArgs += listOf("-Xir-minimized-member-names=false") }
     }
     val hostOs = System.getProperty("os.name")
     val isMingwX64 = hostOs.startsWith("Windows")

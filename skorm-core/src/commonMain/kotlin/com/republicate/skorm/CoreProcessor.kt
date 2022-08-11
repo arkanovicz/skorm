@@ -146,10 +146,8 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
 
     private fun Instance.putInternal(names: Array<String>, values: Array<Any?>) {
         names.zip(values).forEach { (name, value) ->
-            // TODO
-//            val filterKey = "${entity.path}/$name"
-//            put(name, writeFilters[filterKey]?.apply(value) ?: value)
-            put(name, value)
+            // TODO - review
+            put(name.lowercase(), value)
         }
     }
 
@@ -157,7 +155,7 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     private fun Entity.generateBrowseStatement(): QueryDefinition {
         val stmt = "SELECT ${
             fields.values.joinToString(", ") { writeMapper(it.name) }
-        } FROM ${schema.name}.$name;"
+        } FROM ${schema.name}.${writeMapper(name)};"
         return QueryDefinition(stmt, emptyList())
     }
 
