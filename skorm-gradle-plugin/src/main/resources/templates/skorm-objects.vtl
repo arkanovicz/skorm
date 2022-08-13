@@ -10,15 +10,15 @@ import com.republicate.skorm.*
 #set ($databaseClass = "#pascal($database.name)Database")
 class $databaseClass(processor: Processor): Database("$database.name", processor) {
     companion object {
-        private lateinit var dbInstance: Database
-        private fun isInstantiated() = this::dbInstance.isInitialized
+        lateinit var instance: Database
+        private fun isInstantiated() = this::instance.isInitialized
 #foreach ($schema in $database.schemas.values())
-        val #camel($schema.name): #pascal($schema.name)Schema by lazy { #pascal($schema.name)Schema(dbInstance) }
+        val #camel($schema.name): #pascal($schema.name)Schema by lazy { #pascal($schema.name)Schema(instance) }
 #end
     }
     init {
         if (isInstantiated()) throw RuntimeException("$databaseClass instance already crated")
-        dbInstance = this
+        instance = this
     }
     override fun initialize() {
   #foreach ($schema in $database.schemas.values())

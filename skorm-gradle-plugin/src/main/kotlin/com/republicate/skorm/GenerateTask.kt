@@ -79,13 +79,10 @@ abstract class GenerateTask: DefaultTask() {
         db
     }
 
-    @get:Internal
-    protected open val templatePath = ""
-
     private val context: VelocityContext by lazy {
         VelocityContext().apply {
             put("kotlin", KotlinTool())
-            put("log", LogTool())
+            put("log", logger)
             put("package", destPackage.get())
             put("database", database)
             populateContext(this)
@@ -94,7 +91,7 @@ abstract class GenerateTask: DefaultTask() {
 
     protected open fun populateContext(context: VelocityContext) {}
 
-    protected fun generateCode() {
+    protected fun generateCode(templatePath: String, destFile: RegularFileProperty) {
         logger.lifecycle("$tag modelStructure is: ${model.orNull}")
         logger.lifecycle("$tag datasource is: ${datasource.orNull}")
         logger.lifecycle("$tag destPackage is: ${destPackage.orNull}")

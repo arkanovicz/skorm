@@ -15,7 +15,6 @@ val bookshelf = ExampleDatabase.bookshelf
 
 typealias Author = ExampleDatabase.BookshelfSchema.Author
 typealias Book = ExampleDatabase.BookshelfSchema.Book
-typealias AuthorBook = ExampleDatabase.BookshelfSchema.AuthorBook
 
 fun reserve(bookId: Int) {
     logger.info { "reserve $bookId" }
@@ -28,6 +27,7 @@ fun main() {
     window.onload = {
         logger.info { "window loaded" }
         exampleDatabase.initialize()
+        exampleDatabase.initJoins()
         logger.info { "db initialized" }
         sel(".reserve").click { event ->
             logger.info { "reserve" }

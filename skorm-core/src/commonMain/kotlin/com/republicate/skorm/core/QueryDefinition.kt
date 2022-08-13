@@ -1,6 +1,8 @@
-package com.republicate.skorm
+package com.republicate.skorm.core
 
-import com.republicate.skorm.Query.Companion.ParserState.*
+import com.republicate.skorm.SkormException
+import com.republicate.skorm.concurrentMapOf
+import com.republicate.skorm.core.Query.Companion.ParserState.*
 
 data class QueryDefinition(val stmt: String, val params: List<String>) {
 }
@@ -58,7 +60,7 @@ sealed interface Query {
                                 INITIAL, PARAMETER -> throw SkormException("unexpected case")
                                 ERROR -> throw SkormException("provided queries should not have '?' markers")
                                 END -> {
-                                    queries.add(QueryDefinition(queryPart.toString(), params))
+                                    queries.add(QueryDefinition(queryPart.toString(), params.toList()))
                                     queryPart.clear()
                                     params.clear()
                                 }

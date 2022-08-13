@@ -20,10 +20,10 @@ abstract class GenerateObjectsCodeTask : GenerateTask() {
         group = "code generation"
     }
 
-    override val templatePath = "templates/skorm-objects.vtl"
+    private val templatePath = "templates/skorm-objects.vtl"
 
     @TaskAction
     fun generateObjectsCode() {
-        generateCode()
+        generateCode(templatePath, destFile)
     }
 }

@@ -1,11 +1,6 @@
-package com.republicate.skorm
+package com.republicate.skorm.core
 
-import com.ionspin.kotlin.bignum.decimal.BigDecimal
-import com.ionspin.kotlin.bignum.integer.BigInteger
-import kotlinx.datetime.Instant
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.LocalTime
+import com.republicate.skorm.*
 
 inline fun <reified T> AttributeHolder.scalarAttribute(name: String, query: String): ScalarAttribute<T> {
     val queryDef = Query.parse(query)

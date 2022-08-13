@@ -2,8 +2,11 @@ package com.republicate.skorm.bookshelf
 
 import com.republicate.kson.Json
 import com.republicate.kson.toJsonObject
-import com.republicate.skorm.*
+import com.republicate.skorm.SkormException
+import com.republicate.skorm.core.CoreProcessor
+import com.republicate.skorm.core.mutationAttribute
 import com.republicate.skorm.jdbc.JdbcConnector
+import com.republicate.skorm.rest
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.serialization.*
@@ -132,6 +135,7 @@ fun Application.configureDatabase() {
         exampleDatabase.configure(toMap().toJsonObject())
     }
     exampleDatabase.initialize()
+    exampleDatabase.initJoins()
 
     println("Creating database...")
     val creationScript = Application::class.java.getResource("/${CREATION_SCRIPT}").readText()
@@ -146,11 +150,7 @@ fun Application.configureDatabase() {
         }
         val book = Book().apply {
             title = "Le Language des Pierres"
-            insert()
-        }
-        AuthorBook().apply {
             authorId = author.authorId
-            bookId = book.bookId
             insert()
         }
     }
@@ -158,7 +158,6 @@ fun Application.configureDatabase() {
 
 typealias Author = ExampleDatabase.BookshelfSchema.Author
 typealias Book = ExampleDatabase.BookshelfSchema.Book
-typealias AuthorBook = ExampleDatabase.BookshelfSchema.AuthorBook
 
 fun Application.configureRouting() {
     routing {
@@ -187,9 +186,12 @@ fun Application.configureRouting() {
                     ul {
                         runBlocking {
                             for (book in Book) {
+                                val authorName = book.author().name
                                 li {
                                     +book.title
-                                    +" " // CB TODO nbsp
+                                    i { +" by " }
+                                    +authorName
+                                    br()
                                     button(type=ButtonType.submit, classes = "reserve") {
                                         attributes["data-book_id"] = "${book.bookId}"
                                         +"reserve"

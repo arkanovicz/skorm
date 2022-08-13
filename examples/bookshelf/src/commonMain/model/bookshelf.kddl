@@ -15,12 +15,11 @@ database example {
     }
 
     table borrowing {
-      reservation_date date?
-      lending_date date?
+      borrowing_date date?
       restitution_date date?
     }
 
-    author *-* book
+    book --> author
     borrowing -> book
     borrowing -> dude
 

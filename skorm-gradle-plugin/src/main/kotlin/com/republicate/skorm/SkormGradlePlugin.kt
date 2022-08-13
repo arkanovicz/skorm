@@ -5,8 +5,9 @@ import org.gradle.api.Project
 
 const val EXTENSION_NAME = "skorm"
 const val GEN_OBJECTS_TASK_NAME = "generateSkormObjectsCode"
-const val GEN_PROPERTIES_TASK_NAME = "generateSkormPropertiesCode"
-const val POPULATE_CORE_PROCESSOR_TASK_NAME = "generateSkormProcessor"
+const val GEN_JOINS_ATTRIBUTES_NAME = "generateSkormJoinsCode"
+//const val GEN_PROPERTIES_TASK_NAME = "generateSkormPropertiesCode"
+//const val POPULATE_CORE_PROCESSOR_TASK_NAME = "generateSkormProcessor"
 const val GEN_DATABASE_CREATION_SCRIPT_TASK_NAME = "generateDatabaseCreationScript"
 
 abstract class SkormGradlePlugin : Plugin<Project> {
@@ -24,23 +25,34 @@ abstract class SkormGradlePlugin : Plugin<Project> {
             it.destFile.set(extension.destStructureFile)
         }
 
-        // Populate queries in core processor
-        project.tasks.register(POPULATE_CORE_PROCESSOR_TASK_NAME, GenerateProcessorTask::class.java) {
+        // Generate tables joins attributes
+        project.tasks.register(GEN_JOINS_ATTRIBUTES_NAME, GenerateJoinAttributesCodeTask::class.java) {
             it.model.set(extension.definition)
             it.datasource.set(extension.datasource)
             it.destPackage.set(extension.destPackage)
-            it.destFile.set(extension.destPopulateFile)
+            it.destFile.set(extension.destJoinsFile)
+            it.destCoreFile.set(extension.destCoreJoinsFile)
+            it.destClientFile.set(extension.destClientJoinsFile)
         }
 
-        // Generate database properties
-        project.tasks.register(GEN_PROPERTIES_TASK_NAME, GeneratePropertiesCodeTask::class.java) {
-            it.model.set(extension.definition)
-            it.datasource.set(extension.datasource)
-            it.propertiesFile.set(extension.properties)
-            it.destPackage.set(extension.destPackage)
-            it.destFile.set(extension.destPropertiesFile)
-        }
 
+//        // Populate queries in core processor
+//        project.tasks.register(POPULATE_CORE_PROCESSOR_TASK_NAME, GenerateProcessorTask::class.java) {
+//            it.model.set(extension.definition)
+//            it.datasource.set(extension.datasource)
+//            it.destPackage.set(extension.destPackage)
+//            it.destFile.set(extension.destPopulateFile)
+//        }
+//
+//        // Generate database properties
+//        project.tasks.register(GEN_PROPERTIES_TASK_NAME, GeneratePropertiesCodeTask::class.java) {
+//            it.model.set(extension.definition)
+//            it.datasource.set(extension.datasource)
+//            it.propertiesFile.set(extension.properties)
+//            it.destPackage.set(extension.destPackage)
+//            it.destFile.set(extension.destPropertiesFile)
+//        }
+//
         // Generate database creation script
         project.tasks.register(GEN_DATABASE_CREATION_SCRIPT_TASK_NAME, GenerateCreationScriptTask::class.java) {
             it.model.set(extension.definition)

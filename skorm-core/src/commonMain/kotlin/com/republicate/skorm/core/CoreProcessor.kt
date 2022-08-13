@@ -1,6 +1,7 @@
-package com.republicate.skorm
+package com.republicate.skorm.core
 
 import com.republicate.kson.Json
+import com.republicate.skorm.*
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger("core")
@@ -42,6 +43,7 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     }
 
     fun define(path: String, definition: Query) {
+        logger.trace { "defining $path to $definition" }
         queries.put(path, definition)?.let {
             throw SkormException("attribute $path already defined")
         }

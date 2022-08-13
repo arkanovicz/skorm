@@ -12,6 +12,7 @@ open class Database protected constructor(name: String, override val processor: 
 
     private val _schemas = mutableMapOf<String, Schema>()
     val schemas: Collection<Schema> get() = _schemas.values
+    fun schema(name: String) = _schemas[name] ?: throw SkormException("no such schema: $name")
     internal fun addSchema(schema: Schema) {
         _schemas[schema.name] = schema
     }
@@ -19,7 +20,7 @@ open class Database protected constructor(name: String, override val processor: 
     override fun initialize() {
         if (initialized) throw RuntimeException("Already initialized")
         processor.initialize(processor.configTag?.let { config.getObject(it) })
-        initialized = true
+        initialized = true // CB TODO - it really means *populated* (via reverse engineering or structure file)
         for (entity in schemas.flatMap { it.entities }) {
             processor.register(entity)
         }
@@ -28,6 +29,7 @@ open class Database protected constructor(name: String, override val processor: 
 
 open class Schema protected constructor(name: String, parent: Database) : AttributeHolder(name, parent) {
     init {
+        @Suppress("LeakingThis")
         parent.addSchema(this)
     }
 
@@ -36,6 +38,7 @@ open class Schema protected constructor(name: String, parent: Database) : Attrib
 
     private val _entities = mutableMapOf<String, Entity>()
     val entities: Collection<Entity> get() = _entities.values
+    fun entity(name: String) = _entities[name] ?: throw SkormException("no such entity: $name")
     fun addEntity(entity: Entity) {
         if (database.initialized) throw RuntimeException("Already initialized")
         _entities[entity.name] = entity
@@ -44,6 +47,7 @@ open class Schema protected constructor(name: String, parent: Database) : Attrib
 
 open class Entity protected constructor(val name: String, schema: Schema) {
     init {
+        @Suppress("LeakingThis")
         schema.addEntity(this)
     }
 

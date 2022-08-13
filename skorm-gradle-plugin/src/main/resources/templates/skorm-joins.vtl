@@ -1,0 +1,22 @@
+package $package
+
+#set ($databaseClass = "#pascal($database.name)Database")
+
+#foreach ($schema in $database.schemas.values())
+  #set($schemaClass = "${databaseClass}.#pascal($schema.name)Schema")
+  #set($schemaInstance = "${databaseClass}.#camel($schema.name)")
+  #foreach ($table in $schema.tables.values())
+    #set ($instanceClass = "#pascal($table.name)")
+    #foreach($fk in $table.foreignKeys)
+
+// forward foreign key
+      #set($attrName = "#camel($fk.towards.name)")
+suspend fun ${schemaClass}.#pascal($fk.from.name).${attrName}(): ${schemaClass}.#pascal($fk.towards.name) = entity.retrieve("$attrName", this)
+
+// reverse foreign key
+      #set($attrName = "#camel($fk.from.name)")
+suspend fun ${schemaClass}.#pascal($fk.towards.name).#plural($attrName)(): Sequence<${schemaClass}.#pascal($fk.from.name)> = entity.query("#plural($attrName)", this)
+
+    #end
+  #end
+#end

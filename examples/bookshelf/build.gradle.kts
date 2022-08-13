@@ -48,13 +48,11 @@ kotlin {
         }
     }
     js(IR) {
+        useCommonJs()
         binaries.executable()
         browser {
             commonWebpackConfig {
                 cssSupport.enabled = true
-            }
-            dceTask {
-                dceOptions.devMode = true
             }
             compilations.all { compileKotlinTask.kotlinOptions.freeCompilerArgs += listOf("-Xir-minimized-member-names=false") }
         }
@@ -100,6 +98,7 @@ kotlin {
             }
         }
         val jsMain by getting {
+            kotlin.srcDir(file("build/generated-src/jsMain/kotlin"))
             dependencies {
                 implementation(project(":skorm-api-client"))
             }
@@ -131,5 +130,5 @@ tasks.named<Jar>("jvmJar") {
 
 tasks.filter { it.name.startsWith("compileKotlin") }.forEach {
     it.dependsOn("generateSkormObjectsCode")
-    // it.dependsOn("generateSkormPropertiesCode")
+    it.dependsOn("generateSkormJoinsCode")
 }

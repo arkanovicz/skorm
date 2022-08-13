@@ -1,10 +1,11 @@
 package com.republicate.skorm
 
 import com.republicate.kddl.ASTField
+import com.republicate.kddl.ASTForeignKey
 import com.republicate.kddl.ASTSchema
 import groovyjarjarantlr.SemanticException
+import org.atteo.evo.inflector.English
 import java.util.*
-import com.republicate.skorm.GeneratePropertiesCodeTask.PropertyType.*
 
 fun String.lowercase() = toLowerCase(Locale.ROOT)
 
@@ -12,6 +13,7 @@ class KotlinTool {
     companion object {
         private val decomp = Regex("^(\\w+)\\s*(?:\\((?:(\\d+|'(?:[^']|'')*')(?:\\s*,\\s*(\\d+|'(?:[^']|'')*'))*)?\\))?$")
         private val text = setOf("text", "varchar")
+        private val enInflector = English(English.MODE.ENGLISH_CLASSICAL)
     }
 
     fun type(name: String, type: String): String {
@@ -43,11 +45,31 @@ class KotlinTool {
 
     fun pascal(identifier: String) = snakeToPascal(identifier)
 
-    fun propertyType(property: GeneratePropertiesCodeTask.ObjectProperty): String {
-        return when (property.type) {
-            SCALAR -> "Any?"
-            ROW -> "${pascal(property.entity!!)}${if (property.nullable) "?" else ""}"
-            ROWSET -> "Sequence<${property.entity?.let {pascal(it)} ?: "Instance"}>"
-        }
+//    fun propertyType(property: GeneratePropertiesCodeTask.ObjectProperty): String {
+//        return when (property.type) {
+//            SCALAR -> "Any?"
+//            ROW -> "${pascal(property.entity!!)}${if (property.nullable) "?" else ""}"
+//            ROWSET -> "Sequence<${property.entity?.let {pascal(it)} ?: "Instance"}>"
+//        }
+//    }
+
+    fun plural(str: String) = enInflector.getPlural(str)
+
+    fun foreignKeyForwardQuery(fk: ASTForeignKey): String {
+        return "SELECT * FROM ${fk.towards.schema.name}.${fk.towards.name} WHERE ${
+            fk.fields.zip(fk.towards.getPrimaryKey()).joinToString(" AND ") { 
+                "${fk.towards.name}.${it.second.name} = {${it.first.name}}"
+            }
+        };"
     }
+
+    fun foreignKeyReverseQuery(fk: ASTForeignKey): String {
+        return "SELECT * FROM ${fk.from.schema.name}.${fk.from.name} WHERE ${
+            fk.fields.zip(fk.towards.getPrimaryKey()).joinToString(" AND ") {
+                "${fk.from.name}.${it.first.name} = {${it.second.name}}"
+            }
+        };"
+    }
+
+    fun fieldNames(fields: Set<ASTField>) = fields.joinToString(",") { "\"it.name\"" }
 }

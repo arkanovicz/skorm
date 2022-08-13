@@ -13,6 +13,7 @@ dependencies {
     implementation(gradleApi())
     implementation("org.apache.velocity:velocity-engine-core:2.3")
     implementation("org.apache.velocity.tools:velocity-tools-generic:3.1")
+    implementation("org.atteo:evo-inflector:1.3")
     api("com.republicate.kddl:kddl:0.7.4")
     testImplementation(gradleTestKit())
     testImplementation("junit:junit:4.12")
