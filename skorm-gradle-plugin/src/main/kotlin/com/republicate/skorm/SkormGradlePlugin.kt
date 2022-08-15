@@ -6,8 +6,7 @@ import org.gradle.api.Project
 const val EXTENSION_NAME = "skorm"
 const val GEN_OBJECTS_TASK_NAME = "generateSkormObjectsCode"
 const val GEN_JOINS_ATTRIBUTES_NAME = "generateSkormJoinsCode"
-//const val GEN_PROPERTIES_TASK_NAME = "generateSkormPropertiesCode"
-//const val POPULATE_CORE_PROCESSOR_TASK_NAME = "generateSkormProcessor"
+const val GEN_RUNTIME_MODEL_NAME = "generateSkormModelCode"
 const val GEN_DATABASE_CREATION_SCRIPT_TASK_NAME = "generateDatabaseCreationScript"
 
 abstract class SkormGradlePlugin : Plugin<Project> {
@@ -19,7 +18,7 @@ abstract class SkormGradlePlugin : Plugin<Project> {
 
         // Generate database objects
         project.tasks.register(GEN_OBJECTS_TASK_NAME, GenerateObjectsCodeTask::class.java) {
-            it.model.set(extension.definition)
+            it.structure.set(extension.structure)
             it.datasource.set(extension.datasource)
             it.destPackage.set(extension.destPackage)
             it.destFile.set(extension.destStructureFile)
@@ -27,12 +26,21 @@ abstract class SkormGradlePlugin : Plugin<Project> {
 
         // Generate tables joins attributes
         project.tasks.register(GEN_JOINS_ATTRIBUTES_NAME, GenerateJoinAttributesCodeTask::class.java) {
-            it.model.set(extension.definition)
+            it.structure.set(extension.structure)
             it.datasource.set(extension.datasource)
             it.destPackage.set(extension.destPackage)
             it.destFile.set(extension.destJoinsFile)
             it.destCoreFile.set(extension.destCoreJoinsFile)
             it.destClientFile.set(extension.destClientJoinsFile)
+        }
+
+        // Generate runtime model objects and attributes
+        project.tasks.register(GEN_RUNTIME_MODEL_NAME, GenerateRuntimeModelTask::class.java) {
+            it.runtimeModel.set(extension.runtimeModel)
+            it.destPackage.set(extension.destPackage)
+            it.destFile.set(extension.destModelFile)
+            it.destCoreFile.set(extension.destCoreModelFile)
+            it.destClientFile.set(extension.destClientModelFile)
         }
 
 
@@ -55,7 +63,7 @@ abstract class SkormGradlePlugin : Plugin<Project> {
 //
         // Generate database creation script
         project.tasks.register(GEN_DATABASE_CREATION_SCRIPT_TASK_NAME, GenerateCreationScriptTask::class.java) {
-            it.model.set(extension.definition)
+            it.structure.set(extension.structure)
             it.destFile.set(extension.destCreationScriptFile)
         }
     }

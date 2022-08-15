@@ -3,7 +3,9 @@ package $package
 import com.republicate.skorm.bagAttribute
 import com.republicate.skorm.instanceAttribute
 
-// attributes declaration for client
+#set ($databaseClass = "#pascal($database.name)Database")
+
+// join attributes declaration for client
 fun ${package}.${databaseClass}.initJoins() {
 #foreach ($schema in $database.schemas.values())
     #set($schemaClass = "${databaseClass}.#pascal($schema.name)Schema")
@@ -11,9 +13,9 @@ fun ${package}.${databaseClass}.initJoins() {
     #foreach ($table in $schema.tables.values())
         #foreach($fk in $table.foreignKeys)
     // forward foreign key attribute
-    ${schemaInstance}.entity("#camel($fk.from.name)").instanceAttributes.#if($fk.nonNull)instanceAttribute#{else}nullableInstanceAttribute#end("#camel($fk.towards.name)", ${schemaClass}.#pascal($fk.towards.name), setOf(#names($fk.towards.primaryKey)))
+    ${schemaInstance}.entity("#camel($fk.from.name)").instanceAttributes.#if($fk.nonNull)instanceAttribute#{else}nullableInstanceAttribute#end("#camel($fk.towards.name)", ${schemaClass}.#pascal($fk.towards.name), setOf(#fieldNames($fk.towards.primaryKey)))
     // reverse foreign key attribute
-    ${schemaInstance}.entity("#camel($fk.towards.name)").instanceAttributes.bagAttribute("#plural("#camel($fk.from.name)")", ${schemaClass}.#pascal($fk.from.name), setOf(#names($fk.fields)))
+    ${schemaInstance}.entity("#camel($fk.towards.name)").instanceAttributes.bagAttribute("#plural("#camel($fk.from.name)")", ${schemaClass}.#pascal($fk.from.name), setOf(#fieldNames($fk.fields)))
         #end
     #end
 #end

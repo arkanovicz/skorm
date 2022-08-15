@@ -43,7 +43,7 @@ class $databaseClass(processor: Processor): Database("$database.name", processor
   #foreach ($table in $schema.tables.values())
     #set ($instanceClass = "#pascal($table.name)")
     #set ($instanceObject = "#camel($table.name)")
-        class $instanceClass: Instance(Companion) {
+        open class $instanceClass: Instance(Companion) {
             companion object: Entity("$instanceObject", $schemaObject) {
                 override fun new(): $instanceClass = $instanceClass()
     #if ($table.primaryKey.size() > 0)

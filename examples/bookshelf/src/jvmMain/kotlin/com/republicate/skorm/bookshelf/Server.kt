@@ -187,6 +187,7 @@ fun Application.configureRouting() {
                         runBlocking {
                             for (book in Book) {
                                 val authorName = book.author().name
+                                val currentBorrower = book.currentBorrower()
                                 li {
                                     +book.title
                                     i { +" by " }

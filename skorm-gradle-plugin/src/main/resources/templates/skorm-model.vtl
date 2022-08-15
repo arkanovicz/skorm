@@ -1,0 +1,75 @@
+package $package
+
+import kotlinx.datetime.*
+
+#set ($databaseClass = "#pascal($database.name)Database")
+
+#foreach($schema in $database.schemas)
+  #set($schemaClass = "${databaseClass}.#pascal($schema.name)Schema")
+  #set($schemaInstance = "${databaseClass}.#camel($schema.name)")
+  #foreach($item in $schema.items)
+    #if($item.type.isComposite())
+        #if($item.type.parent)
+          #set($parent = "#pascal($database.name)Database.#pascal($schema.name)Schema.#pascal($item.type.parent)")
+        #else
+          #set($parent = "Json.Object")
+        #end
+class #pascal($item.name): ${parent}() {
+      #foreach ($field in $item.type.fields)
+    val #camel($field.name): ${field.type}#if($field.nullable)?#end
+        get() = get${field.type}("$field.name")#if(!$field.nullable)!!#end
+      #end
+
+    override fun putAll(from: Map<out String, Any?>) {
+        super.putAll(from)
+      #foreach ($field in $item.type.fields)
+        if (from.containsKey("$field.name")) {
+            internalPut("$field.name", from["$field.name"])
+        }
+      #end
+    }
+}
+    #end
+
+    #if($item.receiver)
+      #set($receiver = "${schemaClass}.#capitalize($item.receiver)")
+      #set($holder = "${schemaInstance}.entity(""${item.receiver}"").instanceAttributes")
+    #else
+      #set($receiver = $schemaClass)
+      #set($holder = $schemaInstance)
+    #end
+
+    #set($cast = '')
+    #set($generics = '')
+    #if($item.transaction)
+      #set($verb = 'attempt')
+    #elseif($item.action)
+      #set($verb = 'perform')
+    #else
+      #if($item.type.isComposite())
+        #set($generics = "<#capitalize($item.name)#if($item.nullable)?#end>")
+        #if(!$item.multiple)
+          #set($cast=" as #capitalize($item.name)")
+        #end
+      #elseif($item.type.isEntity)
+        #set($generics = "<#capitalize($item.type.name)#if($item.nullable)?#end>")
+        #if(!$item.multiple)
+          #set($cast=" as #capitalize($item.name)")
+        #end
+      #else
+        #set($generics = "<$item.type.name#if($item.nullable)?#end>")
+      #end
+      #if($item.multiple)
+        #set($verb = 'query')
+      #elseif($item.type.isComposite() && $item.type.parent || $item.type.isEntity)
+        #set($verb = 'retrieve')
+      #else
+        #set($verb = 'eval')
+      #end
+    #end
+
+// attribute ${item.receiver|$schema.name}.$item.name
+suspend fun ${receiver}.`${item.name}`(#arguments($item.arguments)) = ${holder}.${verb}${generics}("$item.name", #values($item.arguments))$cast
+
+  #end
+#end

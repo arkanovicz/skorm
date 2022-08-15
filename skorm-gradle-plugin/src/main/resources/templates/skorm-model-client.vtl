@@ -1,0 +1,60 @@
+package $package
+
+import kotlinx.datetime.*
+import com.republicate.skorm.*
+
+#set ($databaseClass = "#pascal($database.name)Database")
+
+// runtime model attributes declaration for client
+fun ${package}.${databaseClass}.initRuntimeModel() {
+#foreach ($schema in $database.schemas)
+    #set($schemaClass = "${databaseClass}.#pascal($schema.name)Schema")
+    #set($schemaInstance = "${databaseClass}.#camel($schema.name)")
+    #foreach ($item in $schema.items)
+      #set($entityParam = false)
+      #if($item.receiver)
+        #set($receiver = "${schemaInstance}.entity(""${item.receiver}"").instanceAttributes")
+      #else
+        #set($receiver = "${schemaInstance}")
+      #end
+      #if($item.action)
+        #set($attribute = 'mutationAttribute')
+      #elseif($item.type.isComposite())
+        #if($item.type.parent)
+          #set($entityParam = "#pascal($database.name)Database.#pascal($schema.name)Schema.#pascal($item.type.parent)")
+          #if($item.multiple)
+            #set($attribute = 'bagAttribute')
+          #elseif($item.nullable)
+            #set($attribute = 'nullableInstanceAttribute')
+          #else
+            #set($attribute = 'instanceAttribute')
+          #end
+        #else
+          #if($item.multible)
+            #set($attribute = 'rowSetAttribute')
+          #elseif($item.nullable)
+            #set($attribute = 'nullableRowAttribute')
+          #else
+            #set($attribute = 'rowAttribute')
+          #end
+        #end
+      #elseif ($item.type.isEntity)
+        #set($entityParam = "#pascal($database.name)Database.#pascal($schema.name)Schema.#pascal($item.type.name)")
+        #if($item.nullable)
+          #set($attribute = 'nullableInstanceAttribute')
+        #else
+          #set($attribute = 'instanceAttribute')
+        #end
+      #else
+        #if($item.nullable)
+##          #set($attribute = "nullable#capitalize(${item.type.name})Attribute")
+          #set($attribute = "scalarAttribute<${item.type.name}?>")
+        #else
+##          #set($attribute = "#decapitalize($item.type.name)Attribute") // item.type.name = $item.type.name, decapitalize = $item.type.name.decapitalize()
+          #set($attribute = "scalarAttribute<${item.type.name}>")
+        #end
+      #end
+    ${receiver}.${attribute}("$item.name", #if($entityParam)$entityParam, #{end}setOf(#names($item.arguments)))
+    #end
+#end
+}

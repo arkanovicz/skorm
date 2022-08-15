@@ -182,6 +182,8 @@ open class Instance(val entity: Entity) : Json.MutableObject() {
         return ret
     }
 
+    // to allow subclasses to add key-value pairs besides entity columns
+    protected fun internalPut(key: String, value: Any?): Any? = super.put(key, value)
 
     suspend inline fun <reified T: Any?> eval(attrName: String, vararg params: Any?) = entity.eval<T>(attrName, this, *params)
     suspend inline fun <reified T: Json.Object?> retrieve(attrName: String, vararg params: Any?) = entity.retrieve<T>(attrName, entity, this, *params)

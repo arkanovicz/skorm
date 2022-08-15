@@ -24,7 +24,7 @@ class KotlinTool {
             "enum" -> pascal(name) + "Enum"
             "serial" -> "Int"
             "date" -> "LocalDate"
-            "datetime" -> "Instant"
+            "datetime" -> "LocalDateTime"
             "int", "integer" -> "Int"
             "long" -> "Long"
             "float" -> "Float"
@@ -71,5 +71,15 @@ class KotlinTool {
         };"
     }
 
-    fun fieldNames(fields: Set<ASTField>) = fields.joinToString(",") { "\"it.name\"" }
+    fun fieldNames(fields: Set<ASTField>) = fields.joinToString(",") { "\"${it.name}\"" }
+
+    fun names(fields: Set<String>) = fields.joinToString(",") { "\"$it\"" }
+
+    fun arguments(fields: Set<String>) = fields.joinToString(",") { "${it}: Any?" }
+
+    fun values(fields: Set<String>) = fields.joinToString(",")
+
+    fun capitalize(str: String) = str.replaceFirstChar { it.uppercase() }
+
+    fun decapitalize(str: String) = str.replaceFirstChar { it.lowercase() }
 }

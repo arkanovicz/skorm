@@ -16,14 +16,9 @@ buildscript {
 }
 
 skorm {
-    definition.set(File("src/commonMain/model/bookshelf.kddl"))
-//    properties.set(File("src/commonMain/model/bookshelf.ksql"))
+    structure.set(File("src/commonMain/model/bookshelf.kddl"))
     destPackage.set("com.republicate.skorm.bookshelf")
-
-//    database("example") {
-//    }
-//    destStructureFile.set(File("generated-src/..."))
-//    destPropertiesFile.set(File("generated-src/..."))
+    runtimeModel.set(File("src/commonMain/model/bookshelf.ksql"))
 }
 
 val ktor_version: String by project
@@ -131,4 +126,5 @@ tasks.named<Jar>("jvmJar") {
 tasks.filter { it.name.startsWith("compileKotlin") }.forEach {
     it.dependsOn("generateSkormObjectsCode")
     it.dependsOn("generateSkormJoinsCode")
+    it.dependsOn("generateSkormModelCode")
 }

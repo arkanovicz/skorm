@@ -9,6 +9,22 @@ plugins {
      maven("https://jitpack.io") // for antlr-kotlin
  }
 
+buildscript {
+    repositories {
+        mavenCentral()
+        maven("https://jitpack.io")
+    }
+    dependencies {
+        classpath("com.strumenta.antlr-kotlin:antlr-kotlin-gradle-plugin:6304d5c1c4")
+    }
+}
+
+kotlin.sourceSets.main {
+    kotlin.srcDirs(
+        file("$buildDir/generated-src/main/kotlin"),
+    )
+}
+
 dependencies {
     implementation(gradleApi())
     implementation("org.apache.velocity:velocity-engine-core:2.3")
@@ -19,6 +35,8 @@ dependencies {
     testImplementation("junit:junit:4.12")
     testImplementation(kotlin("test"))
     testImplementation(kotlin("test-junit"))
+    // as api to expose CharStream
+    api("com.strumenta.antlr-kotlin:antlr-kotlin-runtime:6304d5c1c4")
 }
 
 tasks {
@@ -33,6 +51,25 @@ tasks {
         targetCompatibility = JavaVersion.VERSION_1_8.toString()
     }
 }
+
+tasks.register<com.strumenta.antlrkotlin.gradleplugin.AntlrKotlinTask>("generateKotlinGrammarSource") {
+    antlrClasspath = configurations.detachedConfiguration(
+        project.dependencies.create("com.strumenta.antlr-kotlin:antlr-kotlin-target:6304d5c1c4")
+    )
+    // maxHeapSize = "64m"
+    packageName = "com.republicate.skorm.parser"
+    arguments = listOf("-no-visitor", "-no-listener")
+    source = project.objects
+        .sourceDirectorySet("antlr", "antlr")
+        .srcDir("src/main/antlr").apply {
+            include("*.g4")
+        }
+    outputDirectory = File("build/generated-src/main/kotlin")
+    group = "code generation"
+}
+
+tasks.filter { it.name.startsWith("compileKotlin") }.forEach { it.dependsOn("generateKotlinGrammarSource") }
+
 
 gradlePlugin {
     plugins {

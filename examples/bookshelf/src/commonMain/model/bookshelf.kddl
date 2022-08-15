@@ -15,7 +15,7 @@ database example {
     }
 
     table borrowing {
-      borrowing_date date?
+      borrowing_date date
       restitution_date date?
     }
 
