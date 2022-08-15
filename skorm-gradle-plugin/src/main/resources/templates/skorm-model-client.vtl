@@ -47,14 +47,14 @@ fun ${package}.${databaseClass}.initRuntimeModel() {
         #end
       #else
         #if($item.nullable)
-##          #set($attribute = "nullable#capitalize(${item.type.name})Attribute")
           #set($attribute = "scalarAttribute<${item.type.name}?>")
         #else
-##          #set($attribute = "#decapitalize($item.type.name)Attribute") // item.type.name = $item.type.name, decapitalize = $item.type.name.decapitalize()
           #set($attribute = "scalarAttribute<${item.type.name}>")
         #end
       #end
-    ${receiver}.${attribute}("$item.name", #if($entityParam)$entityParam, #{end}setOf(#names($item.arguments)))
+
+    // attribute ${item.receiver|$schema.name}.$item.name
+    ${receiver}.${attribute}("$item.name"#if($entityParam), $entityParam#end#if($item.arguments), setOf(#names($item.arguments))#end)
     #end
 #end
 }

@@ -5,7 +5,7 @@ import com.republicate.skorm.core.*
 
 #set ($databaseClass = "#pascal($database.name)Database")
 
-// runtime model attributes declaration for client
+// runtime model attributes declaration for core
 fun ${package}.${databaseClass}.initRuntimeModel() {
 #foreach ($schema in $database.schemas)
     #set($schemaClass = "${databaseClass}.#pascal($schema.name)Schema")
@@ -54,7 +54,11 @@ fun ${package}.${databaseClass}.initRuntimeModel() {
                 #set($attribute = "scalarAttribute<${item.type.name}>")
             #end
         #end
-        ${receiver}.${attribute}("$item.name", #if($entityParam)$entityParam, #{end}"""$item.sql""".trimIndent())
+
+    // attribute ${item.receiver|$schema.name}.$item.name
+    ${receiver}.${attribute}("$item.name", #if($entityParam)$entityParam, #{end}"""
+        $item.sql""".trimIndent())
+
     #end
 #end
 }

@@ -104,7 +104,7 @@ abstract class GenerateRuntimeModelTask: BaseGenerationTask() {
                     qualif.QM() != null -> item.nullable = true
                     qualif.ST() != null -> item.multiple = true
                 }
-                item.sql = itemContext.query?.text ?: itemContext.queries?.text ?: nullerr()
+                item.sql = itemContext.query?.text?.trim() ?: itemContext.queries?.text?.trim() ?: nullerr()
             }
         }
         return database

@@ -49,12 +49,12 @@ class #pascal($item.name): ${parent}() {
       #if($item.type.isComposite())
         #set($generics = "<#capitalize($item.name)#if($item.nullable)?#end>")
         #if(!$item.multiple)
-          #set($cast=" as #capitalize($item.name)")
+          #set($cast=" as #capitalize($item.name)#if($item.nullable)?#end")
         #end
       #elseif($item.type.isEntity)
         #set($generics = "<#capitalize($item.type.name)#if($item.nullable)?#end>")
         #if(!$item.multiple)
-          #set($cast=" as #capitalize($item.name)")
+          #set($cast=" as #capitalize($item.name)#if($item.nullable)?#end")
         #end
       #else
         #set($generics = "<$item.type.name#if($item.nullable)?#end>")
