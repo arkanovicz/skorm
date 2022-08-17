@@ -28,6 +28,7 @@ fun main() {
         logger.info { "window loaded" }
         exampleDatabase.initialize()
         exampleDatabase.initJoins()
+        exampleDatabase.initRuntimeModel()
         logger.info { "db initialized" }
         sel(".reserve").click { event ->
             logger.info { "reserve" }

@@ -33,6 +33,7 @@ public class JdbcConnector implements Connector
         {
             try
             {
+                // CB TODO - in which schema?!
                 txConnection = txConnectionPool.getConnection();
             }
             catch (SQLException sqle)
@@ -50,11 +51,11 @@ public class JdbcConnector implements Connector
 
         @NotNull
         @Override
-        public QueryResult query(@NotNull String query, @Nullable Object... params) throws SkormException
+        public QueryResult query(@NotNull String schema, @NotNull String query, @Nullable Object... params) throws SkormException
         {
             try
             {
-                PooledStatement stmt = statementPool.prepareQuery(query, txConnection);
+                PooledStatement stmt = statementPool.prepareQuery(schema, query, txConnection);
                 ResultSet rs = stmt.executeQuery(params);
                 return buildQueryResult(rs, stmt);
             }
@@ -65,11 +66,11 @@ public class JdbcConnector implements Connector
         }
 
         @Override
-        public long mutate(@NotNull String query, @Nullable Object... params) throws SkormException
+        public long mutate(@NotNull String schema, @NotNull String query, @Nullable Object... params) throws SkormException
         {
             try
             {
-                PooledStatement stmt = statementPool.prepareUpdate(query, txConnection);
+                PooledStatement stmt = statementPool.prepareUpdate(schema, query, txConnection);
                 long changed = stmt.executeUpdate(params);
                 return params.length > 0 && params[params.length - 1] instanceof GeneratedKeyMarker
                         ? stmt.getLastInsertID(((GeneratedKeyMarker) params[params.length - 1]).getColName())
@@ -236,11 +237,11 @@ public class JdbcConnector implements Connector
 
     @NotNull
     @Override
-    public QueryResult query(@NotNull String query, @Nullable Object... params) throws SkormException
+    public QueryResult query(@NotNull String schema, @NotNull String query, @Nullable Object... params) throws SkormException
     {
         try
         {
-            PooledStatement stmt = statementPool.prepareQuery(query);
+            PooledStatement stmt = statementPool.prepareQuery(schema, query);
             ResultSet rs = stmt.executeQuery(params);
             return buildQueryResult(rs, stmt);
         }
@@ -251,11 +252,11 @@ public class JdbcConnector implements Connector
     }
 
     @Override
-    public long mutate(@NotNull String query, @Nullable Object... params) throws SkormException
+    public long mutate(@NotNull String schema, @NotNull String query, @Nullable Object... params) throws SkormException
     {
         try
         {
-            PooledStatement stmt = statementPool.prepareUpdate(query);
+            PooledStatement stmt = statementPool.prepareUpdate(schema, query);
             long changed = stmt.executeUpdate(params);
             return params.length > 0 && params[params.length - 1] instanceof GeneratedKeyMarker
                     ? stmt.getLastInsertID(((GeneratedKeyMarker) params[params.length - 1]).getColName())

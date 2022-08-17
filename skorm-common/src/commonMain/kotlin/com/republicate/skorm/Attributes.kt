@@ -273,6 +273,7 @@ class MutationAttribute(holder: AttributeHolder, name: String, parameters: Set<S
 
 abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = null) {
     abstract val processor: Processor
+    open val schema: Schema? = null
     private val _attributes = mutableMapOf<String, Attribute<*>>()
     val attributes: Map<String, Attribute<*>> get() = _attributes
     val path: String by lazy { (parent?.path ?: "") + "/$name" }

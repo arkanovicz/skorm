@@ -20,6 +20,7 @@ package com.republicate.skorm.jdbc;
  */
 
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,7 +63,7 @@ public class StatementPool
      * @exception SQLException thrown by the database engine
      * @return a valid statement
      */
-    protected synchronized PooledStatement prepareStatement(String query, boolean update, Connection connection) throws SQLException
+    protected synchronized PooledStatement prepareStatement(String schema, String query, boolean update, Connection connection) throws SQLException
     {
         logger.trace("prepare-{}", query);
 
@@ -71,7 +72,7 @@ public class StatementPool
         boolean sharedStatement = connection == null;
         if (sharedStatement)
         {
-            availableStatements = statementsMap.computeIfAbsent(query, (str) -> new ArrayList<>());
+            availableStatements = statementsMap.computeIfAbsent(Pair.of(schema, query), (str) -> new ArrayList<>());
             for (Iterator<PooledStatement> it = availableStatements.iterator(); it.hasNext(); )
             {
                 statement = it.next();
@@ -101,7 +102,7 @@ public class StatementPool
             {
                 throw new SQLException("Error: Too many opened prepared statements!");
             }
-            connection = connectionPool.getConnection();
+            connection = connectionPool.getConnection(schema);
         }
 
         statement = new PooledStatement(connection,
@@ -119,24 +120,24 @@ public class StatementPool
         return statement;
     }
 
-    public synchronized PooledStatement prepareQuery(String query) throws SQLException
+    public synchronized PooledStatement prepareQuery(String schema, String query) throws SQLException
     {
-        return prepareStatement(query, false, null);
+        return prepareStatement(schema, query, false, null);
     }
 
-    public synchronized PooledStatement prepareQuery(String query, Connection txConnection) throws SQLException
+    public synchronized PooledStatement prepareQuery(String schema, String query, Connection txConnection) throws SQLException
     {
-        return prepareStatement(query, false, txConnection);
+        return prepareStatement(schema, query, false, txConnection);
     }
 
-    public synchronized PooledStatement prepareUpdate(String query) throws SQLException
+    public synchronized PooledStatement prepareUpdate(String schema, String query) throws SQLException
     {
-        return prepareStatement(query, true, null);
+        return prepareStatement(schema, query, true, null);
     }
 
-    public synchronized PooledStatement prepareUpdate(String query, Connection txConnection) throws SQLException
+    public synchronized PooledStatement prepareUpdate(String schema, String query, Connection txConnection) throws SQLException
     {
-        return prepareStatement(query, true, txConnection);
+        return prepareStatement(schema, query, true, txConnection);
     }
 
     /**
@@ -145,7 +146,7 @@ public class StatementPool
     public void clear()
     {
         // close all statements
-        for(Iterator<String> it = statementsMap.keySet().iterator(); it.hasNext(); )
+        for(Iterator<Pair<String, String>> it = statementsMap.keySet().iterator(); it.hasNext(); )
         {
             for(Iterator<PooledStatement> jt = statementsMap.get(it.next()).iterator(); jt.hasNext(); )
             {
@@ -168,7 +169,7 @@ public class StatementPool
      */
     private void dropConnection(Connection connection)
     {
-        for(Iterator<String> it = statementsMap.keySet().iterator(); it.hasNext(); )
+        for(Iterator<Pair<String, String>> it = statementsMap.keySet().iterator(); it.hasNext(); )
         {
             for (PooledStatement statement : statementsMap.get(it.next()))
             {
@@ -211,7 +212,7 @@ public class StatementPool
     {
         int[] stats = new int[] { 0, 0 };
 
-        for(Iterator<String> it = statementsMap.keySet().iterator(); it.hasNext(); )
+        for(Iterator<Pair<String, String>> it = statementsMap.keySet().iterator(); it.hasNext(); )
         {
             for (PooledStatement pooledStatement : statementsMap.get(it.next()))
             {
@@ -238,7 +239,7 @@ public class StatementPool
     /**
      * map queries -&gt; statements.
      */
-    private final Map<String,List<PooledStatement>> statementsMap = new HashMap<>();    // query -> PooledStatement
+    private final Map<Pair<String, String>,List<PooledStatement>> statementsMap = new HashMap<>();    // query -> PooledStatement
 
     /**
      * running thread.

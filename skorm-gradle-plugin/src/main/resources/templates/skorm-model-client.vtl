@@ -54,7 +54,7 @@ fun ${package}.${databaseClass}.initRuntimeModel() {
       #end
 
     // attribute ${item.receiver|$schema.name}.$item.name
-    ${receiver}.${attribute}("$item.name"#if($entityParam), $entityParam#end#if($item.arguments), setOf(#names($item.arguments))#end)
+    ${receiver}.${attribute}("$item.name"#if($entityParam), $entityParam#end, setOf(#names($item.arguments)))
     #end
 #end
 }

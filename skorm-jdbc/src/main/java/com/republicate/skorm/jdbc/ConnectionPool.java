@@ -23,9 +23,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  *  Connection pool.
@@ -41,10 +40,10 @@ public class ConnectionPool
     /** autocommit flag */
     private boolean autocommit = true;
 
-    /** list of all connections */
-    private List<Connection> connections = new ArrayList<>();
+    /** list of all connections, per schema */
+    private Map<String, List<Connection>> connectionsMap = new ConcurrentHashMap<>();
 
-    /** Maximum number of connections. */
+    /** Maximum number of connections (per schema). */
     private int max;
 
     /**
@@ -82,13 +81,19 @@ public class ConnectionPool
         this.max = max;
     }
 
+    public Connection getConnection() throws SQLException
+    {
+        return getConnection("");
+    }
+
     /**
      * Get a connection.
      * @return a connection
      * @throws SQLException
      */
-    public synchronized Connection getConnection() throws SQLException
+    public synchronized Connection getConnection(String schema) throws SQLException
     {
+        List<Connection> connections = connectionsMap.computeIfAbsent(schema, (s) -> new ArrayList<>());
         for(Iterator it = connections.iterator(); it.hasNext(); )
         {
             Connection c = (Connection)it.next();
@@ -111,7 +116,14 @@ public class ConnectionPool
         }
 
         Connection newconn = createConnection();
-
+        if (!schema.isEmpty())
+        {
+            switch (newconn.getVendor().getIdentifierInternalCase()) {
+                case 'L': schema = schema.toLowerCase(Locale.ROOT); break;
+                case 'U': schema = schema.toUpperCase(Locale.ROOT); break;
+            }
+            newconn.setSchema(schema);
+        }
         connections.add(newconn);
         return newconn;
     }
@@ -154,15 +166,16 @@ public class ConnectionPool
      */
     public void clear()
     {
-        for(Iterator it = connections.iterator(); it.hasNext(); )
+        for(Iterator<List<Connection>> it = connectionsMap.values().iterator(); it.hasNext(); )
         {
-            Connection c = (Connection)it.next();
-
-            try
-            {
-                c.close();
+            for (Iterator<Connection> jt = it.next().iterator(); jt.hasNext(); ) {
+                Connection c = jt.next();
+                try
+                {
+                    c.close();
+                }
+                catch (SQLException sqle) {}
             }
-            catch(SQLException sqle) {}
         }
     }
 }

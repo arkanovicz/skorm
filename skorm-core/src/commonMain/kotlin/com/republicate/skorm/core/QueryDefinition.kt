@@ -2,12 +2,12 @@ package com.republicate.skorm.core
 
 import com.republicate.skorm.SkormException
 import com.republicate.skorm.concurrentMapOf
-import com.republicate.skorm.core.Query.Companion.ParserState.*
+import com.republicate.skorm.core.AttributeDefinition.Companion.ParserState.*
 
 data class QueryDefinition(val stmt: String, val params: List<String>) {
 }
 
-sealed interface Query {
+sealed interface AttributeDefinition {
 
     companion object {
         // CB TODO - this is driver specific, but we try to have a kinda generic handling
@@ -23,7 +23,7 @@ sealed interface Query {
             END(start=";")
         }
         private val stateMap = ParserState.values().associateBy { it.start }.toMap()
-        fun parse(qry: String): Query {
+        fun parse(qry: String, schema: String = ""): AttributeDefinition {
             val trimmed = qry.trim()
             val raw = if (trimmed.endsWith((';'))) trimmed else "$trimmed;"
             val queries = mutableListOf<QueryDefinition>()
@@ -73,11 +73,13 @@ sealed interface Query {
             if (pos < trimmed.length) throw SkormException("inconsistency")
             return when (queries.size) {
                 0 -> throw SkormException("could not parse statement")
-                1 -> SimpleQuery(queries.first())
-                else -> MultipleQuery(queries)
+                1 -> SimpleQuery(schema, queries.first())
+                else -> MultipleQuery(schema, queries)
             }
         }
     }
+
+    open val schema: String
 
     fun queries(params: Collection<String>): List<QueryDefinition>
     fun parameters(): Set<String>
@@ -85,19 +87,19 @@ sealed interface Query {
     override fun toString(): String
 }
 
-class SimpleQuery(val queryDefinition: QueryDefinition): Query {
+class SimpleQuery(override val schema: String, val queryDefinition: QueryDefinition): AttributeDefinition {
     override fun queries(params: Collection<String>) = listOf(queryDefinition)
     override fun parameters() = queryDefinition.params.toSet()
     override fun toString() = "(${queryDefinition.params.joinToString(", ")}) -> [${queryDefinition.stmt}]"
 }
 
-class MultipleQuery(val queries: List<QueryDefinition>): Query {
+class MultipleQuery(override val schema: String, val queries: List<QueryDefinition>): AttributeDefinition {
     override fun queries(params: Collection<String>) = queries
     override fun parameters() = queries.flatMap { it.params }.toSet()
     override fun toString() = "(${parameters().joinToString(", ")}) -> [${queries.joinToString("; ") { it.stmt }}]"
 }
 
-class DynamicQuery(val generator: (Collection<String>)-> QueryDefinition): Query {
+class DynamicQuery(override val schema: String, val generator: (Collection<String>)-> QueryDefinition): AttributeDefinition {
     private val queryCache = concurrentMapOf<String, QueryDefinition>()
     override fun queries(params: Collection<String>): List<QueryDefinition> {
         val key = params.sorted().joinToString("#")

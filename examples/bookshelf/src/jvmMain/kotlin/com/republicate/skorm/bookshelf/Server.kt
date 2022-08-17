@@ -136,6 +136,7 @@ fun Application.configureDatabase() {
     }
     exampleDatabase.initialize()
     exampleDatabase.initJoins()
+    exampleDatabase.initRuntimeModel()
 
     println("Creating database...")
     val creationScript = Application::class.java.getResource("/${CREATION_SCRIPT}").readText()
@@ -193,6 +194,11 @@ fun Application.configureRouting() {
                                     i { +" by " }
                                     +authorName
                                     br()
+                                    if (currentBorrower != null) {
+                                        +"borrowed by ${currentBorrower.name} (${currentBorrower.borrowingDate})"
+                                    } else {
+                                        +"available"
+                                    }
                                     button(type=ButtonType.submit, classes = "reserve") {
                                         attributes["data-book_id"] = "${book.bookId}"
                                         +"reserve"

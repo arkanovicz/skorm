@@ -11,7 +11,7 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     override val configTag = "core"
     override val config = Configuration()
 
-    private val queries = mutableMapOf<String, Query>() // CB TODO - or concurrent?
+    private val queries = mutableMapOf<String, AttributeDefinition>() // CB TODO - or concurrent?
     // TODO
 //    private val readFilters = mutableMapOf<String, Mapper<*>>()
 //    private val writeFilters = mutableMapOf<String, Mapper<Any?>>()
@@ -22,27 +22,27 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     // var readMapper: IdentifierMapper = identityMapper UNUSED
     internal var writeMapper: IdentifierMapper = identityMapper
 
-    private fun register(path: String, query: Query) {
+    private fun register(path: String, query: AttributeDefinition) {
         logger.trace { "registering $path to $query" }
         queries[path] = query
     }
 
     // CB TODO - register() should make calls to define()
     override fun register(entity: Entity) {
-        register("${entity.path}/browse", SimpleQuery(entity.generateBrowseStatement()))
-        register("${entity.path}/insert", DynamicQuery {
+        register("${entity.path}/browse", SimpleQuery(entity.schema.name, entity.generateBrowseStatement()))
+        register("${entity.path}/insert", DynamicQuery(entity.schema.name) {
             entity.generateInsertStatement(it)
         })
         if (entity.primaryKey.isNotEmpty()) {
-            register("${entity.path}/delete", SimpleQuery(entity.generateDeleteStatement()))
-            register("${entity.path}/fetch", SimpleQuery(entity.generateFetchStatement()))
-            register("${entity.path}/update", DynamicQuery {
+            register("${entity.path}/delete", SimpleQuery(entity.schema.name, entity.generateDeleteStatement()))
+            register("${entity.path}/fetch", SimpleQuery(entity.schema.name, entity.generateFetchStatement()))
+            register("${entity.path}/update", DynamicQuery(entity.schema.name) {
                 entity.generateUpdateStatement(it)
             })
         }
     }
 
-    fun define(path: String, definition: Query) {
+    fun define(path: String, definition: AttributeDefinition) {
         logger.trace { "defining $path to $definition" }
         queries.put(path, definition)?.let {
             throw SkormException("attribute $path already defined")
@@ -60,8 +60,8 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     }
 
     override suspend fun eval(path: String, params: Map<String, Any?>): Any? {
-        val query = getSingleQuery(path, params.keys)
-        val (names, it) = connector.query(query.stmt, *query.params.map { params[it] }.toTypedArray())
+        val (schema, query) = getSingleQuery(path, params.keys)
+        val (names, it) = connector.query(schema, query.stmt, *query.params.map { params[it] }.toTypedArray())
         if (names.size != 1) throw SkormException("scalar attribute $path expects only one column")
         if (!it.hasNext()) throw SkormException("scalar attribute $path has no result row")
         val ret = it.next()
@@ -70,8 +70,8 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     }
 
     override suspend fun retrieve(path: String, params: Map<String, Any?>, result: Entity?): Json.Object? {
-        val query = getSingleQuery(path, params.keys)
-        val (names, it) = connector.query(query.stmt, *query.params.map { params[it] }.toTypedArray())
+        val (schema, query) = getSingleQuery(path, params.keys)
+        val (names, it) = connector.query(schema, query.stmt, *query.params.map { params[it] }.toTypedArray())
         if (!it.hasNext()) return null // CB TODO - non-null result should be specifiable
         val rawValues = it.next()
         if (it.hasNext()) throw SkormException("raw attribute $path has more than one result row") // CB TODO - could be relaxed by config
@@ -86,8 +86,8 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     }
 
     override suspend fun query(path: String, params: Map<String, Any?>, result: Entity?): Sequence<Json.Object> {
-        val query = getSingleQuery(path, params.keys)
-        val (names, it) = connector.query(query.stmt, *query.params.map {
+        val (schema, query) = getSingleQuery(path, params.keys)
+        val (names, it) = connector.query(schema, query.stmt, *query.params.map {
             params[it]
                 ?:
                 if (params.containsKey(it)) null
@@ -106,13 +106,13 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     }
 
     override suspend fun perform(path: String, params: Map<String, Any?>): Long {
-        val queries = getMutationQueries(path, params.keys.filter { it !== GeneratedKeyMarker.PARAM_KEY })
+        val (schema, queries) = getMutationQueries(path, params.keys.filter { it !== GeneratedKeyMarker.PARAM_KEY })
         if (queries.size > 1) {
             var totalChanged = 0L
             transaction {
                 with (this as CoreProcessorTransaction) {
                     for (query in queries) {
-                        totalChanged += connector.mutate(query.stmt, *query.params.map { params[it] }.toTypedArray())
+                        totalChanged += connector.mutate(schema, query.stmt, *query.params.map { params[it] }.toTypedArray())
                     }
                 }
             }
@@ -124,7 +124,7 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
 //                    list.add(GeneratedKeyMarker.PARAM_KEY)
 //                }
 //            }.toTypedArray())
-            return connector.mutate(query.stmt, *query.params.map { params[it] }.toTypedArray())
+            return connector.mutate(schema, query.stmt, *query.params.map { params[it] }.toTypedArray())
         }
     }
 
@@ -134,11 +134,16 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
 
     private inline fun getSingleQuery(path: String, params: Collection<String>) = queries.getOrElse(path) {
         throw SkormException("attribute not found: $path")
-    }.queries(params).firstOrNull() ?: throw SkormException("single query excpected: $path")
+    }.let {
+        Pair(it.schema,
+            it.queries(params).firstOrNull() ?: throw SkormException("single query expected: $path"))
+    }
 
     private inline fun getMutationQueries(path: String, params: Collection<String>) = queries.getOrElse(path) {
         throw SkormException("attribute not found: $path")
-    }.queries(params)
+    }.let {
+        Pair(it.schema, it.queries(params))
+    }
 
     private fun Json.MutableObject.putAll(names: Array<String>, values: Array<Any?>) {
         names.zip(values).forEach { (name, value) ->

@@ -35,6 +35,7 @@ open class Schema protected constructor(name: String, parent: Database) : Attrib
 
     val database: Database get() = parent as Database
     override val processor get() = database.processor
+    override val schema get() = this
 
     private val _entities = mutableMapOf<String, Entity>()
     val entities: Collection<Entity> get() = _entities.values
@@ -53,6 +54,7 @@ open class Entity protected constructor(val name: String, schema: Schema) {
 
     /*private*/ val instanceAttributes = object : AttributeHolder(name, schema) {
         override val processor get() = schema.processor
+        override val schema get() = parent as Schema
     }
     val schema get() = instanceAttributes.parent as Schema
     val path get() = instanceAttributes.path

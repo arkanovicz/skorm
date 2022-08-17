@@ -20,11 +20,11 @@ interface Connector: Configurable {
 
     // queries
     @Throws(SkormException::class)
-    fun query(query: String, vararg params: Any?): QueryResult
+    fun query(schema: String, query: String, vararg params: Any?): QueryResult
 
     // mutations
     @Throws(SkormException::class)
-    fun mutate(query: String, vararg params: Any?): Long
+    fun mutate(schema: String, query: String, vararg params: Any?): Long
 
     // transactions
     @Throws(SkormException::class)
