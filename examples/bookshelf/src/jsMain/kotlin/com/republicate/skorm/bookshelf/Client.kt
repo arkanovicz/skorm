@@ -5,6 +5,7 @@ import kotlinx.browser.window
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
+import org.w3c.dom.HTMLSelectElement
 import org.w3c.dom.events.EventListener
 import org.w3c.dom.get
 
@@ -30,18 +31,31 @@ fun main() {
         exampleDatabase.initJoins()
         exampleDatabase.initRuntimeModel()
         logger.info { "db initialized" }
-        sel(".reserve").click { event ->
-            logger.info { "reserve" }
-            logger.info { "target = ${event.element()}" }
+
+        sel(".lend-form").submit { event ->
+            event.preventDefault()
             GlobalScope.launch {
-                logger.info { "inside launch" }
-                logger.info { "target = ${event.element()}" }
-                val bookId = event.element().attributes["data-book_id"]?.let { it.value } ?: throw Error("book id not found")
-                logger.info { "bookId = $bookId" }
-                val book = Book.fetch(bookId) ?: throw Error("book not found")
-                logger.info { "book = $book" }
-                logger.info { book.title }
+                val form = event.element()
+                val bookId = form.attributes["data-book_id"]?.let { it.value } ?: throw Error("book id not found")
+                val book = Book.fetch() ?: throw Error("invalid book id")
+                val select = form.children["dude_id"] as HTMLSelectElement? ?: throw Error("invalid select")
+                val dudeId = select.selectedOptions[0] ?: throw Error("dude id not found")
+                book.lend(dudeId)
             }
         }
+
+//        sel(".reserve").click { event ->
+//            logger.info { "reserve" }
+//            logger.info { "target = ${event.element()}" }
+//            GlobalScope.launch {
+//                logger.info { "inside launch" }
+//                logger.info { "target = ${event.element()}" }
+//                val bookId = event.element().attributes["data-book_id"]?.let { it.value } ?: throw Error("book id not found")
+//                logger.info { "bookId = $bookId" }
+//                val book = Book.fetch(bookId) ?: throw Error("book not found")
+//                logger.info { "book = $book" }
+//                logger.info { book.title }
+//            }
+//        }
     }
 }

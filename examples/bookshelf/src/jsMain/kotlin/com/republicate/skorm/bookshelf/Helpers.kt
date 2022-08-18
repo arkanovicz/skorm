@@ -42,6 +42,17 @@ fun Collection<HTMLElement>.click(handler: EventHandler) {
     on("click", handler)
 }
 
+// submit
+
+fun EventTarget.submit(handler: EventHandler) {
+    on("submit", handler)
+}
+
+fun Collection<HTMLElement>.submit(handler: EventHandler) {
+    on("submit", handler)
+}
+
+
 // classes
 
 fun HTMLElement.addClass(cls: String) {

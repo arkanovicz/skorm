@@ -49,6 +49,7 @@ class $databaseClass(processor: Processor): Database("$database.name", processor
     #if ($table.primaryKey.size() > 0)
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as $instanceClass?
     #end
+                override suspend fun browse() = super.browse() as Sequence<$instanceClass>
                 @Suppress("UNCHECKED_CAST")
                 override suspend operator fun iterator() = super.iterator() as Iterator<$instanceClass>
                 fun initialize() {

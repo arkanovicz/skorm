@@ -159,6 +159,7 @@ fun Application.configureDatabase() {
 
 typealias Author = ExampleDatabase.BookshelfSchema.Author
 typealias Book = ExampleDatabase.BookshelfSchema.Book
+typealias Dude = ExampleDatabase.BookshelfSchema.Dude
 
 fun Application.configureRouting() {
     routing {
@@ -186,6 +187,7 @@ fun Application.configureRouting() {
                     h1 { +"My Bookshelf" }
                     ul {
                         runBlocking {
+                            val dudes = ExampleDatabase.BookshelfSchema.Dude.browse().toList()
                             for (book in Book) {
                                 val authorName = book.author().name
                                 val currentBorrower = book.currentBorrower()
@@ -198,11 +200,23 @@ fun Application.configureRouting() {
                                         +"borrowed by ${currentBorrower.name} (${currentBorrower.borrowingDate})"
                                     } else {
                                         +"available"
+                                        br()
+                                        form(classes="lend-form") {
+                                            attributes["data-book_id"] = "${book.bookId}"
+                                            +"lend to"
+                                            select() {
+                                                attributes["name"] = "dude_id"
+                                                for (dude in dudes) {
+                                                    option {
+                                                        attributes["value"] = dude.dudeId.toString()
+                                                        +dude.name
+                                                    }
+                                                }
+                                                button(type=ButtonType.submit, classes = "lend")
+                                            }
+                                        }
                                     }
-                                    button(type=ButtonType.submit, classes = "reserve") {
-                                        attributes["data-book_id"] = "${book.bookId}"
-                                        +"reserve"
-                                    }
+                                    br()
                                 }
                             }
                         }
