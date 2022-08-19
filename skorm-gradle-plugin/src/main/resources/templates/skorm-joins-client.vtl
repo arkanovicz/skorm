@@ -6,10 +6,10 @@ import com.republicate.skorm.instanceAttribute
 #set ($databaseClass = "#pascal($database.name)Database")
 
 // join attributes declaration for client
-fun ${package}.${databaseClass}.initJoins() {
+fun ${databaseClass}.initJoins() {
 #foreach ($schema in $database.schemas.values())
     #set($schemaClass = "${databaseClass}.#pascal($schema.name)Schema")
-    #set($schemaInstance = "${databaseClass}.#camel($schema.name)")
+    #set($schemaInstance = "#camel($schema.name)")
     #foreach ($table in $schema.tables.values())
         #foreach($fk in $table.foreignKeys)
     // forward foreign key attribute

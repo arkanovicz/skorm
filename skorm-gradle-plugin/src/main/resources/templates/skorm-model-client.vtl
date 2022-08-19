@@ -7,7 +7,7 @@ import com.republicate.skorm.*
 
 // runtime model attributes declaration for client
 fun ${package}.${databaseClass}.initRuntimeModel() {
-#foreach ($schema in $database.schemas)
+#foreach ($schema in $model.schemas)
     #set($schemaClass = "${databaseClass}.#pascal($schema.name)Schema")
     #set($schemaInstance = "${databaseClass}.#camel($schema.name)")
     #foreach ($item in $schema.items)
@@ -54,7 +54,7 @@ fun ${package}.${databaseClass}.initRuntimeModel() {
       #end
 
     // attribute ${item.receiver|$schema.name}.$item.name
-    ${receiver}.${attribute}("$item.name"#if($entityParam), $entityParam#end, setOf(#names($item.arguments)))
+    ${receiver}.${attribute}("$item.name"#if($entityParam), $entityParam#end, setOf(#names($item.parameters)))
     #end
 #end
 }

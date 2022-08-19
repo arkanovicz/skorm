@@ -1,5 +1,7 @@
 package com.republicate.skorm.model
 
+import com.republicate.kddl.ASTTable
+
 class RMDatabase(val name: String) {
     val schemas = mutableListOf<RMSchema>()
 }
@@ -9,15 +11,32 @@ class RMSchema(val name: String) {
 }
 
 class RMItem(val name: String) {
+    // parsed infos
+
+    // entity of instances on which this attribute is defined
     var receiver: String? = null
-    val arguments = mutableSetOf<String>()
+    // manually specified arguments
+    var arguments : Set<String>? = null
+    // whether the item is an action
     var action: Boolean = false
+    //  item type
     var type: RMType? = null
+    // whether the item result is nullable
     var nullable: Boolean = false
+    // whether the item result is a collection
     var multiple: Boolean = false
+    // whether the item is a transaction
     var transaction: Boolean = false
+    // the sql for this item
     var sql: String? = null
 
+    // structure infos
+
+    // the parameters needed to execute this item
+    val parameters = mutableSetOf<String>()
+    // the (deduced) needed arguments needed to execute this item, subset of the preceding,
+    // the other ones being taken in the receiver instance
+    val neededParameters = mutableSetOf<String>()
 }
 
 sealed class RMType(val name: String) {

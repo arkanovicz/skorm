@@ -7,7 +7,7 @@ import com.republicate.skorm.core.*
 
 // runtime model attributes declaration for core
 fun ${package}.${databaseClass}.initRuntimeModel() {
-#foreach ($schema in $database.schemas)
+#foreach ($schema in $model.schemas)
     #set($schemaClass = "${databaseClass}.#pascal($schema.name)Schema")
     #set($schemaInstance = "${databaseClass}.#camel($schema.name)")
     #foreach ($item in $schema.items)

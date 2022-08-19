@@ -36,6 +36,8 @@ abstract class SkormGradlePlugin : Plugin<Project> {
 
         // Generate runtime model objects and attributes
         project.tasks.register(GEN_RUNTIME_MODEL_NAME, GenerateRuntimeModelTask::class.java) {
+            it.structure.set(extension.structure)
+            it.datasource.set(extension.datasource)
             it.runtimeModel.set(extension.runtimeModel)
             it.destPackage.set(extension.destPackage)
             it.destFile.set(extension.destModelFile)

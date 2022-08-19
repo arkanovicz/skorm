@@ -1,8 +1,9 @@
 package com.republicate.skorm
 
-import com.republicate.kddl.ASTDatabase
 import com.republicate.kddl.Utils
 import com.republicate.kddl.Utils.getFile
+import com.republicate.skorm.SkormException
+import com.republicate.skorm.core.AttributeDefinition
 import com.republicate.skorm.model.RMCompositeType
 import com.republicate.skorm.model.RMDatabase
 import com.republicate.skorm.model.RMField
@@ -15,21 +16,15 @@ import org.antlr.v4.kotlinruntime.CommonTokenStream
 import org.antlr.v4.kotlinruntime.ConsoleErrorListener
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.InputFile
-import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.options.Option
 import com.republicate.skorm.parser.ksqlLexer
 import com.republicate.skorm.parser.ksqlParser
-import org.antlr.v4.kotlinruntime.Parser
-import org.antlr.v4.kotlinruntime.ParserRuleContext
-import org.antlr.v4.kotlinruntime.tree.ErrorNode
-import org.antlr.v4.kotlinruntime.tree.ParseTreeListener
-import org.antlr.v4.kotlinruntime.tree.TerminalNode
 import org.apache.velocity.VelocityContext
 import org.gradle.api.tasks.Internal
 
-abstract class GenerateRuntimeModelTask: BaseGenerationTask() {
+abstract class GenerateRuntimeModelTask: BaseStructureGenerationTask() {
 
     init {
         description = "Skorm code generation of runtime model objects and attributes"
@@ -53,7 +48,7 @@ abstract class GenerateRuntimeModelTask: BaseGenerationTask() {
     abstract val destClientFile: RegularFileProperty
 
     @get:Internal
-    protected val database: RMDatabase by lazy {
+    protected val model: RMDatabase by lazy {
         val ksqlFilePath = project.file(runtimeModel.get()).absolutePath
         val ksql = Utils.getFile(ksqlFilePath)
         parse(ksql)
@@ -80,7 +75,7 @@ abstract class GenerateRuntimeModelTask: BaseGenerationTask() {
                 val item = RMItem(name)
                 schema.items.add(item)
                 item.receiver = itemContext.receiver?.text
-                itemContext.findArguments()?.LABEL()?.map { it.text }?.toCollection(item.arguments)
+                item.arguments = itemContext.findArguments()?.LABEL()?.map { it.text }?.toSet()
                 item.action = itemContext.ARROW() != null
                 item.transaction = item.action && itemContext.queries != null
                 val type = itemContext.findType()
@@ -116,10 +111,37 @@ abstract class GenerateRuntimeModelTask: BaseGenerationTask() {
 
     override fun populateContext(context: VelocityContext) {
         context.put("database", database)
+        context.put("model", model)
+    }
+
+    private fun populateStructureInfos() {
+        for (schema in model.schemas) {
+            val dbSchema = database.schemas[schema.name] ?: throw SkormException("schema not found: ${schema.name}")
+            for (item in schema.items) {
+                val def = AttributeDefinition.parse(item.sql!!)
+                item.parameters.addAll(def.parameters())
+                item.neededParameters.addAll(def.parameters())
+                if (item.receiver != null) {
+                    val dbTable = dbSchema.tables[item.receiver] ?: throw SkormException("table not found: ${item.receiver}")
+                    item.neededParameters.removeAll(dbTable.fields.keys)
+                }
+                item.arguments?.also {
+                    if (it != item.neededParameters) throw SkormException(
+                        "attribute parameters mismatch: expected: [${
+                            it.joinToString(
+                                ","
+                            )
+                        }], found: [${item.neededParameters}]"
+                    )
+                }
+            }
+        }
     }
 
     @TaskAction
     fun generateObjectsCode() {
+        populateStructureInfos()
+
         generateCode(templatePath, destFile)
         generateCode(templateCorePath, destCoreFile)
         generateCode(templateClientPath, destClientFile)

@@ -7,10 +7,13 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
+import mu.KotlinLogging
 
 /*
  * Attributes
  */
+
+private val logger = KotlinLogging.logger("skorm.common")
 
 // CB TODO - forbidden only on entity
 val reserveAttributeNames = setOf("insert", "fetch", "update", "delete")
@@ -24,6 +27,9 @@ sealed class Attribute<out T>(val holder: AttributeHolder, val name: String, val
      * Match attribute named parameters with values found in provided context parameters
      */
     internal fun matchParamValues(vararg rawValues: Any?) : Map<String, Any?> {
+
+        logger.info { ">> matchParamValues ${rawValues.joinToString { "$it" }}" }
+
         val ret = mutableMapOf<String, Any?>()
 
         val params: Set<String> =
@@ -44,48 +50,64 @@ sealed class Attribute<out T>(val holder: AttributeHolder, val name: String, val
 
         val consumedParam = BitSet(rawValues.size)
 
+        logger.info { "-- parameters size = ${parameters.size}"}
         params.forEach { p ->
+            logger.info { "Searching for $p"}
             params@ for (i in rawValues.indices) {
+                logger.info { "at indice $i"}
                 val value = rawValues[i]
                 when(value) {
                     is Instance -> {
+                        logger.info { "  found instance"}
                         val found = value[p]
                         if (found != null || value.containsKey(p)) {
+                            logger.info { "  found inside instance: $found"}
 //                            ret[p] = value.entity.fields[p]?.write(found) ?: found
                             ret[p] = found
                             break@params
                         }
                     }
                     is Map<*, *> -> {
+                        logger.info { "  found map"}
                         val found = value[p]
                         if (found != null || value.containsKey(p)) {
+                            logger.info { "  found inside map: $found"}
                             ret[p] = found
                             break@params
                         }
                     }
                     hasGenericGetter() -> {
+                        logger.info { "  found getter"}
                         val found = value.callGenericGetter(p)
                         if (found != null) {
+                            logger.info { "  found with getter: $found"}
                             ret[p] = found
                             break@params
                         }
                     }
                     is GeneratedKeyMarker -> {
                         ret[GeneratedKeyMarker.PARAM_KEY] = value
-                    }
-                    else -> if (!consumedParam[i]) {
-                        ret[p] = value
-                        consumedParam.set(i, true)
                         break@params
                     }
+                    else -> {
+                        logger.info { "  searching among raw params"}
+                        if (!consumedParam[i]) {
+                            logger.info { "  consuming raw param $i: $value"}
+                            ret[p] = value
+                            consumedParam.set(i, true)
+                            break@params
+                        }
+                    }
                 }
-                if (i + 1 == parameters.size) {
+                logger.info { "  not found at indice $i. " }
+                if (i + 1 == rawValues.size) {
                     throw SkormException("attribute $name: parameter $p not found")
                 }
             }
         }
         // TODO control that all simple parameters have been consumed
         // rawValues.filter { it !is Map<*, *> }.size > consumedParam.setBitsCount => error
+        logger.info { "<< matchParamValues { ${ret.entries.joinToString(",") } }" }
         return ret
     }
 
@@ -258,6 +280,7 @@ class RowSetAttribute(holder: AttributeHolder, name: String, parameters: Set<Str
 }
 
 class BagAttribute(holder: AttributeHolder, name: String, parameters: Set<String>, val resultEntity: Entity): Attribute<Sequence<Instance>>(holder, name, parameters) {
+    @Suppress("Unchecked_cast")
     override suspend fun execute(vararg params: Any?) =
         holder.processor.query("${holder.path}/$name", matchParamValues(*params), resultEntity) as Sequence<Instance>
 }
@@ -278,12 +301,11 @@ abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = 
     val attributes: Map<String, Attribute<*>> get() = _attributes
     val path: String by lazy { (parent?.path ?: "") + "/$name" }
 
-    @Suppress("UNCHECKED_CAST")
     inline fun <reified A> getAttribute(attrName: String): A? {
         val attr = attributes[attrName]
-        when {
-            A::class.isInstance(attr) -> return attr as A
-            attr == null -> return null
+        return when {
+            A::class.isInstance(attr) -> attr as A
+            attr == null -> null
             else -> throw SkormException("attribute $path.$attrName is not a ${A::class::simpleName}")
         }
     }

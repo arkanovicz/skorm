@@ -52,10 +52,12 @@ open class Entity protected constructor(val name: String, schema: Schema) {
         schema.addEntity(this)
     }
 
-    /*private*/ val instanceAttributes = object : AttributeHolder(name, schema) {
+    inner class InstanceAttributes: AttributeHolder(name, schema) {
         override val processor get() = schema.processor
         override val schema get() = parent as Schema
     }
+
+    /*private*/ val instanceAttributes = InstanceAttributes()
     val schema get() = instanceAttributes.parent as Schema
     val path get() = instanceAttributes.path
 
@@ -188,8 +190,8 @@ open class Instance(val entity: Entity) : Json.MutableObject() {
     protected fun internalPut(key: String, value: Any?): Any? = super.put(key, value)
 
     suspend inline fun <reified T: Any?> eval(attrName: String, vararg params: Any?) = entity.eval<T>(attrName, this, *params)
-    suspend inline fun <reified T: Json.Object?> retrieve(attrName: String, vararg params: Any?) = entity.retrieve<T>(attrName, entity, this, *params)
-    suspend inline fun <reified T: Json.Object> query(attrName: String, vararg params: Any?) = entity.query<T>(attrName, entity, this, *params)
+    suspend inline fun <reified T: Json.Object?> retrieve(attrName: String, vararg params: Any?) = entity.retrieve<T>(attrName, this, *params)
+    suspend inline fun <reified T: Json.Object> query(attrName: String, vararg params: Any?) = entity.query<T>(attrName, this, *params)
     suspend fun perform(attrName: String, vararg params: Any?) = entity.perform(attrName, this, *params)
 
     internal fun dirtyFieldNames(): Iterator<String> = object: Iterator<String> {

@@ -4,13 +4,15 @@ import com.republicate.kson.Json
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
-import io.ktor.client.plugins.json.*
+import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.http.content.*
+import io.ktor.serialization.*
 import io.ktor.util.reflect.TypeInfo
 import io.ktor.utils.io.*
+import io.ktor.utils.io.charsets.*
 import io.ktor.utils.io.core.*
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.async
@@ -19,15 +21,34 @@ import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger("skorm.client")
 
+fun ContentNegotiation.Config.json() {
+    register(
+        contentType = ContentType.Application.Json,
+        converter = KsonConverter)
+}
 
-/* CB TODO - deprecated in ktor-2.x ; but documentation is still not ready */
-class KsonSerializer(): JsonSerializer {
-    override fun write(data: Any, contentType: ContentType) = TextContent(data.toString(), contentType)
-    override fun read(type: TypeInfo, body: Input): Any {
-        val str = body.readText()
-        logger.info { "received: <$str>"}
-        return Json.parseValue(str) ?: "null"
+object KsonConverter: ContentConverter {
+    override suspend fun deserialize(charset: Charset, typeInfo: TypeInfo, content: ByteReadChannel): Any? {
+        val buffer = StringBuilder()
+        var first = true
+        while (true) {
+            if (first) first = false
+            else buffer.append('\n')
+            if (!content.readUTF8LineTo(buffer)) break
+        }
+        return Json.parseValue(buffer.toString())
     }
+
+    override suspend fun serialize(
+        contentType: ContentType,
+        charset: Charset,
+        typeInfo: TypeInfo,
+        value: Any
+    ): OutgoingContent? {
+        if (value !is Json) throw SkormException("content is not Json")
+        return TextContent(value.toString(), ContentType.Application.Json)
+    }
+
 }
 
 class ApiClient(val baseUrl: String) : Processor {
@@ -35,8 +56,8 @@ class ApiClient(val baseUrl: String) : Processor {
     override val config = Configuration()
 
     private val client = HttpClient() {
-        install(JsonPlugin) {
-            serializer = KsonSerializer()
+        install(ContentNegotiation) {
+            json()
         }
         defaultRequest {
             url(baseUrl)
@@ -77,11 +98,13 @@ class ApiClient(val baseUrl: String) : Processor {
 //    }
 
     override suspend fun eval(path: String, params: Map<String, Any?>): Any? {
+        logger.info { "eval $path $params" }
         val response = get(path, params)
         return response.body()
     }
 
     override suspend fun retrieve(path: String, params: Map<String, Any?>, result: Entity?): Json.Object? {
+        logger.info { "retrieve $path $params ${result?.let { "as ${result.name}" } ?: ""} with params ${params.entries.joinToString(" ") { "${it.key}=${it.value}" }}" }
         var restPath = path
         var restParams = params
         if (result != null) {
@@ -93,6 +116,7 @@ class ApiClient(val baseUrl: String) : Processor {
                 }
             }
         }
+        logger.info { "@@@ actual path = ${restPath}" }
         val response = get(restPath, restParams)
         val json = response.body<Json.Object>()
         return result?.new()?.also {
@@ -102,6 +126,7 @@ class ApiClient(val baseUrl: String) : Processor {
     }
 
     override suspend fun query(path: String, params: Map<String, Any?>, result: Entity?): Sequence<Json.Object> {
+        logger.info { "query $path $params ${result?.let { "as $result.name" } ?: ""}" }
         var restPath = path
         var restParams = params
         if (result != null) {
@@ -114,7 +139,14 @@ class ApiClient(val baseUrl: String) : Processor {
             }
         }
         val response = get(restPath, restParams)
-        val sequence = response.body<Sequence<Json.Object>>()
+
+        // CB TODO - stream parsing of Sequence<Object> in Kson
+        // val sequence = response.body<Sequence<Json.Object>>()
+        logger.info {  "Reading response "}
+        val all = response.body<Json.Array>()
+        logger.info { "Got response $all" }
+        val sequence = all.asSequence() as Sequence<Json.Object>
+
         return result?.let { sequence.map { obj ->
             result.new().also {
                 it.putAll(obj)
@@ -124,6 +156,7 @@ class ApiClient(val baseUrl: String) : Processor {
     }
 
     override suspend fun perform(path: String, params: Map<String, Any?>): Long {
+        logger.info { "perform $path $params" }
         val response = post(path, params)
         return response.body()
     }

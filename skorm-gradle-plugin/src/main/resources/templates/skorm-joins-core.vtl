@@ -4,7 +4,7 @@ import com.republicate.skorm.core.bagAttribute
 import com.republicate.skorm.core.instanceAttribute
 
 // attributes declaration for core
-fun ${package}.${databaseClass}.initJoins() {
+fun ${databaseClass}.initJoins() {
 #foreach ($schema in $database.schemas.values())
     #set($schemaClass = "${databaseClass}.#pascal($schema.name)Schema")
     #set($schemaInstance = "${databaseClass}.#camel($schema.name)")

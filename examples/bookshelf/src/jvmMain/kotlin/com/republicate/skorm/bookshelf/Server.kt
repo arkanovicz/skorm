@@ -47,6 +47,7 @@ fun Application.module() {
     install(ContentNegotiation) {
         register(ContentType.Application.Json, KsonConverter)
     }
+    install(IgnoreTrailingSlash)
     configureDatabase()
     configureRouting()
 }
@@ -154,6 +155,9 @@ fun Application.configureDatabase() {
             authorId = author.authorId
             insert()
         }
+        for (name in listOf("Alice", "Bob")) {
+            Dude().also { it.name = name }.insert()
+        }
     }
 }
 
@@ -187,7 +191,7 @@ fun Application.configureRouting() {
                     h1 { +"My Bookshelf" }
                     ul {
                         runBlocking {
-                            val dudes = ExampleDatabase.BookshelfSchema.Dude.browse().toList()
+                            val dudes = Dude.browse().toList()
                             for (book in Book) {
                                 val authorName = book.author().name
                                 val currentBorrower = book.currentBorrower()
@@ -203,7 +207,7 @@ fun Application.configureRouting() {
                                         br()
                                         form(classes="lend-form") {
                                             attributes["data-book_id"] = "${book.bookId}"
-                                            +"lend to"
+                                            +"lend to "
                                             select() {
                                                 attributes["name"] = "dude_id"
                                                 for (dude in dudes) {
@@ -212,7 +216,9 @@ fun Application.configureRouting() {
                                                         +dude.name
                                                     }
                                                 }
-                                                button(type=ButtonType.submit, classes = "lend")
+                                            }
+                                            button(type=ButtonType.submit, classes = "lend") {
+                                                +"go"
                                             }
                                         }
                                     }
@@ -229,19 +235,10 @@ fun Application.configureRouting() {
         route("/api/example") {
             rest(ExampleDatabase.bookshelf)
         }
+
+        trace { application.log.warn(it.buildText()) }
     }
-
-//    displayRoutes()
 }
-
-//fun Application.displayRoutes() {
-//    val root = feature(Routing)
-//    val allRoutes = listOf(root) + root.children.flatMap { allRoutes(it) }
-//    val allRoutesWithMethod = allRoutes.filter { it.selector is HttpMethodRouteSelector }
-//    allRoutesWithMethod.forEach {
-//        logger.info("route: $it")
-//    }
-//}
 
 // ktor essential-kson converter ; here for now, but should move elsewhere
 

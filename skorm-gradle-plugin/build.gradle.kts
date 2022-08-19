@@ -27,6 +27,8 @@ kotlin.sourceSets.main {
 
 dependencies {
     implementation(gradleApi())
+    implementation("com.republicate.skorm:skorm-common-jvm:0.1")
+    implementation("com.republicate.skorm:skorm-core-jvm:0.1")
     implementation("org.apache.velocity:velocity-engine-core:2.3")
     implementation("org.apache.velocity.tools:velocity-tools-generic:3.1")
     implementation("org.atteo:evo-inflector:1.3")

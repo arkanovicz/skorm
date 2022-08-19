@@ -22,6 +22,7 @@ dependencies {
     implementation(project(":skorm-common"))
     implementation(project(":skorm-core"))
     implementation("io.ktor:ktor-server-core-jvm:$ktor_version")
+    implementation("io.github.microutils:kotlin-logging:2.1.23")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 }

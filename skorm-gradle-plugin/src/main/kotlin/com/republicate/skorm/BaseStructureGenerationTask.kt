@@ -30,6 +30,8 @@ abstract class BaseStructureGenerationTask: BaseGenerationTask() {
     protected val database: ASTDatabase by lazy {
         val foundStructure = structure.orNull
         val foundDatasource = datasource.orNull
+        logger.lifecycle("$tag @@@ found datasource: $foundDatasource")
+        logger.lifecycle("$tag @@@ found structure: $foundStructure")
         if ((foundStructure == null) == (foundDatasource == null)) {
             throw RuntimeException("$tag expecting exactly one of skorm.structure or skorm.datasource parameter")
         }

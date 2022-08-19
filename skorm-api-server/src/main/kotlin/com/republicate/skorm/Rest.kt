@@ -6,6 +6,9 @@ import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.util.*
+import mu.KotlinLogging
+
+private val logger = KotlinLogging.logger("skorm.api")
 
 private fun StringValues.toMap() = entries().associate { it.key to it.value.firstOrNull() }
 
@@ -15,8 +18,10 @@ val Parameters.params get() = toMap()
 
 fun Route.rest(entity: Entity) {
     route(entity.name) {
+        logger.info { "Defining routes for entity ${entity.name}"}
         val idPath = entity.primaryKey.joinToString("/") { "{${it.name}}" }
         route(idPath) {
+            logger.info { "Defining routes for entity ${entity.name} instances with pk path ${idPath}"}
             get {
                  entity.fetch(call.params)?.also {
                      call.respond(it)
@@ -41,7 +46,9 @@ fun Route.rest(entity: Entity) {
                     call.response.status(HttpStatusCode.NotFound)
                 }
             }
+            logger.info { "Defining attributes for entity ${entity.name}"}
             for (attribute in entity.instanceAttributes.attributes) {
+                logger.info { "Defining attribute ${entity.path}/${attribute.value.name}"}
                 if (attribute.value is MutationAttribute) {
                     post(attribute.key) {
                         call.response.
