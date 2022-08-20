@@ -311,7 +311,7 @@ abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = 
             val instance = params[0] as Instance
             val pkFields = instance.entity.primaryKey.map { it.name }
             execPath = "$path/${attr.name}/${
-                pkFields.joinToString(":") {
+                pkFields.joinToString("/") {
                     instance[it].toString()
                 }
             }"
@@ -352,8 +352,9 @@ abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = 
         return attribute.handleResult(processor.perform(execPath, execParams))
     }
 
-    suspend fun attempt(attrName: String, vararg params: Any?) =
-        findAttribute<List<Int>>(attrName).execute(*params)
+    // WIP
+//    suspend fun attempt(attrName: String, vararg params: Any?) =
+//        findAttribute<List<Int>>(attrName).execute(*params)
 }
 
 @Suppress("UNCHECKED_CAST")
@@ -413,13 +414,13 @@ fun AttributeHolder.nullableRowAttribute(name: String, params: Set<String>): Nul
         addAttribute(it)
     }
 
-fun AttributeHolder.instanceAttribute(name: String, resultEntity: Entity, params: Set<String>): InstanceAttribute<Instance> =
-    InstanceAttribute<Instance>(name, params, resultEntity).also {
+fun <T: Instance>AttributeHolder.instanceAttribute(name: String, resultEntity: Entity, params: Set<String>): InstanceAttribute<T> =
+    InstanceAttribute<T>(name, params, resultEntity).also {
         addAttribute(it)
     }
 
-fun AttributeHolder.nullableInstanceAttribute(name: String, resultEntity: Entity, params: Set<String>): NullableInstanceAttribute<Instance> =
-    NullableInstanceAttribute<Instance>(name, params, resultEntity).also {
+fun <T: Instance>AttributeHolder.nullableInstanceAttribute(name: String, resultEntity: Entity, params: Set<String>): NullableInstanceAttribute<T> =
+    NullableInstanceAttribute<T>(name, params, resultEntity).also {
         addAttribute(it)
     }
 
@@ -428,8 +429,8 @@ fun AttributeHolder.rowSetAttribute(name: String, params: Set<String>): RowSetAt
         addAttribute(it)
     }
 
-fun AttributeHolder.bagAttribute(name: String, resultEntity: Entity, params: Set<String>): BagAttribute<Instance> =
-    BagAttribute<Instance>(name, params, resultEntity).also {
+fun <T: Instance>AttributeHolder.bagAttribute(name: String, resultEntity: Entity, params: Set<String>): BagAttribute<T> =
+    BagAttribute<T>(name, params, resultEntity).also {
         addAttribute(it)
     }
 

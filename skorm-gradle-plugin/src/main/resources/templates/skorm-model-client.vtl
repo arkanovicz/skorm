@@ -23,11 +23,11 @@ fun ${package}.${databaseClass}.initRuntimeModel() {
         #if($item.type.parent)
           #set($entityParam = "#pascal($database.name)Database.#pascal($schema.name)Schema.#pascal($item.type.parent)")
           #if($item.multiple)
-            #set($attribute = 'bagAttribute')
+            #set($attribute = "bagAttribute<$entityParam>")
           #elseif($item.nullable)
-            #set($attribute = 'nullableInstanceAttribute')
+            #set($attribute = "nullableInstanceAttribute<$entityParam>")
           #else
-            #set($attribute = 'instanceAttribute')
+            #set($attribute = "instanceAttribute<$entityParam>")
           #end
         #else
           #if($item.multible)
@@ -41,9 +41,9 @@ fun ${package}.${databaseClass}.initRuntimeModel() {
       #elseif ($item.type.isEntity)
         #set($entityParam = "#pascal($database.name)Database.#pascal($schema.name)Schema.#pascal($item.type.name)")
         #if($item.nullable)
-          #set($attribute = 'nullableInstanceAttribute')
+          #set($attribute = "nullableInstanceAttribute<$entityParam>")
         #else
-          #set($attribute = 'instanceAttribute')
+          #set($attribute = "instanceAttribute<$entityParam>")
         #end
       #else
         #if($item.nullable)

@@ -3,10 +3,10 @@ package com.republicate.skorm
 import com.republicate.kson.Json
 
 open class Database protected constructor(name: String, override val processor: Processor): AttributeHolder(name), Configurable {
-    var initialized by initOnce(false)
+    var populated by initOnce(false)
     override val config = Configuration()
     override fun configure(cfg: Map<String, Any?>) {
-        if (initialized) throw SkormException("Already initialized")
+        if (populated) throw SkormException("Already initialized")
         super.configure(cfg)
     }
 
@@ -18,9 +18,9 @@ open class Database protected constructor(name: String, override val processor: 
     }
 
     override fun initialize() {
-        if (initialized) throw RuntimeException("Already initialized")
+        if (populated) throw RuntimeException("Already initialized")
         processor.initialize(processor.configTag?.let { config.getObject(it) })
-        initialized = true // CB TODO - it really means *populated* (via reverse engineering or structure file)
+        populated = true
         for (entity in schemas.flatMap { it.entities }) {
             processor.register(entity)
         }
@@ -41,12 +41,12 @@ open class Schema protected constructor(name: String, parent: Database) : Attrib
     val entities: Collection<Entity> get() = _entities.values
     fun entity(name: String) = _entities[name] ?: throw SkormException("no such entity: $name")
     fun addEntity(entity: Entity) {
-        if (database.initialized) throw RuntimeException("Already initialized")
+        if (database.populated) throw RuntimeException("Already initialized")
         _entities[entity.name] = entity
     }
 }
 
-open class Entity protected constructor(val name: String, schema: Schema) {
+open class Entity protected constructor(val name: String, val schema: Schema) {
     init {
         @Suppress("LeakingThis")
         schema.addEntity(this)
@@ -58,7 +58,6 @@ open class Entity protected constructor(val name: String, schema: Schema) {
     }
 
     /*private*/ val instanceAttributes = InstanceAttributes()
-    val schema get() = instanceAttributes.parent as Schema
     val path get() = instanceAttributes.path
 
     private val _fields = mutableMapOf<String, Field>()
@@ -70,7 +69,7 @@ open class Entity protected constructor(val name: String, schema: Schema) {
         _fields.entries.mapIndexed { index, entry -> entry.key to index }.toMap()
     }
     fun addField(field: Field) {
-        if (schema.database.initialized) throw RuntimeException("Already initialized")
+        if (schema.database.populated) throw RuntimeException("Already initialized")
         _fields[field.name] = field
     }
 
@@ -78,31 +77,31 @@ open class Entity protected constructor(val name: String, schema: Schema) {
 
     private val fetchAttribute: InstanceAttribute<Instance> by lazy {
         InstanceAttribute<Instance>("fetch", primaryKey.map { it.name }.toSet(), this).apply {
-            check(schema.database.initialized)
+            check(schema.database.populated)
         }
     }
 
     private val browseAttribute: BagAttribute<Instance> by lazy {
         BagAttribute<Instance>("browse", emptySet(), this).apply {
-            check(schema.database.initialized)
+            check(schema.database.populated)
         }
     }
 
     private val insertAttribute: MutationAttribute by lazy {
         MutationAttribute("insert", useDirtyFields = true).apply {
-            check(schema.database.initialized)
+            check(schema.database.populated)
         }
     }
 
     private val updateAttribute: MutationAttribute by lazy {
         MutationAttribute("update", useDirtyFields = true).apply {
-            check(schema.database.initialized)
+            check(schema.database.populated)
         }
     }
 
     private val deleteAttribute: MutationAttribute by lazy {
         MutationAttribute("delete", parameters = primaryKey.map { it.name }.toSet()).apply {
-            check(schema.database.initialized)
+            check(schema.database.populated)
         }
     }
 
