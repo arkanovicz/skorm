@@ -76,14 +76,14 @@ open class Entity protected constructor(val name: String, schema: Schema) {
 
     val primaryKey: List<Field> by lazy { _fields.values.filter { it.primary } }
 
-    private val fetchAttribute: InstanceAttribute by lazy {
-        InstanceAttribute("fetch", primaryKey.map { it.name }.toSet(), this).apply {
+    private val fetchAttribute: InstanceAttribute<Instance> by lazy {
+        InstanceAttribute<Instance>("fetch", primaryKey.map { it.name }.toSet(), this).apply {
             check(schema.database.initialized)
         }
     }
 
-    private val browseAttribute: BagAttribute by lazy {
-        BagAttribute("browse", emptySet(), this).apply {
+    private val browseAttribute: BagAttribute<Instance> by lazy {
+        BagAttribute<Instance>("browse", emptySet(), this).apply {
             check(schema.database.initialized)
         }
     }
