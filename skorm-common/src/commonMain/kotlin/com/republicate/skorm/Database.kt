@@ -77,51 +77,51 @@ open class Entity protected constructor(val name: String, schema: Schema) {
     val primaryKey: List<Field> by lazy { _fields.values.filter { it.primary } }
 
     private val fetchAttribute: InstanceAttribute by lazy {
-        InstanceAttribute(instanceAttributes, "fetch", primaryKey.map { it.name }.toSet(), this).apply {
+        InstanceAttribute("fetch", primaryKey.map { it.name }.toSet(), this).apply {
             check(schema.database.initialized)
         }
     }
 
     private val browseAttribute: BagAttribute by lazy {
-        BagAttribute(instanceAttributes, "browse", emptySet(), this).apply {
+        BagAttribute("browse", emptySet(), this).apply {
             check(schema.database.initialized)
         }
     }
 
     private val insertAttribute: MutationAttribute by lazy {
-        MutationAttribute(instanceAttributes, "insert", useDirtyFields = true).apply {
+        MutationAttribute("insert", useDirtyFields = true).apply {
             check(schema.database.initialized)
         }
     }
 
     private val updateAttribute: MutationAttribute by lazy {
-        MutationAttribute(instanceAttributes, "update", useDirtyFields = true).apply {
+        MutationAttribute("update", useDirtyFields = true).apply {
             check(schema.database.initialized)
         }
     }
 
     private val deleteAttribute: MutationAttribute by lazy {
-        MutationAttribute(instanceAttributes, "delete", parameters = primaryKey.map { it.name }.toSet()).apply {
+        MutationAttribute("delete", parameters = primaryKey.map { it.name }.toSet()).apply {
             check(schema.database.initialized)
         }
     }
 
     open fun new() = Instance(this)
 
-    open suspend fun fetch(vararg key: Any): Instance? = fetchAttribute.execute(*key)
-    open suspend fun browse() = browseAttribute.execute()
+    open suspend fun fetch(vararg key: Any): Instance? = instanceAttributes.retrieve("fetch", *key)
+    open suspend fun browse() = instanceAttributes.query<Instance>("browse")
     open suspend operator fun iterator() = browse().iterator()
 
     // Other operations are not visible directly, they are proxied from Instance
     internal suspend fun insert(instance: Instance): Long {
         return if (primaryKey.size == 1 && primaryKey.first().generated) {
-            insertAttribute.execute(instance, GeneratedKeyMarker(primaryKey.first().name))
+            instanceAttributes.perform("insert", instance, GeneratedKeyMarker(primaryKey.first().name))
         } else {
-            insertAttribute.execute(instance)
+            instanceAttributes.perform("insert", instance)
         }
     }
-    internal suspend fun update(instance: Instance) = updateAttribute.execute(instance)
-    internal suspend fun delete(instance: Instance) = deleteAttribute.execute(instance)
+    internal suspend fun update(instance: Instance) = instanceAttributes.perform("update", instance)
+    internal suspend fun delete(instance: Instance) = instanceAttributes.perform("delete", instance)
     /*internal*/ suspend inline fun <reified T: Any?> eval(attrName: String, vararg params: Any?) = instanceAttributes.eval<T>(attrName, *params)
     /*internal*/ suspend inline fun <reified T: Json.Object?> retrieve(attrName: String, vararg params: Any?) = instanceAttributes.retrieve<T>(attrName, *params)
     /*internal*/ suspend inline fun <reified T: Json.Object> query(attrName: String, vararg params: Any?) = instanceAttributes.query<T>(attrName, *params)

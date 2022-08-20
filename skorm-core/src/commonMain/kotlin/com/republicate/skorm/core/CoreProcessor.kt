@@ -10,6 +10,7 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
 
     override val configTag = "core"
     override val config = Configuration()
+    override val restMode = false
 
     private val queries = mutableMapOf<String, AttributeDefinition>() // CB TODO - or concurrent?
     // TODO

@@ -53,7 +53,9 @@ object KsonConverter: ContentConverter {
 
 class ApiClient(val baseUrl: String) : Processor {
 
+    override val configTag = "client"
     override val config = Configuration()
+    override val restMode = true
 
     private val client = HttpClient() {
         install(ContentNegotiation) {
@@ -68,6 +70,8 @@ class ApiClient(val baseUrl: String) : Processor {
     override fun initialize() {
 
     }
+
+
 
     private suspend fun process(url: String, parameters: Map<String, Any?>, httpMethod: HttpMethod): HttpResponse = coroutineScope {
         logger.info { "$httpMethod $url" }
