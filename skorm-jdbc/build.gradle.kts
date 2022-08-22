@@ -3,12 +3,14 @@ plugins {
 }
 
 val kotlin_version: String by project
+val datetime_version: String by project
 
 dependencies {
     implementation(project(":skorm-common"))
     //implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version")
     implementation("org.slf4j:slf4j-api:1.7.32")
     implementation("org.apache.commons:commons-lang3:3.12.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime-jvm:$datetime_version")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.0")
     testImplementation("org.mockito:mockito-junit-jupiter:4.0.0")

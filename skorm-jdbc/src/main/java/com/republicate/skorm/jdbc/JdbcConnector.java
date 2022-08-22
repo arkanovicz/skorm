@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Savepoint;
+import java.time.LocalDateTime;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -359,7 +360,7 @@ public class JdbcConnector implements Connector
                 Object[] result = new Object[rowSize];
                 for (int i = 0; i < rowSize; ++i)
                 {
-                    result[i] = resultSet.getObject(i + 1);
+                    result[i] = downstreamValueMapping(resultSet.getObject(i + 1));
                 }
                 return result;
             }
@@ -373,6 +374,17 @@ public class JdbcConnector implements Connector
     private static String shorten(String qry) {
         if (qry.length() > 50) return qry.substring(0, 50) + "...";
         else return qry;
+    }
+
+    private static Object downstreamValueMapping(Object obj)
+    {
+        if (obj == null) return null;
+        else switch (obj.getClass().getName())
+        {
+            case "java.sql.Date": return new kotlinx.datetime.LocalDate(((java.sql.Date)obj).toLocalDate());
+            case "java.sql.Timestamp": return new kotlinx.datetime.LocalDateTime(((java.sql.Timestamp)obj).toLocalDateTime());
+            default: return obj;
+        }
     }
 
 }

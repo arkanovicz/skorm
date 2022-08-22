@@ -57,7 +57,7 @@ kotlin {
             kotlin.srcDir(file("build/generated-src/commonMain/kotlin"))
             dependencies {
                 implementation(project(":skorm-common"))
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.3")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
 //                implementation("io.github.microutils:kotlin-logging:2.0.11")
             }
         }
