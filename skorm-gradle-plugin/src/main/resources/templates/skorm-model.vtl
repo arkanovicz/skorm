@@ -9,22 +9,23 @@ import kotlinx.datetime.*
   #set($schemaInstance = "${databaseClass}.#camel($schema.name)")
   #foreach($item in $schema.items)
     #if($item.type.isComposite())
+      #set($itemClass = "#pascal($item.name)")
         #if($item.type.parent)
           #set($parent = "#pascal($database.name)Database.#pascal($schema.name)Schema.#pascal($item.type.parent)")
         #else
           #set($parent = "Json.Object")
         #end
-class #pascal($item.name): ${parent}() {
+class $itemClass: ${parent}() {
       #foreach ($field in $item.type.fields)
     val #camel($field.name): ${field.type}#if($field.nullable)?#end
         get() = get${field.type}("$field.name")#if(!$field.nullable)!!#end
       #end
 
-    override fun putFields(from: Map<out String, Any?>) {
-        super.putFields(from)
+    override fun putRawFields(from: Map<out String, Any?>) {
+        super.putRawFields(from)
       #foreach ($field in $item.type.fields)
         if (from.containsKey("$field.name")) {
-            internalPut("$field.name", from["$field.name"])
+            putRawValue("$field.name", from["$field.name"])
         }
       #end
     }
@@ -67,7 +68,7 @@ class #pascal($item.name): ${parent}() {
     #end
 
 // attribute ${item.receiver|$schema.name}.$item.name
-suspend fun ${receiver}.`${item.name}`(#arguments($item.neededParameters)) = ${verb}${generics}("$item.name", #values($item.neededParameters))$cast
+suspend fun ${receiver}.`${item.name}`(#arguments($item.neededParameters)) = ${verb}${generics}("$item.name"#if($item.neededParameters), #values($item.neededParameters)#end)$cast
 
   #end
 #end

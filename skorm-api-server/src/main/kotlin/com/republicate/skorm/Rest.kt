@@ -41,7 +41,7 @@ fun Route.rest(entity: Entity) {
             }
             put {
                 entity.fetch(call.allParameters())?.also {
-                    it.putFields(call.allParameters())
+                    it.putRawFields(call.allParameters())
                     it.update()
                     call.response.status(HttpStatusCode.OK)
                 } ?: run {
@@ -177,7 +177,7 @@ fun Route.rest(entity: Entity) {
         post {
             val instance = entity.new()
             // instance.putAll(call.request.queryParameters.toMap())
-            instance.putFields(call.allParameters())
+            instance.putRawFields(call.allParameters())
             instance.insert()
             call.response.status(HttpStatusCode.OK)
         }

@@ -14,7 +14,6 @@ import io.ktor.serialization.*
 import io.ktor.util.reflect.TypeInfo
 import io.ktor.utils.io.*
 import io.ktor.utils.io.charsets.*
-import io.ktor.utils.io.core.*
 import kotlinx.coroutines.*
 import mu.KotlinLogging
 
@@ -125,7 +124,7 @@ class ApiClient(val baseUrl: String) : Processor {
         val response = get(restPath, restParams)
         val json = response.body<Json.Object>()
         return factory?.invoke()?.also {
-            it.putFields(json)
+            it.putRawFields(json)
             it.setClean()
         } ?: json
     }
@@ -154,7 +153,7 @@ class ApiClient(val baseUrl: String) : Processor {
 
         return factory?.let { sequence.map { obj ->
             factory().also {
-                it.putFields(obj)
+                it.putRawFields(obj)
                 it.setClean()
             }
         } }?.asSequence() ?: sequence

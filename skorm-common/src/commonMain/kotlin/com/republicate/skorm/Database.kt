@@ -181,7 +181,7 @@ open class Instance(val entity: Entity) : Json.MutableObject() {
     suspend fun refresh() {
         if (!persisted) throw SkormException("cannot refresh a volatile instance")
         val self = entity.fetch(this) ?: throw SkormException("cannot refresh instance, it doesn't exist")
-        putFields(self)
+        putRawFields(self)
     }
 
     // dirty flags handling
@@ -193,29 +193,34 @@ open class Instance(val entity: Entity) : Json.MutableObject() {
 
     fun isDirty() = dirtyFields.nextSetBit(0) != -1
 
-    open fun putFields(from: Map<out String, Any?>) {
-        from.entries.filter { entity.fields.contains(it.key) }.forEach { put(it.key, it.value) }
-    }
-
     override fun put(key: String, value: Any?): Any? {
         val ret = super.put(key, value)
-        // CB TODO add config option?
         // coercitive version
-//        val field = entity.fields[key] ?: throw SkormException("${entity.name} has no field named $key")
-//        if (persisted && field.primary && ret != value) // CB TODO - since 'value' type is lax, 'value' may need a proper conversion before the comparison
-//                persisted = false
-//        dirtyFields.set(entity.fieldIndices[key]!!, true)
-        // relaxed version
-        val field = entity.fields[key]?.let { field ->
-            if (persisted && field.primary && ret != value) // CB TODO - since 'value' type is lax, 'value' may need a proper conversion before the comparison
+        val field = entity.fields[key] ?: throw SkormException("${entity.name} has no field named $key")
+        if (persisted && field.primary && ret != value) // CB TODO - since 'value' type is lax, 'value' may need a proper conversion before the comparison
                 persisted = false
-            dirtyFields.set(entity.fieldIndices[key]!!, true)
-        }
+        dirtyFields.set(entity.fieldIndices[key]!!, true)
+        // relaxed version
+        // val field = entity.fields[key]?.let { field ->
+        //     if (persisted && field.primary && ret != value) // CB TODO - since 'value' type is lax, 'value' may need a proper conversion before the comparison
+        //         persisted = false
+        //     dirtyFields.set(entity.fieldIndices[key]!!, true)
+        // }
         return ret
     }
 
+    open fun putRawFields(from: Map<out String, Any?>) {
+        from.entries.filter { entity.fields.contains(it.key) }.forEach { putRawValue(it.key, it.value) }
+    }
+
     // to allow subclasses to add key-value pairs besides entity columns
-    protected fun internalPut(key: String, value: Any?): Any? = super.put(key, value)
+    fun putRawValue(key: String, value: Any?): Any? = super.put(key, downstreamFilter(value))
+
+    private fun downstreamFilter(value: Any?): Any? {
+        return value?.let {
+            value
+        }
+    }
 
     suspend inline fun <reified T: Any?> eval(attrName: String, vararg params: Any?) = entity.eval<T>(attrName, this, *params)
     suspend inline fun <reified T: Json.Object?> retrieve(attrName: String, vararg params: Any?) = entity.retrieve<T>(attrName, this, *params)

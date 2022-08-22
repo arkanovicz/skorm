@@ -11,7 +11,7 @@ fun ${package}.${databaseClass}.initRuntimeModel() {
     #set($schemaClass = "${databaseClass}.#pascal($schema.name)Schema")
     #set($schemaInstance = "${databaseClass}.#camel($schema.name)")
     #foreach ($item in $schema.items)
-      #set($entityParam = false)
+      #set($itemClass = false)
       #if($item.receiver)
         #set($receiver = "${schemaInstance}.entity(""${item.receiver}"").instanceAttributes")
       #else
@@ -21,13 +21,14 @@ fun ${package}.${databaseClass}.initRuntimeModel() {
         #set($attribute = 'mutationAttribute')
       #elseif($item.type.isComposite())
         #if($item.type.parent)
-          #set($entityParam = "#pascal($database.name)Database.#pascal($schema.name)Schema.#pascal($item.type.parent)")
+          #set($itemClass = "#pascal($item.name)")
+          #set($factory = "::$itemClass")
           #if($item.multiple)
-            #set($attribute = "bagAttribute<$entityParam>")
+            #set($attribute = "bagAttribute<$itemClass>")
           #elseif($item.nullable)
-            #set($attribute = "nullableInstanceAttribute<$entityParam>")
+            #set($attribute = "nullableInstanceAttribute<$itemClass>")
           #else
-            #set($attribute = "instanceAttribute<$entityParam>")
+            #set($attribute = "instanceAttribute<$itemClass>")
           #end
         #else
           #if($item.multible)
@@ -39,11 +40,12 @@ fun ${package}.${databaseClass}.initRuntimeModel() {
           #end
         #end
       #elseif ($item.type.isEntity)
-        #set($entityParam = "#pascal($database.name)Database.#pascal($schema.name)Schema.#pascal($item.type.name)")
+        #set($itemClass = "#pascal($database.name)Database.#pascal($schema.name)Schema.#pascal($item.type.name)")
+        #set($factory = "$itemClass::new")
         #if($item.nullable)
-          #set($attribute = "nullableInstanceAttribute<$entityParam>")
+          #set($attribute = "nullableInstanceAttribute<$itemClass>")
         #else
-          #set($attribute = "instanceAttribute<$entityParam>")
+          #set($attribute = "instanceAttribute<$itemClass>")
         #end
       #else
         #if($item.nullable)
@@ -54,7 +56,7 @@ fun ${package}.${databaseClass}.initRuntimeModel() {
       #end
 
     // attribute ${item.receiver|$schema.name}.$item.name
-    ${receiver}.${attribute}("$item.name", setOf(#names($item.parameters))#if($entityParam), $entityParam#end)
+    ${receiver}.${attribute}("$item.name", setOf(#names($item.parameters))#if($itemClass), $factory#end)
     #end
 #end
 }

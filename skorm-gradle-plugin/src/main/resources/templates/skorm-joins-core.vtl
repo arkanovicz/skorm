@@ -12,9 +12,9 @@ fun ${databaseClass}.initJoins() {
         #foreach($fk in $table.foreignKeys)
           #set($instanceClass = "${schemaClass}.#pascal($fk.towards.name)")
     // forward foreign key attribute
-    ${schemaInstance}.entity("#camel($fk.from.name)").instanceAttributes.#if($fk.nonNull)instanceAttribute#{else}nullableInstanceAttribute#end<$instanceClass>("#camel($fk.towards.name)", $instanceClass, "$kotlin.foreignKeyForwardQuery($fk)")
+    ${schemaInstance}.entity("#camel($fk.from.name)").instanceAttributes.#if($fk.nonNull)instanceAttribute#{else}nullableInstanceAttribute#end<$instanceClass>("#camel($fk.towards.name)", "$kotlin.foreignKeyForwardQuery($fk)", $instanceClass)
     // reverse foreign key attribute
-    ${schemaInstance}.entity("#camel($fk.towards.name)").instanceAttributes.bagAttribute<$instanceClass>("#plural("#camel($fk.from.name)")", $instanceClass, "$kotlin.foreignKeyReverseQuery($fk)")
+    ${schemaInstance}.entity("#camel($fk.towards.name)").instanceAttributes.bagAttribute<$instanceClass>("#plural("#camel($fk.from.name)")", "$kotlin.foreignKeyReverseQuery($fk)", $instanceClass)
         #end
     #end
 #end

@@ -81,7 +81,7 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
                 putAll(names, rawValues)
             }
             else -> factory().apply {
-                putInternal(names, rawValues)
+                putNamesValues(names, rawValues)
                 setClean()
             }
         }
@@ -101,7 +101,7 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
                     putAll(names, it)
                 }
                 else -> factory().apply {
-                    putInternal(names, it)
+                    putNamesValues(names, it)
                     setClean()
                 }
             }
@@ -154,10 +154,10 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
         }
     }
 
-    private fun Instance.putInternal(names: Array<String>, values: Array<Any?>) {
+    private fun Instance.putNamesValues(names: Array<String>, values: Array<Any?>) {
         names.zip(values).forEach { (name, value) ->
             // TODO - review
-            put(name.lowercase(), value)
+            putRawValue(name.lowercase(), value)
         }
     }
 
