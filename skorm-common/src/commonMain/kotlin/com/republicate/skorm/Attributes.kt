@@ -13,7 +13,7 @@ import mu.KotlinLogging
  * Attributes
  */
 
-private val logger = KotlinLogging.logger("skorm.common")
+internal val logger = KotlinLogging.logger("skorm.common")
 
 // CB TODO - forbidden only on entity
 val reserveAttributeNames = setOf("insert", "fetch", "update", "delete")
@@ -21,12 +21,12 @@ val reserveAttributeNames = setOf("insert", "fetch", "update", "delete")
 expect fun Any.hasGenericGetter(): Boolean
 expect fun Any.callGenericGetter(key: String): Any?
 
-sealed class Attribute<out T>(val holder: AttributeHolder, val name: String, val parameters: Set<String> = emptySet(), val useDirtyFields: Boolean = false) {
+sealed class Attribute<out T>(val name: String, private val parameters: Set<String> = emptySet(), val resultEntity: Entity? = null,  private val useDirtyFields: Boolean = false) {
 
     /**
      * Match attribute named parameters with values found in provided context parameters
      */
-    internal fun matchParamValues(vararg rawValues: Any?) : Map<String, Any?> {
+    fun matchParamValues(vararg rawValues: Any?) : Map<String, Any?> {
 
         logger.info { ">> matchParamValues ${rawValues.joinToString { "$it" }}" }
 
@@ -111,184 +111,163 @@ sealed class Attribute<out T>(val holder: AttributeHolder, val name: String, val
         return ret
     }
 
-    abstract suspend fun execute(vararg params: Any?): T
-}
-
-sealed class ScalarAttribute<T>(holder: AttributeHolder, name: String, parameters: Set<String>):
-    Attribute<T>(holder, name, parameters) {
-    suspend fun exec(vararg params: Any?) =
-        holder.processor.eval("${holder.path}/$name", matchParamValues(*params))
-}
-
-class StringAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<String>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toString(exec(*params)) ?: throw SkormException("attribute $name cannot have a null result")
-}
-
-class NullableStringAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<String?>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toString(exec(*params))
-}
-
-class CharAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<Char>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toChar(exec(*params)) ?: throw SkormException("attribute $name cannot have a null result")
-}
-
-class NullableCharAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<Char?>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toChar(exec(*params))
-}
-
-class BooleanAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<Boolean>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toBoolean(exec(*params)) ?: throw SkormException("attribute $name cannot have a null result")
-}
-
-class NullableBooleanAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<Boolean?>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toBoolean(exec(*params))
-}
-
-class ByteAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<Byte>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toByte(exec(*params)) ?: throw SkormException("attribute $name cannot have a null result")
-}
-
-class NullableByteAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<Byte?>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toByte(exec(*params))
-}
-
-class ShortAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<Short>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toShort(exec(*params)) ?: throw SkormException("attribute $name cannot have a null result")
-}
-
-class NullableShortAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<Short?>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toShort(exec(*params))
-}
-
-class IntAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<Int>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toInt(exec(*params)) ?: throw SkormException("attribute $name cannot have a null result")
-}
-
-class NullableIntAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<Int?>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toInt(exec(*params))
-}
-
-class LongAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<Long>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toLong(exec(*params)) ?: throw SkormException("attribute $name cannot have a null result")
-}
-
-class NullableLongAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<Long?>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toLong(exec(*params))
-}
-
-class BigIntegerAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<BigInteger>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toBigInteger(exec(*params)) ?: throw SkormException("attribute $name cannot have a null result")
-}
-
-class NullableBigIntegerAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<BigInteger?>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toBigInteger(exec(*params))
-}
-
-class FloatAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<Float>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toFloat(exec(*params)) ?: throw SkormException("attribute $name cannot have a null result")
-}
-
-class NullableFloatAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<Float?>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toFloat(exec(*params))
-}
-
-class DoubleAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<Double>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toDouble(exec(*params)) ?: throw SkormException("attribute $name cannot have a null result")
-}
-
-class NullableDoubleAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<Double?>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toDouble(exec(*params))
-}
-
-class BigDecimalAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<BigDecimal>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toBigDecimal(exec(*params)) ?: throw SkormException("attribute $name cannot have a null result")
-}
-
-class NullableBigDecimalAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<BigDecimal?>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toBigDecimal(exec(*params))
-}
-
-class InstantAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<Instant>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toInstant(exec(*params)) ?: throw SkormException("attribute $name cannot have a null result")
-}
-
-class NullableInstantAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<Instant?>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toInstant(exec(*params))
-}
-
-class LocalTimeAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<LocalTime>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toLocalTime(exec(*params)) ?: throw SkormException("attribute $name cannot have a null result")
-}
-
-class NullableLocalTimeAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<LocalTime?>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toLocalTime(exec(*params))
-}
-
-class LocalDateTimeAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<LocalDateTime>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toLocalDateTime(exec(*params)) ?: throw SkormException("attribute $name cannot have a null result")
-}
-
-class NullableLocalDateTimeAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<LocalDateTime?>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toLocalDateTime(exec(*params))
-}
-
-class LocalDateAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<LocalDate>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toLocalDate(exec(*params)) ?: throw SkormException("attribute $name cannot have a null result")
-}
-
-class NullableLocalDateAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<LocalDate?>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toLocalDate(exec(*params))
-}
-
-class BytesAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<ByteArray>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toBytes(exec(*params)) ?: throw SkormException("attribute $name cannot have a null result")
-}
-
-class NullableBytesAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): ScalarAttribute<ByteArray?>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) = Json.TypeUtils.toBytes(exec(*params))
-}
-
-class RowAttribute(holder: AttributeHolder, name: String, parameters: Set<String>):
-    Attribute<Json.Object>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) =
-        holder.processor.retrieve("${holder.path}/$name", matchParamValues(*params))
-            ?: throw SkormException("attribute $name cannot have a null result")
-}
-
-class NullableRowAttribute(holder: AttributeHolder, name: String, parameters: Set<String>):
-    Attribute<Json.Object?>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) =
-        holder.processor.retrieve("${holder.path}/$name", matchParamValues(*params))
-}
-
-class InstanceAttribute(holder: AttributeHolder, name: String, parameters: Set<String>, val resultEntity: Entity):
-    Attribute<Instance>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) =
-        holder.processor.retrieve("${holder.path}/$name", matchParamValues(*params), resultEntity) as Instance?
-            ?: throw SkormException("attribute $name cannot have a null result")
-}
-
-class NullableInstanceAttribute(holder: AttributeHolder, name: String, parameters: Set<String>, val resultEntity: Entity):
-    Attribute<Instance?>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) =
-        holder.processor.retrieve("${holder.path}/$name", matchParamValues(*params), resultEntity) as Instance?
-}
-
-class RowSetAttribute(holder: AttributeHolder, name: String, parameters: Set<String>): Attribute<Sequence<Json.Object>>(holder, name, parameters) {
-    override suspend fun execute(vararg params: Any?) =
-        holder.processor.query("${holder.path}/$name", matchParamValues(*params))
-}
-
-class BagAttribute(holder: AttributeHolder, name: String, parameters: Set<String>, val resultEntity: Entity): Attribute<Sequence<Instance>>(holder, name, parameters) {
     @Suppress("Unchecked_cast")
-    override suspend fun execute(vararg params: Any?) =
-        holder.processor.query("${holder.path}/$name", matchParamValues(*params), resultEntity) as Sequence<Instance>
+    open fun handleResult(result: Any?): T = result as T
 }
 
-class MutationAttribute(holder: AttributeHolder, name: String, parameters: Set<String> = setOf(), useDirtyFields: Boolean = false): Attribute<Long>(holder, name, parameters, useDirtyFields) {
-    override suspend fun execute(vararg params: Any?) =
-        holder.processor.perform("${holder.path}/$name", matchParamValues(*params))
+sealed class ScalarAttribute<T>(name: String, parameters: Set<String>):
+    Attribute<T>(name, parameters)
+
+class StringAttribute(name: String, parameters: Set<String>): ScalarAttribute<String>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toString(result)  ?: throw SkormException("attribute $name cannot have a null result")
 }
+
+class NullableStringAttribute(name: String, parameters: Set<String>): ScalarAttribute<String?>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toString(result)
+}
+
+class CharAttribute(name: String, parameters: Set<String>): ScalarAttribute<Char>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toChar(result)  ?: throw SkormException("attribute $name cannot have a null result")
+}
+
+class NullableCharAttribute(name: String, parameters: Set<String>): ScalarAttribute<Char?>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toChar(result)
+}
+
+class BooleanAttribute(name: String, parameters: Set<String>): ScalarAttribute<Boolean>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toBoolean(result)  ?: throw SkormException("attribute $name cannot have a null result")
+}
+
+class NullableBooleanAttribute(name: String, parameters: Set<String>): ScalarAttribute<Boolean?>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toBoolean(result)
+}
+
+class ByteAttribute(name: String, parameters: Set<String>): ScalarAttribute<Byte>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toByte(result)  ?: throw SkormException("attribute $name cannot have a null result")
+}
+
+class NullableByteAttribute(name: String, parameters: Set<String>): ScalarAttribute<Byte?>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toByte(result)
+}
+
+class ShortAttribute(name: String, parameters: Set<String>): ScalarAttribute<Short>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toShort(result)  ?: throw SkormException("attribute $name cannot have a null result")
+}
+
+class NullableShortAttribute(name: String, parameters: Set<String>): ScalarAttribute<Short?>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toShort(result)
+}
+
+class IntAttribute(name: String, parameters: Set<String>): ScalarAttribute<Int>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toInt(result)  ?: throw SkormException("attribute $name cannot have a null result")
+}
+
+class NullableIntAttribute(name: String, parameters: Set<String>): ScalarAttribute<Int?>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toInt(result)
+}
+
+class LongAttribute(name: String, parameters: Set<String>): ScalarAttribute<Long>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toLong(result)  ?: throw SkormException("attribute $name cannot have a null result")
+}
+
+class NullableLongAttribute(name: String, parameters: Set<String>): ScalarAttribute<Long?>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toLong(result)
+}
+
+class BigIntegerAttribute(name: String, parameters: Set<String>): ScalarAttribute<BigInteger>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toBigInteger(result)  ?: throw SkormException("attribute $name cannot have a null result")
+}
+
+class NullableBigIntegerAttribute(name: String, parameters: Set<String>): ScalarAttribute<BigInteger?>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toBigInteger(result)
+}
+
+class FloatAttribute(name: String, parameters: Set<String>): ScalarAttribute<Float>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toFloat(result)  ?: throw SkormException("attribute $name cannot have a null result")
+}
+
+class NullableFloatAttribute(name: String, parameters: Set<String>): ScalarAttribute<Float?>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toFloat(result)
+}
+
+class DoubleAttribute(name: String, parameters: Set<String>): ScalarAttribute<Double>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toDouble(result)  ?: throw SkormException("attribute $name cannot have a null result")
+}
+
+class NullableDoubleAttribute(name: String, parameters: Set<String>): ScalarAttribute<Double?>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toDouble(result)
+}
+
+class BigDecimalAttribute(name: String, parameters: Set<String>): ScalarAttribute<BigDecimal>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toBigDecimal(result)  ?: throw SkormException("attribute $name cannot have a null result")
+}
+
+class NullableBigDecimalAttribute(name: String, parameters: Set<String>): ScalarAttribute<BigDecimal?>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toBigDecimal(result)
+}
+
+class InstantAttribute(name: String, parameters: Set<String>): ScalarAttribute<Instant>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toInstant(result)  ?: throw SkormException("attribute $name cannot have a null result")
+}
+
+class NullableInstantAttribute(name: String, parameters: Set<String>): ScalarAttribute<Instant?>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toInstant(result)
+}
+
+class LocalTimeAttribute(name: String, parameters: Set<String>): ScalarAttribute<LocalTime>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toLocalTime(result) ?: throw SkormException("attribute $name cannot have a null result")
+}
+
+class NullableLocalTimeAttribute(name: String, parameters: Set<String>): ScalarAttribute<LocalTime?>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toLocalTime(result)
+}
+
+class LocalDateTimeAttribute(name: String, parameters: Set<String>): ScalarAttribute<LocalDateTime>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toLocalDateTime(result) ?: throw SkormException("attribute $name cannot have a null result")
+}
+
+class NullableLocalDateTimeAttribute(name: String, parameters: Set<String>): ScalarAttribute<LocalDateTime?>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toLocalDateTime(result)
+}
+
+class LocalDateAttribute(name: String, parameters: Set<String>): ScalarAttribute<LocalDate>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toLocalDate(result) ?: throw SkormException("attribute $name cannot have a null result")
+}
+
+class NullableLocalDateAttribute(name: String, parameters: Set<String>): ScalarAttribute<LocalDate?>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toLocalDate(result)
+}
+
+class BytesAttribute(name: String, parameters: Set<String>): ScalarAttribute<ByteArray>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toBytes(result) ?: throw SkormException("attribute $name cannot have a null result")
+}
+
+class NullableBytesAttribute(name: String, parameters: Set<String>): ScalarAttribute<ByteArray?>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toBytes(result)
+}
+
+class RowAttribute(name: String, parameters: Set<String>): Attribute<Json.Object>(name, parameters) {
+    override fun handleResult(result: Any?) =
+        result as Json.Object? ?: throw SkormException("attribute $name cannot have a null result")
+}
+
+class NullableRowAttribute(name: String, parameters: Set<String>): Attribute<Json.Object?>(name, parameters)
+
+class InstanceAttribute<out T: Instance>(name: String, parameters: Set<String>, resultEntity: Entity): Attribute<T>(name, parameters, resultEntity = resultEntity) {
+    override fun handleResult(result: Any?) =
+        result as T? ?: throw SkormException("attribute $name cannot have a null result")
+}
+
+class NullableInstanceAttribute<out T: Instance>(name: String, parameters: Set<String>, resultEntity: Entity): Attribute<T?>(name, parameters, resultEntity = resultEntity)
+
+class RowSetAttribute(name: String, parameters: Set<String>): Attribute<Sequence<Json.Object>>(name, parameters)
+
+class BagAttribute<out T: Instance>(name: String, parameters: Set<String>, resultEntity: Entity): Attribute<Sequence<T>>(name, parameters, resultEntity = resultEntity)
+    
+class MutationAttribute(name: String, parameters: Set<String> = setOf(), useDirtyFields: Boolean = false): Attribute<Long>(name, parameters, useDirtyFields = useDirtyFields)
+
+// WIP
+class TransactionAttribute(name: String, parameters: Set<String> = setOf(), useDirtyFields: Boolean = false): Attribute<Long>(name, parameters, useDirtyFields = useDirtyFields)
 
 /*
  * Attributes holder
@@ -324,61 +303,80 @@ abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = 
         if (previous != null) throw SkormException("attribute $path.${attr.name} cannot be overwritten")
     }
 
-    suspend inline fun <reified T> eval(attrName: String, vararg params: Any?) =
-        findAttribute<T>(attrName).execute(*params)
+    open fun prepare(attr: Attribute<*>, vararg params: Any?) = Pair("$path/${attr.name}", attr.matchParamValues(*params))
 
-    suspend inline fun <reified T: Json.Object?> retrieve(attrName: String, vararg params: Any?) =
-        findAttribute<T>(attrName).execute(*params)
+    suspend inline fun <reified T> eval(attrName: String, vararg params: Any?) = eval(findAttribute<T>(attrName), *params)
 
-    suspend inline fun <reified T: Json.Object> query(attrName: String, vararg params: Any?) =
-        findAttribute<Sequence<T>>(attrName).execute(*params)
+    suspend inline fun <reified T> eval(attribute: Attribute<T>, vararg params: Any?): T {
+        val (execPath, execParams) = prepare(attribute, *params)
+        return attribute.handleResult(processor.eval(execPath, execParams))
+    }
 
-    suspend fun perform(attrName: String, vararg params: Any?) =
-        findAttribute<Long>(attrName).execute(*params)
+    suspend inline fun <reified T: Json.Object?> retrieve(attrName: String, vararg params: Any?) = retrieve(findAttribute<T>(attrName), *params)
 
-    suspend fun attempt(attrName: String, vararg params: Any?) =
-        findAttribute<List<Int>>(attrName).execute(*params)
+    suspend inline fun <reified T: Json.Object?> retrieve(attribute: Attribute<T>, vararg params: Any?): T {
+        val (execPath, execParams) = prepare(attribute, *params)
+        return attribute.handleResult(processor.retrieve(execPath, execParams, attribute.resultEntity))
+    }
+
+    suspend inline fun <reified T: Json.Object> query(attrName: String, vararg params: Any?) = query(findAttribute<Sequence<T>>(attrName), *params)
+
+    suspend inline fun <reified T: Json.Object> query(attribute: Attribute<Sequence<T>>, vararg params: Any?): Sequence<T> {
+        val (execPath, execParams) = prepare(attribute, *params)
+        return attribute.handleResult(processor.query(execPath, execParams, attribute.resultEntity))
+    }
+
+    suspend fun perform(attrName: String, vararg params: Any?) = perform(findAttribute<Long>(attrName), *params)
+
+    suspend fun perform(attribute: Attribute<Long>, vararg params: Any?): Long {
+        val (execPath, execParams) = prepare(attribute, *params)
+        return attribute.handleResult(processor.perform(execPath, execParams))
+    }
+
+    // WIP
+//    suspend fun attempt(attrName: String, vararg params: Any?) =
+//        findAttribute<List<Int>>(attrName).execute(*params)
 }
 
 @Suppress("UNCHECKED_CAST")
 inline fun <reified T> AttributeHolder.scalarAttribute(name: String, params: Set<String>): ScalarAttribute<T> {
     return if (null is T) when (T::class) {
-        String::class -> NullableStringAttribute(this, name, params) as ScalarAttribute<T>
-        Char::class -> NullableCharAttribute(this, name, params) as ScalarAttribute<T>
-        Boolean::class -> NullableBooleanAttribute(this, name, params) as ScalarAttribute<T>
-        Byte::class -> NullableByteAttribute(this, name, params) as ScalarAttribute<T>
-        Short::class -> NullableShortAttribute(this, name, params) as ScalarAttribute<T>
-        Int::class -> NullableIntAttribute(this, name, params) as ScalarAttribute<T>
-        Long::class -> NullableLongAttribute(this, name, params) as ScalarAttribute<T>
-        BigInteger::class -> NullableBigIntegerAttribute(this, name, params) as ScalarAttribute<T>
-        Float::class -> NullableFloatAttribute(this, name, params) as ScalarAttribute<T>
-        Double::class -> NullableDoubleAttribute(this, name, params) as ScalarAttribute<T>
-        BigDecimal::class -> NullableBigDecimalAttribute(this, name, params) as ScalarAttribute<T>
-        Instant::class -> NullableInstantAttribute(this, name, params) as ScalarAttribute<T>
-        LocalTime::class -> NullableLocalTimeAttribute(this, name, params) as ScalarAttribute<T>
-        LocalDate::class -> NullableLocalDateAttribute(this, name, params) as ScalarAttribute<T>
-        LocalDateTime::class -> NullableLocalDateTimeAttribute(this, name, params) as ScalarAttribute<T>
-        ByteArray::class -> NullableBytesAttribute(this, name, params) as ScalarAttribute<T>
+        String::class -> NullableStringAttribute(name, params) as ScalarAttribute<T>
+        Char::class -> NullableCharAttribute(name, params) as ScalarAttribute<T>
+        Boolean::class -> NullableBooleanAttribute(name, params) as ScalarAttribute<T>
+        Byte::class -> NullableByteAttribute(name, params) as ScalarAttribute<T>
+        Short::class -> NullableShortAttribute(name, params) as ScalarAttribute<T>
+        Int::class -> NullableIntAttribute(name, params) as ScalarAttribute<T>
+        Long::class -> NullableLongAttribute(name, params) as ScalarAttribute<T>
+        BigInteger::class -> NullableBigIntegerAttribute(name, params) as ScalarAttribute<T>
+        Float::class -> NullableFloatAttribute(name, params) as ScalarAttribute<T>
+        Double::class -> NullableDoubleAttribute(name, params) as ScalarAttribute<T>
+        BigDecimal::class -> NullableBigDecimalAttribute(name, params) as ScalarAttribute<T>
+        Instant::class -> NullableInstantAttribute(name, params) as ScalarAttribute<T>
+        LocalTime::class -> NullableLocalTimeAttribute(name, params) as ScalarAttribute<T>
+        LocalDate::class -> NullableLocalDateAttribute(name, params) as ScalarAttribute<T>
+        LocalDateTime::class -> NullableLocalDateTimeAttribute(name, params) as ScalarAttribute<T>
+        ByteArray::class -> NullableBytesAttribute(name, params) as ScalarAttribute<T>
         // not supported yet
         // else -> throw SkormException("unhandled type: ${T::class.qualifiedName}")
         else -> throw SkormException("unhandled type: ${T::class.simpleName}")
     } else when (T::class) {
-        String::class -> StringAttribute(this, name, params) as ScalarAttribute<T>
-        Char::class -> CharAttribute(this, name, params) as ScalarAttribute<T>
-        Boolean::class -> BooleanAttribute(this, name, params) as ScalarAttribute<T>
-        Byte::class -> ByteAttribute(this, name, params) as ScalarAttribute<T>
-        Short::class -> ShortAttribute(this, name, params) as ScalarAttribute<T>
-        Int::class -> IntAttribute(this, name, params) as ScalarAttribute<T>
-        Long::class -> LongAttribute(this, name, params) as ScalarAttribute<T>
-        BigInteger::class -> BigIntegerAttribute(this, name, params) as ScalarAttribute<T>
-        Float::class -> FloatAttribute(this, name, params) as ScalarAttribute<T>
-        Double::class -> DoubleAttribute(this, name, params) as ScalarAttribute<T>
-        BigDecimal::class -> BigDecimalAttribute(this, name, params) as ScalarAttribute<T>
-        Instant::class -> InstantAttribute(this, name, params) as ScalarAttribute<T>
-        LocalTime::class -> LocalTimeAttribute(this, name, params) as ScalarAttribute<T>
-        LocalDate::class -> LocalDateAttribute(this, name, params) as ScalarAttribute<T>
-        LocalDateTime::class -> LocalDateTimeAttribute(this, name, params) as ScalarAttribute<T>
-        ByteArray::class -> BytesAttribute(this, name, params) as ScalarAttribute<T>
+        String::class -> StringAttribute(name, params) as ScalarAttribute<T>
+        Char::class -> CharAttribute(name, params) as ScalarAttribute<T>
+        Boolean::class -> BooleanAttribute(name, params) as ScalarAttribute<T>
+        Byte::class -> ByteAttribute(name, params) as ScalarAttribute<T>
+        Short::class -> ShortAttribute(name, params) as ScalarAttribute<T>
+        Int::class -> IntAttribute(name, params) as ScalarAttribute<T>
+        Long::class -> LongAttribute(name, params) as ScalarAttribute<T>
+        BigInteger::class -> BigIntegerAttribute(name, params) as ScalarAttribute<T>
+        Float::class -> FloatAttribute(name, params) as ScalarAttribute<T>
+        Double::class -> DoubleAttribute(name, params) as ScalarAttribute<T>
+        BigDecimal::class -> BigDecimalAttribute(name, params) as ScalarAttribute<T>
+        Instant::class -> InstantAttribute(name, params) as ScalarAttribute<T>
+        LocalTime::class -> LocalTimeAttribute(name, params) as ScalarAttribute<T>
+        LocalDate::class -> LocalDateAttribute(name, params) as ScalarAttribute<T>
+        LocalDateTime::class -> LocalDateTimeAttribute(name, params) as ScalarAttribute<T>
+        ByteArray::class -> BytesAttribute(name, params) as ScalarAttribute<T>
         // not supported yet
         // else -> throw SkormException("unhandled type: ${T::class.qualifiedName}")
         else -> throw SkormException("unhandled type: ${T::class.simpleName}")
@@ -388,36 +386,36 @@ inline fun <reified T> AttributeHolder.scalarAttribute(name: String, params: Set
 }
 
 fun AttributeHolder.rowAttribute(name: String, params: Set<String>): RowAttribute =
-    RowAttribute(this, name, params).also {
+    RowAttribute(name, params).also {
         addAttribute(it)
     }
 
 fun AttributeHolder.nullableRowAttribute(name: String, params: Set<String>): NullableRowAttribute =
-    NullableRowAttribute(this, name, params).also {
+    NullableRowAttribute(name, params).also {
         addAttribute(it)
     }
 
-fun AttributeHolder.instanceAttribute(name: String, resultEntity: Entity, params: Set<String>): InstanceAttribute =
-    InstanceAttribute(this, name, params, resultEntity).also {
+fun <T: Instance>AttributeHolder.instanceAttribute(name: String, resultEntity: Entity, params: Set<String>): InstanceAttribute<T> =
+    InstanceAttribute<T>(name, params, resultEntity).also {
         addAttribute(it)
     }
 
-fun AttributeHolder.nullableInstanceAttribute(name: String, resultEntity: Entity, params: Set<String>): NullableInstanceAttribute =
-    NullableInstanceAttribute(this, name, params, resultEntity).also {
+fun <T: Instance>AttributeHolder.nullableInstanceAttribute(name: String, resultEntity: Entity, params: Set<String>): NullableInstanceAttribute<T> =
+    NullableInstanceAttribute<T>(name, params, resultEntity).also {
         addAttribute(it)
     }
 
 fun AttributeHolder.rowSetAttribute(name: String, params: Set<String>): RowSetAttribute =
-    RowSetAttribute(this, name, params).also {
+    RowSetAttribute(name, params).also {
         addAttribute(it)
     }
 
-fun AttributeHolder.bagAttribute(name: String, resultEntity: Entity, params: Set<String>): BagAttribute =
-    BagAttribute(this, name, params, resultEntity).also {
+fun <T: Instance>AttributeHolder.bagAttribute(name: String, resultEntity: Entity, params: Set<String>): BagAttribute<T> =
+    BagAttribute<T>(name, params, resultEntity).also {
         addAttribute(it)
     }
 
 fun AttributeHolder.mutationAttribute(name: String, params: Set<String>): MutationAttribute =
-    MutationAttribute(this, name, params).also {
+    MutationAttribute(name, params).also {
         addAttribute(it)
     }

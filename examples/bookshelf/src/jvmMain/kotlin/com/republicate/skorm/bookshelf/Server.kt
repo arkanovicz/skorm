@@ -201,7 +201,7 @@ fun Application.configureRouting() {
                                     +authorName
                                     br()
                                     if (currentBorrower != null) {
-                                        +"borrowed by ${currentBorrower.name} (${currentBorrower.borrowingDate})"
+                                        +"borrowed by ${currentBorrower.name} on ${currentBorrower.borrowingDate}"
                                     } else {
                                         +"available"
                                         br()

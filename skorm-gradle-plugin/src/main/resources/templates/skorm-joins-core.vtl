@@ -10,10 +10,11 @@ fun ${databaseClass}.initJoins() {
     #set($schemaInstance = "${databaseClass}.#camel($schema.name)")
     #foreach ($table in $schema.tables.values())
         #foreach($fk in $table.foreignKeys)
+          #set($instanceClass = "${schemaClass}.#pascal($fk.towards.name)")
     // forward foreign key attribute
-    ${schemaInstance}.entity("#camel($fk.from.name)").instanceAttributes.#if($fk.nonNull)instanceAttribute#{else}nullableInstanceAttribute#end("#camel($fk.towards.name)", ${schemaClass}.#pascal($fk.towards.name), "$kotlin.foreignKeyForwardQuery($fk)")
+    ${schemaInstance}.entity("#camel($fk.from.name)").instanceAttributes.#if($fk.nonNull)instanceAttribute#{else}nullableInstanceAttribute#end<$instanceClass>("#camel($fk.towards.name)", $instanceClass, "$kotlin.foreignKeyForwardQuery($fk)")
     // reverse foreign key attribute
-    ${schemaInstance}.entity("#camel($fk.towards.name)").instanceAttributes.bagAttribute("#plural("#camel($fk.from.name)")", ${schemaClass}.#pascal($fk.from.name), "$kotlin.foreignKeyReverseQuery($fk)")
+    ${schemaInstance}.entity("#camel($fk.towards.name)").instanceAttributes.bagAttribute<$instanceClass>("#plural("#camel($fk.from.name)")", $instanceClass, "$kotlin.foreignKeyReverseQuery($fk)")
         #end
     #end
 #end

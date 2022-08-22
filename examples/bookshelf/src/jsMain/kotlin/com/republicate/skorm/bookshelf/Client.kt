@@ -17,13 +17,6 @@ val bookshelf = ExampleDatabase.bookshelf
 typealias Author = ExampleDatabase.BookshelfSchema.Author
 typealias Book = ExampleDatabase.BookshelfSchema.Book
 
-fun reserve(bookId: Int) {
-    logger.info { "reserve $bookId" }
-    GlobalScope.launch {
-        ExampleDatabase.bookshelf.attempt("reserve", bookId)
-    }
-}
-
 fun main() {
     window.onload = {
         logger.info { "window loaded" }

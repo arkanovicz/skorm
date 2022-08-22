@@ -32,6 +32,9 @@ interface Processor: Configurable {
 
     // transaction
     suspend fun begin(): Transaction
+
+    // in rest mode, instances PK are appended to the path
+    val restMode: Boolean
 }
 
 suspend fun Processor.transaction(block: Transaction.()->Unit) {

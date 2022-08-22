@@ -6,6 +6,7 @@ import io.ktor.client.call.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
+import io.ktor.client.request.forms.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.http.content.*
@@ -53,7 +54,9 @@ object KsonConverter: ContentConverter {
 
 class ApiClient(val baseUrl: String) : Processor {
 
+    override val configTag = "client"
     override val config = Configuration()
+    override val restMode = true
 
     private val client = HttpClient() {
         install(ContentNegotiation) {
@@ -71,9 +74,13 @@ class ApiClient(val baseUrl: String) : Processor {
 
     private suspend fun process(url: String, parameters: Map<String, Any?>, httpMethod: HttpMethod): HttpResponse = coroutineScope {
         logger.info { "$httpMethod $url" }
+        val stringParams = parameters.filterValues { it != null }.mapValues { listOf(it.value?.toString() ?: "") }
         client.request("$baseUrl$url") {
             method = httpMethod
-            parametersOf(parameters.filterValues { it != null }.mapValues { listOf(it.value?.toString() ?: "") })
+            when (method) {
+                HttpMethod.Get -> parametersOf(stringParams)
+                else -> setBody(FormDataContent(parametersOf(stringParams)))
+            }
         }
     }
 
@@ -120,7 +127,7 @@ class ApiClient(val baseUrl: String) : Processor {
         val response = get(restPath, restParams)
         val json = response.body<Json.Object>()
         return result?.new()?.also {
-            it.putAll(json)
+            it.putFields(json)
             it.setClean()
         } ?: json
     }
@@ -149,7 +156,7 @@ class ApiClient(val baseUrl: String) : Processor {
 
         return result?.let { sequence.map { obj ->
             result.new().also {
-                it.putAll(obj)
+                it.putFields(obj)
                 it.setClean()
             }
         } }?.asSequence() ?: sequence
@@ -157,7 +164,11 @@ class ApiClient(val baseUrl: String) : Processor {
 
     override suspend fun perform(path: String, params: Map<String, Any?>): Long {
         logger.info { "perform $path $params" }
-        val response = post(path, params)
+        val response = when(path.split("/").last()) {
+            "update" -> put(path, params)
+            "delete" -> delete(path, params)
+            else -> post(path, params)
+        }
         return response.body()
     }
 

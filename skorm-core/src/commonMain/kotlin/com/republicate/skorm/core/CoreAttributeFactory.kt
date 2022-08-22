@@ -23,18 +23,18 @@ fun AttributeHolder.nullableRowAttribute(name: String, query: String): NullableR
     return nullableRowAttribute(name, queryDef.parameters())
 }
 
-fun AttributeHolder.instanceAttribute(name: String, resultEntity: Entity, query: String): InstanceAttribute {
+fun <T: Instance>AttributeHolder.instanceAttribute(name: String, resultEntity: Entity, query: String): InstanceAttribute<T> {
     val queryDef = AttributeDefinition.parse(query, schema?.name ?: "")
     if (queryDef !is SimpleQuery) throw SkormException("instance attribute can only contain a single query")
     (processor as CoreProcessor).define("${path}/$name", queryDef)
-    return instanceAttribute(name, resultEntity, queryDef.parameters())
+    return instanceAttribute<T>(name, resultEntity, queryDef.parameters())
 }
 
-fun AttributeHolder.nullableInstanceAttribute(name: String, resultEntity: Entity, query: String): NullableInstanceAttribute {
+fun <T: Instance>AttributeHolder.nullableInstanceAttribute(name: String, resultEntity: Entity, query: String): NullableInstanceAttribute<T> {
     val queryDef = AttributeDefinition.parse(query, schema?.name ?: "")
     if (queryDef !is SimpleQuery) throw SkormException("instance attribute can only contain a single query")
     (processor as CoreProcessor).define("${path}/$name", queryDef)
-    return nullableInstanceAttribute(name, resultEntity, queryDef.parameters())
+    return nullableInstanceAttribute<T>(name, resultEntity, queryDef.parameters())
 }
 fun AttributeHolder.rowSetAttribute(name: String, query: String): RowSetAttribute {
     val queryDef = AttributeDefinition.parse(query, schema?.name ?: "")
@@ -43,11 +43,11 @@ fun AttributeHolder.rowSetAttribute(name: String, query: String): RowSetAttribut
     return rowSetAttribute(name,queryDef.parameters())
 }
 
-fun AttributeHolder.bagAttribute(name: String, resultEntity: Entity, query: String): BagAttribute {
+fun <T: Instance>AttributeHolder.bagAttribute(name: String, resultEntity: Entity, query: String): BagAttribute<T> {
     val queryDef = AttributeDefinition.parse(query, schema?.name ?: "")
     if (queryDef !is SimpleQuery) throw SkormException("bag attribute can only contain a single query")
     (processor as CoreProcessor).define("${path}/$name", queryDef)
-    return bagAttribute(name, resultEntity, queryDef.parameters())
+    return bagAttribute<T>(name, resultEntity, queryDef.parameters())
 }
 fun AttributeHolder.mutationAttribute(name: String, query: String): MutationAttribute {
     val queryDef = AttributeDefinition.parse(query, schema?.name ?: "")

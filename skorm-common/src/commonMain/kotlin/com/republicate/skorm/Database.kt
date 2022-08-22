@@ -3,10 +3,10 @@ package com.republicate.skorm
 import com.republicate.kson.Json
 
 open class Database protected constructor(name: String, override val processor: Processor): AttributeHolder(name), Configurable {
-    var initialized by initOnce(false)
+    var populated by initOnce(false)
     override val config = Configuration()
     override fun configure(cfg: Map<String, Any?>) {
-        if (initialized) throw SkormException("Already initialized")
+        if (populated) throw SkormException("Already initialized")
         super.configure(cfg)
     }
 
@@ -18,9 +18,9 @@ open class Database protected constructor(name: String, override val processor: 
     }
 
     override fun initialize() {
-        if (initialized) throw RuntimeException("Already initialized")
+        if (populated) throw RuntimeException("Already initialized")
         processor.initialize(processor.configTag?.let { config.getObject(it) })
-        initialized = true // CB TODO - it really means *populated* (via reverse engineering or structure file)
+        populated = true
         for (entity in schemas.flatMap { it.entities }) {
             processor.register(entity)
         }
@@ -41,12 +41,12 @@ open class Schema protected constructor(name: String, parent: Database) : Attrib
     val entities: Collection<Entity> get() = _entities.values
     fun entity(name: String) = _entities[name] ?: throw SkormException("no such entity: $name")
     fun addEntity(entity: Entity) {
-        if (database.initialized) throw RuntimeException("Already initialized")
+        if (database.populated) throw RuntimeException("Already initialized")
         _entities[entity.name] = entity
     }
 }
 
-open class Entity protected constructor(val name: String, schema: Schema) {
+open class Entity protected constructor(val name: String, val schema: Schema) {
     init {
         @Suppress("LeakingThis")
         schema.addEntity(this)
@@ -55,10 +55,29 @@ open class Entity protected constructor(val name: String, schema: Schema) {
     inner class InstanceAttributes: AttributeHolder(name, schema) {
         override val processor get() = schema.processor
         override val schema get() = parent as Schema
+
+        override fun prepare(attr: Attribute<*>, vararg params: Any?): Pair<String, Map<String, Any?>> {
+            val doRestPK = processor.restMode && params.isNotEmpty() && params[0] is Instance && (params[0] as Instance).persisted
+            return if (doRestPK) {
+                val instance = params[0] as Instance
+                val pkFields = instance.entity.primaryKey.map { it.name }
+                val execPath = "$path/${
+                    pkFields.joinToString("/") {
+                        instance[it].toString()
+                    }
+                }/${attr.name}"
+                val execParams = attr.matchParamValues(*params).entries.filter {
+                    !pkFields.contains(it.key)
+                }.associate {
+                    it.key to it.value
+                }
+                Pair(execPath, execParams)
+            }
+            else super.prepare(attr, *params)
+        }
     }
 
     /*private*/ val instanceAttributes = InstanceAttributes()
-    val schema get() = instanceAttributes.parent as Schema
     val path get() = instanceAttributes.path
 
     private val _fields = mutableMapOf<String, Field>()
@@ -70,58 +89,58 @@ open class Entity protected constructor(val name: String, schema: Schema) {
         _fields.entries.mapIndexed { index, entry -> entry.key to index }.toMap()
     }
     fun addField(field: Field) {
-        if (schema.database.initialized) throw RuntimeException("Already initialized")
+        if (schema.database.populated) throw RuntimeException("Already initialized")
         _fields[field.name] = field
     }
 
     val primaryKey: List<Field> by lazy { _fields.values.filter { it.primary } }
 
-    private val fetchAttribute: InstanceAttribute by lazy {
-        InstanceAttribute(instanceAttributes, "fetch", primaryKey.map { it.name }.toSet(), this).apply {
-            check(schema.database.initialized)
+    private val fetchAttribute: InstanceAttribute<Instance> by lazy {
+        InstanceAttribute<Instance>("fetch", primaryKey.map { it.name }.toSet(), this).apply {
+            check(schema.database.populated)
         }
     }
 
-    private val browseAttribute: BagAttribute by lazy {
-        BagAttribute(instanceAttributes, "browse", emptySet(), this).apply {
-            check(schema.database.initialized)
+    private val browseAttribute: BagAttribute<Instance> by lazy {
+        BagAttribute<Instance>("browse", emptySet(), this).apply {
+            check(schema.database.populated)
         }
     }
 
     private val insertAttribute: MutationAttribute by lazy {
-        MutationAttribute(instanceAttributes, "insert", useDirtyFields = true).apply {
-            check(schema.database.initialized)
+        MutationAttribute("insert", useDirtyFields = true).apply {
+            check(schema.database.populated)
         }
     }
 
     private val updateAttribute: MutationAttribute by lazy {
-        MutationAttribute(instanceAttributes, "update", useDirtyFields = true).apply {
-            check(schema.database.initialized)
+        MutationAttribute("update", useDirtyFields = true).apply {
+            check(schema.database.populated)
         }
     }
 
     private val deleteAttribute: MutationAttribute by lazy {
-        MutationAttribute(instanceAttributes, "delete", parameters = primaryKey.map { it.name }.toSet()).apply {
-            check(schema.database.initialized)
+        MutationAttribute("delete", parameters = primaryKey.map { it.name }.toSet()).apply {
+            check(schema.database.populated)
         }
     }
 
     open fun new() = Instance(this)
 
-    open suspend fun fetch(vararg key: Any): Instance? = fetchAttribute.execute(*key)
-    open suspend fun browse() = browseAttribute.execute()
+    open suspend fun fetch(vararg key: Any): Instance? = instanceAttributes.retrieve(fetchAttribute, *key)
+    open suspend fun browse() = instanceAttributes.query<Instance>(browseAttribute)
     open suspend operator fun iterator() = browse().iterator()
 
     // Other operations are not visible directly, they are proxied from Instance
     internal suspend fun insert(instance: Instance): Long {
         return if (primaryKey.size == 1 && primaryKey.first().generated) {
-            insertAttribute.execute(instance, GeneratedKeyMarker(primaryKey.first().name))
+            instanceAttributes.perform(insertAttribute, instance, GeneratedKeyMarker(primaryKey.first().name))
         } else {
-            insertAttribute.execute(instance)
+            instanceAttributes.perform(insertAttribute, instance)
         }
     }
-    internal suspend fun update(instance: Instance) = updateAttribute.execute(instance)
-    internal suspend fun delete(instance: Instance) = deleteAttribute.execute(instance)
+    internal suspend fun update(instance: Instance) = instanceAttributes.perform(updateAttribute, instance)
+    internal suspend fun delete(instance: Instance) = instanceAttributes.perform(deleteAttribute, instance)
     /*internal*/ suspend inline fun <reified T: Any?> eval(attrName: String, vararg params: Any?) = instanceAttributes.eval<T>(attrName, *params)
     /*internal*/ suspend inline fun <reified T: Json.Object?> retrieve(attrName: String, vararg params: Any?) = instanceAttributes.retrieve<T>(attrName, *params)
     /*internal*/ suspend inline fun <reified T: Json.Object> query(attrName: String, vararg params: Any?) = instanceAttributes.query<T>(attrName, *params)
@@ -151,7 +170,7 @@ open class Instance(val entity: Entity) : Json.MutableObject() {
         setClean()
     }
 
-    suspend fun upsert() = if (persisted) update() else delete()
+    suspend fun upsert() = if (persisted) update() else insert()
 
     suspend fun delete() {
         if (!persisted) throw SkormException("cannot delete a volatile instance")
@@ -162,27 +181,36 @@ open class Instance(val entity: Entity) : Json.MutableObject() {
     suspend fun refresh() {
         if (!persisted) throw SkormException("cannot refresh a volatile instance")
         val self = entity.fetch(this) ?: throw SkormException("cannot refresh instance, it doesn't exist")
-        putAll(self)
+        putFields(self)
     }
 
     // dirty flags handling
 
     fun setClean() {
         dirtyFields.clear()
+        persisted = true
     }
 
     fun isDirty() = dirtyFields.nextSetBit(0) != -1
 
-    override fun putAll(from: Map<out String, Any?>) {
+    open fun putFields(from: Map<out String, Any?>) {
         from.entries.filter { entity.fields.contains(it.key) }.forEach { put(it.key, it.value) }
     }
 
     override fun put(key: String, value: Any?): Any? {
         val ret = super.put(key, value)
-        val field = entity.fields[key] ?: throw SkormException("${entity.name} has no field named $key")
-        if (persisted && field.primary && ret != value) // CB TODO - since 'value' type is lax, 'value' may need a proper conversion before the comparison
+        // CB TODO add config option?
+        // coercitive version
+//        val field = entity.fields[key] ?: throw SkormException("${entity.name} has no field named $key")
+//        if (persisted && field.primary && ret != value) // CB TODO - since 'value' type is lax, 'value' may need a proper conversion before the comparison
+//                persisted = false
+//        dirtyFields.set(entity.fieldIndices[key]!!, true)
+        // relaxed version
+        val field = entity.fields[key]?.let { field ->
+            if (persisted && field.primary && ret != value) // CB TODO - since 'value' type is lax, 'value' may need a proper conversion before the comparison
                 persisted = false
-        dirtyFields.set(entity.fieldIndices[key]!!, true)
+            dirtyFields.set(entity.fieldIndices[key]!!, true)
+        }
         return ret
     }
 
