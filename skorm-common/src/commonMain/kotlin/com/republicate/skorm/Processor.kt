@@ -12,6 +12,8 @@ class GeneratedKeyMarker(val colName: String) {
     override fun toString() = "out:generated_key($colName)"
 }
 
+typealias InstanceFactory = () -> Instance
+
 interface Transaction : Processor {
     suspend fun rollback(): Unit
     suspend fun commit(): Unit
@@ -26,8 +28,8 @@ interface Processor: Configurable {
 
     // attributes
     suspend fun eval(path: String, params: Map<String, Any?>): Any?
-    suspend fun retrieve(path: String, params: Map<String, Any?>, result: Entity? = null): Json.Object?
-    suspend fun query(path: String, params: Map<String, Any?>, result: Entity? = null): Sequence<Json.Object>
+    suspend fun retrieve(path: String, params: Map<String, Any?>, factory: InstanceFactory? = null): Json.Object?
+    suspend fun query(path: String, params: Map<String, Any?>, factory: InstanceFactory? = null): Sequence<Json.Object>
     suspend fun perform(path: String, params: Map<String, Any?>): Long
 
     // transaction

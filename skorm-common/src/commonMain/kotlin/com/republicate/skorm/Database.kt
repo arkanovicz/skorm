@@ -96,13 +96,13 @@ open class Entity protected constructor(val name: String, val schema: Schema) {
     val primaryKey: List<Field> by lazy { _fields.values.filter { it.primary } }
 
     private val fetchAttribute: InstanceAttribute<Instance> by lazy {
-        InstanceAttribute<Instance>("fetch", primaryKey.map { it.name }.toSet(), this).apply {
+        InstanceAttribute<Instance>("fetch", primaryKey.map { it.name }.toSet(), this::new).apply {
             check(schema.database.populated)
         }
     }
 
     private val browseAttribute: BagAttribute<Instance> by lazy {
-        BagAttribute<Instance>("browse", emptySet(), this).apply {
+        BagAttribute<Instance>("browse", emptySet(), this::new).apply {
             check(schema.database.populated)
         }
     }

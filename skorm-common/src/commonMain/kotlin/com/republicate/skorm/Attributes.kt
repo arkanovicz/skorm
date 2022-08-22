@@ -21,7 +21,7 @@ val reserveAttributeNames = setOf("insert", "fetch", "update", "delete")
 expect fun Any.hasGenericGetter(): Boolean
 expect fun Any.callGenericGetter(key: String): Any?
 
-sealed class Attribute<out T>(val name: String, private val parameters: Set<String> = emptySet(), val resultEntity: Entity? = null,  private val useDirtyFields: Boolean = false) {
+sealed class Attribute<out T>(val name: String, private val parameters: Set<String> = emptySet(), val factory: InstanceFactory? = null,  private val useDirtyFields: Boolean = false) {
 
     /**
      * Match attribute named parameters with values found in provided context parameters
@@ -253,16 +253,16 @@ class RowAttribute(name: String, parameters: Set<String>): Attribute<Json.Object
 
 class NullableRowAttribute(name: String, parameters: Set<String>): Attribute<Json.Object?>(name, parameters)
 
-class InstanceAttribute<out T: Instance>(name: String, parameters: Set<String>, resultEntity: Entity): Attribute<T>(name, parameters, resultEntity = resultEntity) {
+class InstanceAttribute<out T: Instance>(name: String, parameters: Set<String>, factory: InstanceFactory): Attribute<T>(name, parameters, factory = factory) {
     override fun handleResult(result: Any?) =
         result as T? ?: throw SkormException("attribute $name cannot have a null result")
 }
 
-class NullableInstanceAttribute<out T: Instance>(name: String, parameters: Set<String>, resultEntity: Entity): Attribute<T?>(name, parameters, resultEntity = resultEntity)
+class NullableInstanceAttribute<out T: Instance>(name: String, parameters: Set<String>, factory: InstanceFactory): Attribute<T?>(name, parameters, factory = factory)
 
 class RowSetAttribute(name: String, parameters: Set<String>): Attribute<Sequence<Json.Object>>(name, parameters)
 
-class BagAttribute<out T: Instance>(name: String, parameters: Set<String>, resultEntity: Entity): Attribute<Sequence<T>>(name, parameters, resultEntity = resultEntity)
+class BagAttribute<out T: Instance>(name: String, parameters: Set<String>, factory: InstanceFactory): Attribute<Sequence<T>>(name, parameters, factory = factory)
     
 class MutationAttribute(name: String, parameters: Set<String> = setOf(), useDirtyFields: Boolean = false): Attribute<Long>(name, parameters, useDirtyFields = useDirtyFields)
 
@@ -316,14 +316,14 @@ abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = 
 
     suspend inline fun <reified T: Json.Object?> retrieve(attribute: Attribute<T>, vararg params: Any?): T {
         val (execPath, execParams) = prepare(attribute, *params)
-        return attribute.handleResult(processor.retrieve(execPath, execParams, attribute.resultEntity))
+        return attribute.handleResult(processor.retrieve(execPath, execParams, attribute.factory))
     }
 
     suspend inline fun <reified T: Json.Object> query(attrName: String, vararg params: Any?) = query(findAttribute<Sequence<T>>(attrName), *params)
 
     suspend inline fun <reified T: Json.Object> query(attribute: Attribute<Sequence<T>>, vararg params: Any?): Sequence<T> {
         val (execPath, execParams) = prepare(attribute, *params)
-        return attribute.handleResult(processor.query(execPath, execParams, attribute.resultEntity))
+        return attribute.handleResult(processor.query(execPath, execParams, attribute.factory))
     }
 
     suspend fun perform(attrName: String, vararg params: Any?) = perform(findAttribute<Long>(attrName), *params)
@@ -395,13 +395,19 @@ fun AttributeHolder.nullableRowAttribute(name: String, params: Set<String>): Nul
         addAttribute(it)
     }
 
-fun <T: Instance>AttributeHolder.instanceAttribute(name: String, resultEntity: Entity, params: Set<String>): InstanceAttribute<T> =
-    InstanceAttribute<T>(name, params, resultEntity).also {
+fun <T: Instance>AttributeHolder.instanceAttribute(name: String, params: Set<String>, resultEntity: Entity) =
+    instanceAttribute<T>(name, params, resultEntity::new)
+
+fun <T: Instance>AttributeHolder.instanceAttribute(name: String, params: Set<String>, factory: InstanceFactory): InstanceAttribute<T> =
+    InstanceAttribute<T>(name, params, factory).also {
         addAttribute(it)
     }
 
-fun <T: Instance>AttributeHolder.nullableInstanceAttribute(name: String, resultEntity: Entity, params: Set<String>): NullableInstanceAttribute<T> =
-    NullableInstanceAttribute<T>(name, params, resultEntity).also {
+fun <T: Instance>AttributeHolder.nullableInstanceAttribute(name: String, params: Set<String>, resultEntity: Entity) =
+    nullableInstanceAttribute<T>(name, params, resultEntity::new)
+
+fun <T: Instance>AttributeHolder.nullableInstanceAttribute(name: String, params: Set<String>, factory: InstanceFactory): NullableInstanceAttribute<T> =
+    NullableInstanceAttribute<T>(name, params, factory).also {
         addAttribute(it)
     }
 
@@ -410,8 +416,11 @@ fun AttributeHolder.rowSetAttribute(name: String, params: Set<String>): RowSetAt
         addAttribute(it)
     }
 
-fun <T: Instance>AttributeHolder.bagAttribute(name: String, resultEntity: Entity, params: Set<String>): BagAttribute<T> =
-    BagAttribute<T>(name, params, resultEntity).also {
+fun <T: Instance>AttributeHolder.bagAttribute(name: String, params: Set<String>, resultEntity: Entity) =
+    bagAttribute<T>(name, params, resultEntity::new)
+
+fun <T: Instance>AttributeHolder.bagAttribute(name: String, params: Set<String>, factory: InstanceFactory): BagAttribute<T> =
+    BagAttribute<T>(name, params, factory).also {
         addAttribute(it)
     }
 

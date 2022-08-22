@@ -15,8 +15,6 @@ import io.ktor.util.reflect.TypeInfo
 import io.ktor.utils.io.*
 import io.ktor.utils.io.charsets.*
 import io.ktor.utils.io.core.*
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.async
 import kotlinx.coroutines.*
 import mu.KotlinLogging
 
@@ -110,11 +108,11 @@ class ApiClient(val baseUrl: String) : Processor {
         return response.body()
     }
 
-    override suspend fun retrieve(path: String, params: Map<String, Any?>, result: Entity?): Json.Object? {
-        logger.info { "retrieve $path $params ${result?.let { "as ${result.name}" } ?: ""} with params ${params.entries.joinToString(" ") { "${it.key}=${it.value}" }}" }
+    override suspend fun retrieve(path: String, params: Map<String, Any?>, factory: InstanceFactory?): Json.Object? {
+        logger.info { "retrieve $path $params with params ${params.entries.joinToString(" ") { "${it.key}=${it.value}" }}" }
         var restPath = path
         var restParams = params
-        if (result != null) {
+        if (factory != null) {
             val name = path.split("/").last()
             when (name) {
                 "fetch" -> {
@@ -126,17 +124,17 @@ class ApiClient(val baseUrl: String) : Processor {
         logger.info { "@@@ actual path = ${restPath}" }
         val response = get(restPath, restParams)
         val json = response.body<Json.Object>()
-        return result?.new()?.also {
+        return factory?.invoke()?.also {
             it.putFields(json)
             it.setClean()
         } ?: json
     }
 
-    override suspend fun query(path: String, params: Map<String, Any?>, result: Entity?): Sequence<Json.Object> {
-        logger.info { "query $path $params ${result?.let { "as $result.name" } ?: ""}" }
+    override suspend fun query(path: String, params: Map<String, Any?>, factory: InstanceFactory?): Sequence<Json.Object> {
+        logger.info { "query $path $params ${factory?.let { "as $factory.name" } ?: ""}" }
         var restPath = path
         var restParams = params
-        if (result != null) {
+        if (factory != null) {
             val name = path.split("/").last()
             when (name) {
                 "browse" -> {
@@ -154,8 +152,8 @@ class ApiClient(val baseUrl: String) : Processor {
         logger.info { "Got response $all" }
         val sequence = all.asSequence() as Sequence<Json.Object>
 
-        return result?.let { sequence.map { obj ->
-            result.new().also {
+        return factory?.let { sequence.map { obj ->
+            factory().also {
                 it.putFields(obj)
                 it.setClean()
             }

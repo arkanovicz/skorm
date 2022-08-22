@@ -70,24 +70,24 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
         return ret
     }
 
-    override suspend fun retrieve(path: String, params: Map<String, Any?>, result: Entity?): Json.Object? {
+    override suspend fun retrieve(path: String, params: Map<String, Any?>, factory: InstanceFactory?): Json.Object? {
         val (schema, query) = getSingleQuery(path, params.keys)
         val (names, it) = connector.query(schema, query.stmt, *query.params.map { params[it] }.toTypedArray())
         if (!it.hasNext()) return null // CB TODO - non-null result should be specifiable
         val rawValues = it.next()
         if (it.hasNext()) throw SkormException("raw attribute $path has more than one result row") // CB TODO - could be relaxed by config
-        return when (result) {
+        return when (factory) {
             null -> Json.MutableObject().apply {
                 putAll(names, rawValues)
             }
-            else -> result.new().apply {
+            else -> factory().apply {
                 putInternal(names, rawValues)
                 setClean()
             }
         }
     }
 
-    override suspend fun query(path: String, params: Map<String, Any?>, result: Entity?): Sequence<Json.Object> {
+    override suspend fun query(path: String, params: Map<String, Any?>, factory: InstanceFactory?): Sequence<Json.Object> {
         val (schema, query) = getSingleQuery(path, params.keys)
         val (names, it) = connector.query(schema, query.stmt, *query.params.map {
             params[it]
@@ -96,11 +96,11 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
                 else throw SkormException("Missing parameter: $it")
         }.toTypedArray())
         return it.asSequence().map {
-            when (result) {
+            when (factory) {
                 null -> Json.MutableObject().apply {
                     putAll(names, it)
                 }
-                else -> result.new().apply {
+                else -> factory().apply {
                     putInternal(names, it)
                     setClean()
                 }
