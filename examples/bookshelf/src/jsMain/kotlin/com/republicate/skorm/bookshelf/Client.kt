@@ -1,6 +1,7 @@
 package com.republicate.skorm.bookshelf
 
 import com.republicate.skorm.ApiClient
+import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -35,21 +36,8 @@ fun main() {
                 val select = form.children["dude_id"] as HTMLSelectElement? ?: throw Error("invalid select")
                 val dudeId = select.selectedOptions[0]?.attributes?.get("value")?.value ?: throw Error("dude id not found")
                 book.lend(dudeId)
+                document.location!!.reload()
             }
         }
-
-//        sel(".reserve").click { event ->
-//            logger.info { "reserve" }
-//            logger.info { "target = ${event.element()}" }
-//            GlobalScope.launch {
-//                logger.info { "inside launch" }
-//                logger.info { "target = ${event.element()}" }
-//                val bookId = event.element().attributes["data-book_id"]?.let { it.value } ?: throw Error("book id not found")
-//                logger.info { "bookId = $bookId" }
-//                val book = Book.fetch(bookId) ?: throw Error("book not found")
-//                logger.info { "book = $book" }
-//                logger.info { book.title }
-//            }
-//        }
     }
 }

@@ -183,7 +183,7 @@ public class PooledStatement // TODO implements RowValues
         {
             Object value = paramValues[i];
             if (value instanceof GeneratedKeyMarker) break;
-            preparedStatement.setObject(i + 1, value);
+            preparedStatement.setObject(i + 1, ClassMapper.write(value));
         }
     }
 

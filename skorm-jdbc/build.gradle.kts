@@ -11,6 +11,8 @@ dependencies {
     implementation("org.slf4j:slf4j-api:1.7.32")
     implementation("org.apache.commons:commons-lang3:3.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-datetime-jvm:$datetime_version")
+    implementation("org.apache.commons:commons-collections4:4.4")
+
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.0")
     testImplementation("org.mockito:mockito-junit-jupiter:4.0.0")
