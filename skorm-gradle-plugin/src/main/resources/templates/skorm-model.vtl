@@ -68,7 +68,7 @@ class $itemClass: ${parent}() {
     #end
 
 // attribute ${item.receiver|$schema.name}.$item.name
-suspend fun ${receiver}.`${item.name}`(#arguments($item.neededParameters)) = ${verb}${generics}("$item.name"#if($item.neededParameters), #values($item.neededParameters)#end)$cast
+suspend fun ${receiver}.`${item.name}`(#typedArguments($item.arguments)) = ${verb}${generics}("$item.name"#if($item.arguments), #values($item.arguments)#end)$cast
 
   #end
 #end

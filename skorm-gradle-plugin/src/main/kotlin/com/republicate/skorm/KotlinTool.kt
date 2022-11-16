@@ -43,6 +43,8 @@ class KotlinTool {
 
     fun camel(identifier: String) = snakeToCamel(identifier)
 
+    fun snake(identifier: String) = camelToSnake(identifier)
+
     fun pascal(identifier: String) = snakeToPascal(identifier)
 
 //    fun propertyType(property: GeneratePropertiesCodeTask.ObjectProperty): String {
@@ -75,9 +77,14 @@ class KotlinTool {
 
     fun names(fields: Set<String>) = fields.joinToString(",") { "\"$it\"" }
 
-    fun arguments(fields: Set<String>) = fields.joinToString(",") { "${it}: Any?" }
+    // deprecated
+    // fun arguments(fields: Set<String>) = fields.joinToString(",") { "${it}: Any?" }
 
-    fun values(fields: Set<String>) = fields.joinToString(",")
+    fun typedArguments(fields: Set<Pair<String, String?>>) = fields.map {
+        "${it.first}: ${it.second ?: "Any?"}"
+    }.joinToString(" ,")
+
+    fun values(fields: Set<Pair<String, String?>>) = fields.joinToString(",") { it.first }
 
     fun capitalize(str: String) = str.replaceFirstChar { it.uppercase() }
 

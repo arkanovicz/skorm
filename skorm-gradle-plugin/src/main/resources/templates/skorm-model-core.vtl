@@ -13,7 +13,7 @@ fun ${package}.${databaseClass}.initRuntimeModel() {
     #foreach ($item in $schema.items)
         #set($itemClass = false)
         #if($item.receiver)
-            #set($receiver = "${schemaInstance}.entity(""${item.receiver}"").instanceAttributes")
+            #set($receiver = "${schemaInstance}.entity(""#snake(${item.receiver})"").instanceAttributes")
         #else
             #set($receiver = "${schemaInstance}")
         #end

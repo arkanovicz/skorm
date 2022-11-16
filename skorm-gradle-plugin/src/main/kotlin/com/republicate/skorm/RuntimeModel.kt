@@ -16,7 +16,7 @@ class RMItem(val name: String) {
     // entity of instances on which this attribute is defined
     var receiver: String? = null
     // manually specified arguments
-    var arguments : Set<String>? = null
+    var arguments : Set<Pair<String, String>>? = null
     // whether the item is an action
     var action: Boolean = false
     //  item type
@@ -32,11 +32,8 @@ class RMItem(val name: String) {
 
     // structure infos
 
-    // the parameters needed to execute this item
+    // the parameters needed to execute this item (as found in the SQL query)
     val parameters = mutableSetOf<String>()
-    // the (deduced) needed arguments needed to execute this item, subset of the preceding,
-    // the other ones being taken in the receiver instance
-    val neededParameters = mutableSetOf<String>()
 }
 
 sealed class RMType(val name: String) {

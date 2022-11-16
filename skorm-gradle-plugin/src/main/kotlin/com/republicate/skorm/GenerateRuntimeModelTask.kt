@@ -75,7 +75,10 @@ abstract class GenerateRuntimeModelTask: BaseStructureGenerationTask() {
                 val item = RMItem(name)
                 schema.items.add(item)
                 item.receiver = itemContext.receiver?.text
-                item.arguments = itemContext.findArguments()?.LABEL()?.map { it.text }?.toSet()
+                item.arguments = itemContext.findArguments()?.findArgument()?.map {
+                    Pair(it.LABEL()?.text!!, it.findSimple_type()?.text ?: "Any?")
+                }?.toSet() ?: setOf()
+                // itemContext.findArguments()?.LABEL()?.map { it.text }?.toSet()
                 item.action = itemContext.ARROW() != null
                 item.transaction = item.action && itemContext.queries != null
                 val type = itemContext.findType()
@@ -120,20 +123,22 @@ abstract class GenerateRuntimeModelTask: BaseStructureGenerationTask() {
             for (item in schema.items) {
                 val def = AttributeDefinition.parse(item.sql!!)
                 item.parameters.addAll(def.parameters())
-                item.neededParameters.addAll(def.parameters())
+                val externalParameters = mutableSetOf<String>()
+                externalParameters.addAll(def.parameters())
                 if (item.receiver != null) {
-                    val dbTable = dbSchema.tables[item.receiver] ?: throw SkormException("table not found: ${item.receiver}")
-                    item.neededParameters.removeAll(dbTable.fields.keys)
+                    val dbTable = dbSchema.tables[item.receiver!!.lowercase()] ?: throw SkormException("table not found: ${item.receiver!!.lowercase()}")
+                    externalParameters.removeAll(dbTable.fields.keys)
                 }
-                item.arguments?.also {
-                    if (it != item.neededParameters) throw SkormException(
+                val declaredArguments = item.arguments?.map {
+                    it.first
+                }?.toSet() ?: setOf()
+                if (declaredArguments != externalParameters)throw SkormException(
                         "attribute parameters mismatch: expected: [${
-                            it.joinToString(
-                                ","
-                            )
-                        }], found: [${item.neededParameters}]"
+                            declaredArguments.joinToString(",")
+                        }], found: [${
+                            externalParameters.joinToString(",")
+                        }]"
                     )
-                }
             }
         }
     }

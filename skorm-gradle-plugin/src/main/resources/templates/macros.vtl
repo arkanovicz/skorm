@@ -2,6 +2,8 @@
 
 #macro(camel $str)$kotlin.camel($str)#end
 
+#macro(snake $str)$kotlin.snake($str)#end
+
 #macro(plural $str)$kotlin.plural($str)#end
 
 #macro(type $type)$kotlin.type($type.name, $type.type)#end
@@ -17,6 +19,8 @@
 #macro(names $fields)$kotlin.names($fields)#end
 
 #macro(arguments $fields)$kotlin.arguments($fields)#end
+
+#macro(typedArguments $fields)$kotlin.typedArguments($fields)#end
 
 #macro(values $fields)$kotlin.values($fields)#end
 

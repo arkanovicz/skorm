@@ -13,7 +13,9 @@ item:
 | receiver=LABEL DOT name=LABEL ( LP arguments RP )? ARROW ( query=single_query | queries=multiple_queries )
 ;
 
-arguments: ( LABEL ( CM LABEL )* )? ;
+arguments: ( argument ( CM argument )* ) ;
+
+argument: LABEL ( FS simple_type )? ;
 
 type: simple_type | out_entity | complex_type ;
 
