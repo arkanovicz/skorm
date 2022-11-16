@@ -202,6 +202,13 @@ fun Application.configureRouting() {
                                     br()
                                     if (currentBorrower != null) {
                                         +"borrowed by ${currentBorrower.name} on ${currentBorrower.borrowingDate}"
+                                        br()
+                                        form(classes="restitute-form") {
+                                            attributes["data-book_id"] = "${book.bookId}"
+                                            button(type=ButtonType.submit) {
+                                                +"restitute"
+                                            }
+                                        }
                                     } else {
                                         +"available"
                                         br()

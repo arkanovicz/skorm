@@ -4,17 +4,17 @@ database example {
     booksCount: Int =
       SELECT count(*) FROM book;
 
-    book.currentBorrower: (Dude, borrowing_date: LocalDateTime)? =
+    Book.currentBorrower: (Dude, borrowing_date: LocalDateTime)? =
       SELECT dude.*, borrowing_date FROM bookshelf.borrowing
         JOIN dude USING (dude_id)
         WHERE book_id = {book_id}
         AND restitution_date IS NULL;
 
-    book.lend(dude_id) ->
+    Book.lend(dude_id: Long) ->
       INSERT INTO borrowing (dude_id, book_id, borrowing_date)
         VALUES ({dude_id}, {book_id}, now());
 
-    book.return ->
+    Book.restitute ->
       UPDATE borrowing SET restitution_date = NOW()
         WHERE book_id = {book_id} AND restitution_date IS NULL;
   }
