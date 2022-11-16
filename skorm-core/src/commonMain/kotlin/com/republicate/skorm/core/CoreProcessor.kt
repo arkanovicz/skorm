@@ -17,8 +17,8 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
 //    private val readFilters = mutableMapOf<String, Mapper<*>>()
 //    private val writeFilters = mutableMapOf<String, Mapper<Any?>>()
 
-    private val identifierQuoteChar: Char by lazy { connector.metaInfos.identifierQuoteChar }
-    private val identifierInternalCase: Char by lazy { connector.metaInfos.identifierInternalCase }
+    private val identifierQuoteChar: Char by lazy { connector.getMetaInfos().identifierQuoteChar }
+    private val identifierInternalCase: Char by lazy { connector.getMetaInfos().identifierInternalCase }
 
     // var readMapper: IdentifierMapper = identityMapper UNUSED
     internal var writeMapper: IdentifierMapper = identityMapper

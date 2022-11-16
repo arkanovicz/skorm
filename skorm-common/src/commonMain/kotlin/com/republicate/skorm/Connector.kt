@@ -15,8 +15,8 @@ interface MetaInfos {
 
 interface Connector: Configurable {
     // meta
-    @get:Throws(SkormException::class)
-    val metaInfos: MetaInfos
+    @Throws(SkormException::class)
+    fun getMetaInfos(): MetaInfos
 
     // queries
     @Throws(SkormException::class)
