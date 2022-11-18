@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm")
-    java
+     java
+    `maven-publish`
 }
 
 val ktor_version: String by project

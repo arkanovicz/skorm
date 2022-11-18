@@ -19,7 +19,7 @@ allprojects {
 
     apply(plugin = "org.jetbrains.dokka")
     apply(plugin = "signing")
-    apply(plugin = "maven-publish")
+//    apply(plugin = "maven-publish")
 
     tasks {
 //        register<Jar>("sourcesJar") {
