@@ -1,12 +1,12 @@
 plugins {
-    java
+    `java-library`
 }
 
 val kotlin_version: String by project
 val datetime_version: String by project
 
 dependencies {
-    implementation(project(":skorm-common"))
+    api(project(":skorm-core"))
     //implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version")
     implementation("org.slf4j:slf4j-api:1.7.32")
     implementation("org.apache.commons:commons-lang3:3.12.0")
@@ -38,3 +38,12 @@ tasks {
         useJUnitPlatform()
     }
 }
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+        }
+    }
+}
+
