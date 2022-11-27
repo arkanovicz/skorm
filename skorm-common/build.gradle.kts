@@ -1,5 +1,6 @@
 plugins {
     kotlin("multiplatform")
+    `maven-publish`
 }
 
 /*
@@ -77,3 +78,13 @@ kotlin {
         val nativeTest by getting
     }
 }
+
+/*
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+        }
+    }
+}
+ */

@@ -79,20 +79,20 @@ abstract class GenerateRuntimeModelTask: BaseStructureGenerationTask() {
                     Pair(it.LABEL()?.text!!, it.findSimple_type()?.text ?: "Any?")
                 }?.toSet() ?: setOf()
                 // itemContext.findArguments()?.LABEL()?.map { it.text }?.toSet()
-                item.action = itemContext.ARROW() != null
-                item.transaction = item.action && itemContext.queries != null
+                item.action = itemContext.attr_type!!.text!!.startsWith("mut")
+                item.transaction = item.action && itemContext.findSql_spec()!!.queries != null
                 val type = itemContext.findType()
                 when {
                     type?.findSimple_type() != null -> item.type = RMSimpleType(type?.findSimple_type()?.text ?: nullerr(), false)
                     type?.findOut_entity() != null -> item.type = RMSimpleType(type?.findOut_entity()?.text ?: nullerr(), true)
                     type?.findComplex_type() != null -> {
-                        val composite = type?.findComplex_type() ?: nullerr()
-                        item.type = RMCompositeType(name.capitalize()).also {
-                            it.parent = composite.entity?.text
+                        val composite = type?.findComplex_type()?.findComplex_type_spec() ?: nullerr()
+                        item.type = RMCompositeType(name.capitalize()).also { itemType ->
+                            itemType.parent = composite.entity?.text
                             var fieldNames = composite.LABEL()
-                            if (it.parent != null) fieldNames = fieldNames.subList(1, fieldNames.size)
-                            var fieldTypes = composite.findSimple_type()
-                            fieldNames.zip(fieldTypes).map { RMField(it.first.text, it.second.text) }.toCollection(it.fields)
+                            if (itemType.parent != null) fieldNames = fieldNames.subList(1, fieldNames.size)
+                            val fieldTypes = composite.findSimple_type()
+                            fieldNames.zip(fieldTypes).map { RMField(it.first.text, it.second.text) }.toCollection(itemType.fields)
                         }
                     }
                 }
@@ -102,7 +102,7 @@ abstract class GenerateRuntimeModelTask: BaseStructureGenerationTask() {
                     qualif.QM() != null -> item.nullable = true
                     qualif.ST() != null -> item.multiple = true
                 }
-                item.sql = itemContext.query?.text?.trim() ?: itemContext.queries?.text?.trim() ?: nullerr()
+                item.sql = itemContext.findSql_spec()?.query?.text?.trim() ?: itemContext.findSql_spec()?.queries?.text?.trim() ?: nullerr()
             }
         }
         return database

@@ -5,6 +5,8 @@ tokens { QUERY_PART }
 // symbols
 DATABASE: 'database' ;
 SCHEMA: 'schema' ;
+ATTR: 'attr' ;
+MUTATION: 'mut' | 'mutation';
 
 // types
 BOOLEAN: 'Boolean' ;
@@ -37,6 +39,7 @@ QM: '?' ;
 CM: ',' ;
 EQ: '='  -> pushMode( QUERY );
 SC: ';' ;
+PL: '+';
 
 // whitespaces and comments
 WS: [ \t\n\r]+ -> skip ;

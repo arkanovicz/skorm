@@ -1,7 +1,7 @@
 plugins {
     kotlin("multiplatform")
     application
-    id("skorm-gradle-plugin") version "0.1"
+    id("skorm-gradle-plugin") version "0.3"
 }
 
 buildscript {

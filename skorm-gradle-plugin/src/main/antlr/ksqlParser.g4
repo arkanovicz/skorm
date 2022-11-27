@@ -7,10 +7,13 @@ database: DATABASE name=LABEL LC ( schema )* RC ;
 schema: SCHEMA name=LABEL LC ( item )* RC ;
 
 item:
-  name=LABEL ( LP arguments RP )? FS type ( qualifier )? EQ query=single_query
-| name=LABEL ( LP arguments RP )? ARROW ( query=single_query | queries=multiple_queries )
-| receiver=LABEL DOT name=LABEL ( LP arguments RP )? FS type ( qualifier )? EQ query=single_query
-| receiver=LABEL DOT name=LABEL ( LP arguments RP )? ARROW ( query=single_query | queries=multiple_queries )
+  attr_type=ATTR ( receiver=LABEL DOT )? name=LABEL ( LP arguments RP )? FS type ( qualifier )? EQ sql_spec
+| attr_type=MUTATION ( receiver=LABEL DOT )? name=LABEL ( LP arguments RP )? EQ sql_spec
+;
+
+sql_spec:
+  query=single_query
+| queries=multiple_queries
 ;
 
 arguments: ( argument ( CM argument )* ) ;
@@ -37,7 +40,9 @@ simple_type:
 
 out_entity: LABEL ;
 
-complex_type: LP ( entity=LABEL | field=LABEL FS simple_type ) ( CM field=LABEL FS simple_type )* RP ;
+complex_type: complex_type_spec | LP complex_type_spec RP ;
+
+complex_type_spec: ( entity=LABEL | field=LABEL FS simple_type ) ( PL field=LABEL FS simple_type )* ;
 
 qualifier: ( optional=QM | mmultiple=ST ) ;
 

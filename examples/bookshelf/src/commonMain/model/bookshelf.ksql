@@ -1,20 +1,20 @@
 database example {
   schema bookshelf {
 
-    booksCount: Int =
+    attr booksCount: Int =
       SELECT count(*) FROM book;
 
-    Book.currentBorrower: (Dude, borrowing_date: LocalDateTime)? =
+    attr Book.currentBorrower: (Dude + borrowing_date: LocalDateTime)? =
       SELECT dude.*, borrowing_date FROM bookshelf.borrowing
         JOIN dude USING (dude_id)
         WHERE book_id = {book_id}
         AND restitution_date IS NULL;
 
-    Book.lend(dude_id: Long) ->
+    mut Book.lend(dude_id: Long) =
       INSERT INTO borrowing (dude_id, book_id, borrowing_date)
         VALUES ({dude_id}, {book_id}, now());
 
-    Book.restitute ->
+    mut Book.restitute =
       UPDATE borrowing SET restitution_date = NOW()
         WHERE book_id = {book_id} AND restitution_date IS NULL;
   }
