@@ -100,12 +100,12 @@ fun ApplicationConfig.toMap(): Map<String, Any> {
                     when (target) {
                         is Map<*,*> ->
                             target.get(elem)?.also {
-                                if (it !is List<*>) throw SkormException("epecting a list")
+                                if (it !is List<*>) throw SkormException("expecting a list")
                                 if (it.size != nextIndex) throw SkormException("wrong list size")
                             } ?: throw SkormException("expecting a list")
                         is List<*> ->
                             target.lastOrNull()?.also {
-                                if (it !is List<*>) throw SkormException("epecting a list")
+                                if (it !is List<*>) throw SkormException("expecting a list")
                                 if (it.size != nextIndex) throw SkormException("wrong list size")
                             } ?: throw SkormException("expecting a list")
                         else -> throw SkormException("unhandled case")

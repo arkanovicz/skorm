@@ -11,7 +11,7 @@ buildscript {
         maven("https://jitpack.io") // for antlr-kotlin
     }
     dependencies {
-        classpath("com.republicate.skorm:skorm-gradle-plugin:0.1")
+        classpath("com.republicate.skorm:skorm-gradle-plugin:0.3")
     }
 }
 
