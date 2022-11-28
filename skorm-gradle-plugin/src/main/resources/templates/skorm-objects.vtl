@@ -75,7 +75,7 @@ class $databaseClass(processor: Processor): Database("$database.name", processor
                 set(v) { put("$field.name", v?.toString() }
         #end
       #else
-                get() = get#type($field)("$field.name")#if($field.nonNull)!!#end
+                get() = #getter($field)("$field.name")#if($field.nonNull)!!#end
         #if(!$pk)
                 set(v) { put("$field.name", v) }
         #end

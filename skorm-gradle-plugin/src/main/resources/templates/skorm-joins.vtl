@@ -6,17 +6,49 @@ package $package
   #set($schemaClass = "${databaseClass}.#pascal($schema.name)Schema")
   #set($schemaInstance = "${databaseClass}.#camel($schema.name)")
   #foreach ($table in $schema.tables.values())
-    #set ($instanceClass = "#pascal($table.name)")
-    #foreach($fk in $table.foreignKeys)
-
+    #if($kotlin.isJoinTable($table))
+      #set($leftFk = $table.foreignKeys[0])
+      #set($rightFk = $table.foreignKeys[1])
+      #set($left = $leftFk.towards)
+      #set($right = $rightFk.towards)
+      #set($leftSchema = "${databaseClass}.#pascal($left.schema.name)Schema")
+      #set($rightSchema = "${databaseClass}.#pascal($right.schema.name)Schema")
+      #set($leftInstance = "${leftSchema}.#pascal($left.name)")
+      #set($rightInstance = "${rightSchema}.#pascal($right.name)")
+      #if($leftFk.fields.size() == 1)
+        #set($rightToLeftAttrBase = "#attributeName($rightFk.fields.iterator().next().name)")
+      #else
+        #set($rightToLeftAttrBase = "#camel($left.name)")
+      #end
+      #if($rightFk.fields.size() == 1)
+        #set($leftToRightAttrBase = "#attributeName($leftFk.fields.iterator().next().name)")
+      #else
+        #set($leftToRightAttrBase = "#camel($right.name)")
+      #end
+// left to right n-n join
+suspend fun ${leftInstance}.#plural($leftToRightAttrBase)(): Sequence<$rightInstance> = entity.query("#plural($leftToRightAttrBase)", this)
+// right to left n-n join
+suspend fun ${rightInstance}.#plural($rightToLeftAttrBase)(): Sequence<$leftInstance> = entity.query("#plural($rightToLeftAttrBase)", this)
+    #else
+      #set ($instanceClass = "#pascal($table.name)")
+      #foreach($fk in $table.foreignKeys)
+        #if($fk.fields.size() == 1)
+          #set($attrName = "#attributeName($fk.fields.iterator().next().name)")
+        #elseif($kotlin.isUniqueFkDest($fk))
+          #set($attrName = "#camel($fk.towards.name)")
+        #else
+          #set($attrName = "#attributeName($fk.fields.iterator().next().name)#pascal($fk.towards.name)")
+        #end
 // forward foreign key
-      #set($attrName = "#camel($fk.towards.name)")
 suspend fun ${schemaClass}.#pascal($fk.from.name).${attrName}(): ${schemaClass}.#pascal($fk.towards.name) = entity.retrieve("$attrName", this)
-
+        #if($kotlin.isUniqueFkDest($fk))
+          #set($attrName = "#camel($fk.from.name)")
+        #else
+          #set($attrName = "#attributeName($fk.fields.iterator().next().name)#pascal($fk.from.name)")
+        #end
 // reverse foreign key
-      #set($attrName = "#camel($fk.from.name)")
 suspend fun ${schemaClass}.#pascal($fk.towards.name).#plural($attrName)(): Sequence<${schemaClass}.#pascal($fk.from.name)> = entity.query("#plural($attrName)", this)
-
+      #end
     #end
   #end
 #end

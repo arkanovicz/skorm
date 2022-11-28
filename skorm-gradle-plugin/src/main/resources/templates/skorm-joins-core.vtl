@@ -9,13 +9,51 @@ fun ${databaseClass}.initJoins() {
     #set($schemaClass = "${databaseClass}.#pascal($schema.name)Schema")
     #set($schemaInstance = "${databaseClass}.#camel($schema.name)")
     #foreach ($table in $schema.tables.values())
+      #if($kotlin.isJoinTable($table))
+        #set($leftFk = $table.foreignKeys[0])
+        #set($rightFk = $table.foreignKeys[1])
+        #set($left = $leftFk.towards)
+        #set($right = $rightFk.towards)
+        #set($leftSchemaClass = "${databaseClass}.#pascal($left.schema.name)Schema")
+        #set($rightSchemaClass = "${databaseClass}.#pascal($right.schema.name)Schema")
+        #set($leftSchemaInstance = "${databaseClass}.#camel($left.schema.name)")
+        #set($rightSchemaInstance = "${databaseClass}.#camel($right.schema.name)")
+        #set($leftInstance = "${leftSchemaClass}.#pascal($left.name)")
+        #set($rightInstance = "${rightSchemaClass}.#pascal($right.name)")
+          #if($leftFk.fields.size() == 1)
+              #set($rightToLeftAttrBase = "#attributeName($rightFk.fields.iterator().next().name)")
+          #else
+              #set($rightToLeftAttrBase = "#camel($left.name)")
+          #end
+          #if($rightFk.fields.size() == 1)
+              #set($leftToRightAttrBase = "#attributeName($leftFk.fields.iterator().next().name)")
+          #else
+              #set($leftToRightAttrBase = "#camel($right.name)")
+          #end
+  // left to right n-n join attribute
+  ${leftSchemaInstance}.entity("#camel(${left.name})").instanceAttributes.bagAttribute<$rightInstance>("#plural($leftToRightAttrBase)", "$kotlin.joinTableQuery($table, true)", $rightInstance)
+  // right to left n-n join attribute
+  ${rightSchemaInstance}.entity("#camel(${right.name})").instanceAttributes.bagAttribute<$leftInstance>("#plural($rightToLeftAttrBase)", "$kotlin.joinTableQuery($table, false)", $leftInstance)
+      #else
         #foreach($fk in $table.foreignKeys)
           #set($instanceClass = "${schemaClass}.#pascal($fk.towards.name)")
-    // forward foreign key attribute
-    ${schemaInstance}.entity("#camel($fk.from.name)").instanceAttributes.#if($fk.nonNull)instanceAttribute#{else}nullableInstanceAttribute#end<$instanceClass>("#camel($fk.towards.name)", "$kotlin.foreignKeyForwardQuery($fk)", $instanceClass)
-    // reverse foreign key attribute
-    ${schemaInstance}.entity("#camel($fk.towards.name)").instanceAttributes.bagAttribute<$instanceClass>("#plural("#camel($fk.from.name)")", "$kotlin.foreignKeyReverseQuery($fk)", $instanceClass)
+          #if($fk.fields.size() == 1)
+            #set($attrName = "#attributeName($fk.fields.iterator().next().name)")
+          #else
+            #set($attrName = "#camel($fk.towards.name)")
+          #end
+   // forward foreign key attribute
+   ${schemaInstance}.entity("#camel($fk.from.name)").instanceAttributes.#if($fk.nonNull)instanceAttribute#{else}nullableInstanceAttribute#end<$instanceClass>("$attrName", "$kotlin.foreignKeyForwardQuery($fk)", $instanceClass)
+          #set($instanceClass = "${schemaClass}.#pascal($fk.from.name)")
+          #if($kotlin.isUniqueFkDest($fk))
+            #set($attrName = "#camel($fk.from.name)")
+          #else
+            #set($attrName = "#attributeName($fk.fields.iterator().next().name)#pascal($fk.from.name)")
+          #end
+   // reverse foreign key attribute
+   ${schemaInstance}.entity("#camel($fk.towards.name)").instanceAttributes.bagAttribute<$instanceClass>("#plural($attrName)", "$kotlin.foreignKeyReverseQuery($fk)", $instanceClass)
         #end
+      #end
     #end
 #end
 }

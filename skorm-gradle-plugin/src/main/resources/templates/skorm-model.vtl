@@ -50,23 +50,22 @@ class $itemClass: ${parent}() {
         #if(!$item.multiple)
           #set($cast=" as #capitalize($item.name)#if($item.nullable)?#end")
         #end
-      #elseif($item.type.isEntity)
-        #set($generics = "<#capitalize($item.type.name)#if($item.nullable)?#end>")
+      #elseif($item.type.isEntity())
+        #set($generics = "<${schemaClass}.#capitalize($item.type.name)#if($item.nullable)?#end>")
         #if(!$item.multiple)
-          #set($cast=" as #capitalize($item.name)#if($item.nullable)?#end")
+##          #set($cast=" as #capitalize($item.name)#if($item.nullable)?#end")
         #end
       #else
         #set($generics = "<$item.type.name#if($item.nullable)?#end>")
       #end
       #if($item.multiple)
         #set($verb = 'query')
-      #elseif($item.type.isComposite() && $item.type.parent || $item.type.isEntity)
+      #elseif($item.type.isComposite() && $item.type.parent || $item.type.isEntity())
         #set($verb = 'retrieve')
       #else
         #set($verb = 'eval')
       #end
     #end
-
 // attribute ${item.receiver|$schema.name}.$item.name
 suspend fun ${receiver}.`${item.name}`(#typedArguments($item.arguments)) = ${verb}${generics}("$item.name"#if($item.arguments), #values($item.arguments)#end)$cast
 

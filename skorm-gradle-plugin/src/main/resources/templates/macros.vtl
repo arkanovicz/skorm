@@ -8,6 +8,8 @@
 
 #macro(type $type)$kotlin.type($type.name, $type.type)#end
 
+#macro(getter $type)$kotlin.getter($type.name, $type.type)#end
+
 #macro(args $fields)#foreach($field in $fields)#camel($field.name)#if($foreach.hasNext), #end#end#end
 
 #macro(typedArgs $fields)#foreach($field in $fields)#camel($field.name): #type($field)#if($foreach.hasNext), #end#end#end
@@ -27,3 +29,5 @@
 #macro(capitalize $str)$kotlin.capitalize($str)#end
 
 #macro(decapitalize $str)$kotlin.decapitalize($str)#end
+
+#macro(attributeName $str)$kotlin.attributeName($str)#end

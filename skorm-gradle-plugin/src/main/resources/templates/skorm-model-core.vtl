@@ -39,7 +39,7 @@ fun ${package}.${databaseClass}.initRuntimeModel() {
                     #set($attribute = 'rowAttribute')
                 #end
             #end
-        #elseif ($item.type.isEntity)
+        #elseif ($item.type.isEntity())
             #set($itemClass = "#pascal($database.name)Database.#pascal($schema.name)Schema.#pascal($item.type.name)")
             #set($factory = "$itemClass::new")
             #if($item.nullable)

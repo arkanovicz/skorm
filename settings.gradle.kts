@@ -13,7 +13,7 @@ pluginManagement {
     resolutionStrategy {
         eachPlugin {
             if (requested.id.id == "skorm-gradle-plugin") {
-                useModule("com.republicate.skorm:skorm-gradle-plugin:0.1")
+                useModule("com.republicate.skorm:skorm-gradle-plugin:0.3")
             } /* else if (requested.id.id == "atomicfu-gradle-plugin") {
                 useModule("com.republicate.skorm:skorm-gradle-plugin:0.1")
             } */

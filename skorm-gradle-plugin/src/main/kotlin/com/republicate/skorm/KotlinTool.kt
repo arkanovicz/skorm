@@ -3,6 +3,7 @@ package com.republicate.skorm
 import com.republicate.kddl.ASTField
 import com.republicate.kddl.ASTForeignKey
 import com.republicate.kddl.ASTSchema
+import com.republicate.kddl.ASTTable
 import groovyjarjarantlr.SemanticException
 import org.atteo.evo.inflector.English
 import java.util.*
@@ -11,7 +12,8 @@ fun String.lowercase() = toLowerCase(Locale.ROOT)
 
 class KotlinTool {
     companion object {
-        private val decomp = Regex("^(\\w+)\\s*(?:\\((?:(\\d+|'(?:[^']|'')*')(?:\\s*,\\s*(\\d+|'(?:[^']|'')*'))*)?\\))?$")
+        private val decomp =
+            Regex("^(\\w+)\\s*(?:\\((?:(\\d+|'(?:[^']|'')*')(?:\\s*,\\s*(\\d+|'(?:[^']|'')*'))*)?\\))?$")
         private val text = setOf("text", "varchar")
         private val enInflector = English(English.MODE.ENGLISH_CLASSICAL)
     }
@@ -19,8 +21,8 @@ class KotlinTool {
     fun type(name: String, type: String): String {
         val match = decomp.matchEntire(type) ?: throw SemanticException("invalid type: $type")
         val base = match.groups[1]!!.value.toLowerCase(Locale.ROOT)
-        return when(base) {
-            "text", "varchar" -> "String"
+        return when (base) {
+            "text", "varchar", "clob" -> "String"
             "enum" -> pascal(name) + "Enum"
             "serial" -> "Int"
             "date" -> "LocalDate"
@@ -29,9 +31,20 @@ class KotlinTool {
             "long" -> "Long"
             "float" -> "Float"
             "double" -> "Double"
+            "blob" -> "ByteArray"
             else -> throw SemanticException("unknown type: $type")
         }
     }
+
+    fun getter(name: String, type: String): String {
+        val match = decomp.matchEntire(type) ?: throw SemanticException("invalid type: $type")
+        val base = match.groups[1]!!.value.toLowerCase(Locale.ROOT)
+        return when (base) {
+            "blob" -> "getBytes"
+            else -> "get${type(name, base)}"
+        }
+    }
+
 
     fun enums(schema: ASTSchema): List<ASTField> {
         return schema.tables.values.flatMap {
@@ -59,8 +72,8 @@ class KotlinTool {
 
     fun foreignKeyForwardQuery(fk: ASTForeignKey): String {
         return "SELECT * FROM ${fk.towards.schema.name}.${fk.towards.name} WHERE ${
-            fk.fields.zip(fk.towards.getPrimaryKey()).joinToString(" AND ") { 
-                "${fk.towards.name}.${it.second.name} = {${it.first.name}}"
+            fk.towards.getPrimaryKey().zip(fk.fields).joinToString(" AND ") {
+                "${fk.towards.name}.${it.first.name} = {${it.second.name}}"
             }
         };"
     }
@@ -68,7 +81,25 @@ class KotlinTool {
     fun foreignKeyReverseQuery(fk: ASTForeignKey): String {
         return "SELECT * FROM ${fk.from.schema.name}.${fk.from.name} WHERE ${
             fk.fields.zip(fk.towards.getPrimaryKey()).joinToString(" AND ") {
-                "${fk.from.name}.${it.first.name} = {${it.second.name}}"
+                "${fk.from.name}.${it.second.name} = {${it.first.name}}"
+            }
+        };"
+    }
+
+    fun joinTableQuery(join: ASTTable, reverse: Boolean = false): String {
+        val fromFk = if (reverse) join.foreignKeys.last() else join.foreignKeys.first()
+        val towardsFk = if (reverse) join.foreignKeys.first() else join.foreignKeys.last()
+        val from = fromFk.towards
+        val towards = towardsFk.towards
+        val join = fromFk.from
+        assert(join == towardsFk.from)
+        return "SELECT towards_table.* FROM ${join.schema.name}.${join.name} AS join_table JOIN ${towards.schema.name}.${towards.name} AS towards_table ON ${
+            towards.getPrimaryKey().zip(towardsFk.fields).joinToString(" AND ") {
+                "towards_table.${it.first.name} = join_table.${it.second.name}"
+            }
+        } WHERE ${
+            fromFk.fields.zip(from.getPrimaryKey()).joinToString(" AND ") {
+                "join_table.${it.first.name} = {${it.second.name}}"
             }
         };"
     }
@@ -89,4 +120,16 @@ class KotlinTool {
     fun capitalize(str: String) = str.replaceFirstChar { it.uppercase() }
 
     fun decapitalize(str: String) = str.replaceFirstChar { it.lowercase() }
+
+    // only consider single-field keys
+    fun isJoinTable(table: ASTTable) =
+        table.foreignKeys.size == 2 && table.foreignKeys.flatMap { it.fields }.toSet() == table.fields.values.toSet()
+
+    fun attributeName(fieldName: String) =
+        camel(fieldName.replace(Regex("_id$|Id$"), ""))
+
+    fun isUniqueFkDest(fk: ASTForeignKey) =
+        !fk.from.foreignKeys.filter { it != fk }.map { it -> it.towards }.contains(fk.towards)
 }
+
+

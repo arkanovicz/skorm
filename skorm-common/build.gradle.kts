@@ -57,7 +57,7 @@ kotlin {
         val atomicfu_version: String by project
         val commonMain by getting {
             dependencies {
-                api("com.republicate.kson:essential-kson:2.1")
+                api("com.republicate.kson:essential-kson:2.3")
                 implementation("org.jetbrains.kotlinx:atomicfu:$atomicfu_version")
                 implementation("io.github.microutils:kotlin-logging:2.1.23")
             }
