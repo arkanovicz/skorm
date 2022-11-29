@@ -20,7 +20,7 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     private val identifierQuoteChar: Char by lazy { connector.getMetaInfos().identifierQuoteChar }
     private val identifierInternalCase: Char by lazy { connector.getMetaInfos().identifierInternalCase }
 
-    // var readMapper: IdentifierMapper = identityMapper UNUSED
+    internal var readMapper: IdentifierMapper = identityMapper
     internal var writeMapper: IdentifierMapper = identityMapper
 
     private fun register(path: String, query: AttributeDefinition) {
@@ -58,6 +58,7 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
             else -> { identityMapper }
         }
         writeMapper = writeMapper.compose(camelToSnake)
+        readMapper = snakeToCamel
     }
 
     override suspend fun eval(path: String, params: Map<String, Any?>): Any? {
@@ -150,14 +151,13 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
 
     private fun Json.MutableObject.putAll(names: Array<String>, values: Array<Any?>) {
         names.zip(values).forEach { (name, value) ->
-            put(name, value)
+            put(readMapper(name), value)
         }
     }
 
     private fun Instance.putNamesValues(names: Array<String>, values: Array<Any?>) {
         names.zip(values).forEach { (name, value) ->
-            // TODO - review
-            putRawValue(name.lowercase(), value)
+            putRawValue(readMapper(name), value)
         }
     }
 
