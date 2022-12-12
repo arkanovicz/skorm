@@ -45,7 +45,6 @@ class KotlinTool {
         }
     }
 
-
     fun enums(schema: ASTSchema): List<ASTField> {
         return schema.tables.values.flatMap {
             it.fields.values
@@ -53,6 +52,12 @@ class KotlinTool {
             it.type.startsWith("enum")
         }
     }
+
+    fun enumValues(field: ASTField): List<String> {
+        return field.type.substringAfter('(').substringBeforeLast(')').split(',').map { it.removeSurrounding("'") }
+    }
+
+    fun isEnum(type: String) = type.startsWith("enum")
 
     fun camel(identifier: String) = snakeToCamel(identifier)
 
