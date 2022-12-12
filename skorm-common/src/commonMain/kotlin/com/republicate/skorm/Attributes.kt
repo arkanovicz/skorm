@@ -28,7 +28,7 @@ sealed class Attribute<out T>(val name: String, private val parameters: Set<Stri
      */
     fun matchParamValues(vararg rawValues: Any?) : Map<String, Any?> {
 
-        logger.info { ">> matchParamValues ${rawValues.joinToString { "$it" }}" }
+        logger.trace { ">> matchParamValues ${rawValues.joinToString { "$it" }}" }
 
         val ret = mutableMapOf<String, Any?>()
 
@@ -50,37 +50,37 @@ sealed class Attribute<out T>(val name: String, private val parameters: Set<Stri
 
         val consumedParam = BitSet(rawValues.size)
 
-        logger.info { "-- parameters size = ${parameters.size}"}
+        logger.trace { "-- parameters size = ${parameters.size}"}
         params.forEach { p ->
-            logger.info { "Searching for $p"}
+            logger.trace { "Searching for $p"}
             params@ for (i in rawValues.indices) {
-                logger.info { "at indice $i"}
+                logger.trace { "at indice $i"}
                 val value = rawValues[i]
                 when(value) {
                     is Instance -> {
-                        logger.info { "  found instance"}
+                        logger.trace { "  found instance"}
                         val found = value[p]
                         if (found != null || value.containsKey(p)) {
-                            logger.info { "  found inside instance: $found"}
+                            logger.trace { "  found inside instance: $found"}
 //                            ret[p] = value.entity.fields[p]?.write(found) ?: found
                             ret[p] = found
                             break@params
                         }
                     }
                     is Map<*, *> -> {
-                        logger.info { "  found map"}
+                        logger.trace { "  found map"}
                         val found = value[p]
                         if (found != null || value.containsKey(p)) {
-                            logger.info { "  found inside map: $found"}
+                            logger.trace { "  found inside map: $found"}
                             ret[p] = found
                             break@params
                         }
                     }
                     hasGenericGetter() -> {
-                        logger.info { "  found getter"}
+                        logger.trace { "  found getter"}
                         val found = value.callGenericGetter(p)
                         if (found != null) {
-                            logger.info { "  found with getter: $found"}
+                            logger.trace { "  found with getter: $found"}
                             ret[p] = found
                             break@params
                         }
@@ -90,16 +90,16 @@ sealed class Attribute<out T>(val name: String, private val parameters: Set<Stri
                         break@params
                     }
                     else -> {
-                        logger.info { "  searching among raw params"}
+                        logger.trace { "  searching among raw params"}
                         if (!consumedParam[i]) {
-                            logger.info { "  consuming raw param $i: $value"}
+                            logger.trace { "  consuming raw param $i: $value"}
                             ret[p] = value
                             consumedParam.set(i, true)
                             break@params
                         }
                     }
                 }
-                logger.info { "  not found at indice $i. " }
+                logger.trace { "  not found at indice $i. " }
                 if (i + 1 == rawValues.size) {
                     throw SkormException("attribute $name: parameter $p not found")
                 }
@@ -107,7 +107,7 @@ sealed class Attribute<out T>(val name: String, private val parameters: Set<Stri
         }
         // TODO control that all simple parameters have been consumed
         // rawValues.filter { it !is Map<*, *> }.size > consumedParam.setBitsCount => error
-        logger.info { "<< matchParamValues { ${ret.entries.joinToString(",") } }" }
+        logger.trace { "<< matchParamValues { ${ret.entries.joinToString(",") } }" }
         return ret
     }
 
