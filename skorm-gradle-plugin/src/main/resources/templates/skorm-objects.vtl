@@ -70,14 +70,14 @@ class $databaseClass(processor: Processor): Database("$database.name", processor
       #end
             $def #camel($field.name): #type($field)#if(!$field.nonNull)?#end
       #if($kotlin.isEnum($field.type))
-                get() = getString("#snake($field.name)")#if($field.nonNull)!!#else?#end.let { #pascal($field.name)Enum.valueOf(it) }
+                get() = getString("#camel($field.name)")#if($field.nonNull)!!#else?#end.let { #pascal($field.name)Enum.valueOf(it) }
         #if(!$pk)
-                set(v) { put("$field.name", v#if(!$field.nonNull)?#end.toString()) }
+                set(v) { put("#camel($field.name)", v#if(!$field.nonNull)?#end.toString()) }
         #end
       #else
-                get() = #getter($field)("#snake($field.name)")#if($field.nonNull)!!#end
+                get() = #getter($field)("#camel($field.name)")#if($field.nonNull)!!#end
         #if(!$pk)
-                set(v) { put("$field.name", v) }
+                set(v) { put("#camel($field.name)", v) }
         #end
       #end
     #end
