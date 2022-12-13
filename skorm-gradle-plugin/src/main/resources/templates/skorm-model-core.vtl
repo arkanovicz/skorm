@@ -42,13 +42,17 @@ fun ${package}.${databaseClass}.initRuntimeModel() {
         #elseif ($item.type.isEntity())
             #set($itemClass = "#pascal($database.name)Database.#pascal($schema.name)Schema.#pascal($item.type.name)")
             #set($factory = "$itemClass::new")
-            #if($item.nullable)
+            #if($item.multiple)
+                #set($attribute = "bagAttribute<$itemClass>")
+            #elseif($item.nullable)
                 #set($attribute = "nullableInstanceAttribute<$itemClass>")
             #else
                 #set($attribute = "instanceAttribute<$itemClass>")
             #end
         #else
-            #if($item.nullable)
+            #if($item.multiple)
+                #set($attribute = "rowSetAttribute<$itemClass>")
+            #elseif($item.nullable)
                 ##          #set($attribute = "nullable#capitalize(${item.type.name})Attribute")
                 #set($attribute = "scalarAttribute<${item.type.name}?>")
             #else
