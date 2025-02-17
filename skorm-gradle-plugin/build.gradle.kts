@@ -1,22 +1,20 @@
 plugins {
-    kotlin("jvm")
+    alias(libs.plugins.jvm)
+    alias(libs.plugins.antlr)
     `java-gradle-plugin`
     `maven-publish`
 }
 
  repositories {
      mavenCentral()
-     mavenLocal() // for now, to get latest kddl version
-     maven("https://jitpack.io") // for antlr-kotlin
  }
 
 buildscript {
     repositories {
         mavenCentral()
-        maven("https://jitpack.io")
     }
     dependencies {
-        classpath("com.strumenta.antlr-kotlin:antlr-kotlin-gradle-plugin:6304d5c1c4")
+        classpath(libs.antlr.kotlin)
     }
 }
 
@@ -27,19 +25,25 @@ kotlin.sourceSets.main {
 }
 
 dependencies {
-    implementation(gradleApi())
-    implementation("com.republicate.skorm:skorm-common-jvm:0.3")
-    implementation("com.republicate.skorm:skorm-core-jvm:0.3")
-    implementation("org.apache.velocity:velocity-engine-core:2.3")
-    implementation("org.apache.velocity.tools:velocity-tools-generic:3.1")
-    implementation("org.atteo:evo-inflector:1.3")
-    api("com.republicate.kddl:kddl:0.7.6")
+    // implementation(gradleApi())
+    implementation(project(":skorm-common"))
+    implementation(project(":skorm-core"))
+    //implementation(projects.skormCommonTarget)
+    //implementation(projects.skormCoreTarget)
+    // implementation("com.republicate.skorm:skorm-common-jvm:0.4")
+    // implementation("com.republicate.skorm:skorm-core-jvm:0.4")
+    implementation(libs.velocity.engine.core)
+    implementation(libs.velocity.tools.generic)
+    implementation(libs.evo.inflector)
+    api(libs.kddl)
     testImplementation(gradleTestKit())
+    /*
     testImplementation("junit:junit:4.12")
     testImplementation(kotlin("test"))
     testImplementation(kotlin("test-junit"))
+    */
     // as api to expose CharStream
-    api("com.strumenta.antlr-kotlin:antlr-kotlin-runtime:6304d5c1c4")
+    api(libs.antlr.kotlin)
 }
 
 tasks {
@@ -55,10 +59,13 @@ tasks {
     }
 }
 
-tasks.register<com.strumenta.antlrkotlin.gradleplugin.AntlrKotlinTask>("generateKotlinGrammarSource") {
+tasks.register<com.strumenta.antlrkotlin.gradle.AntlrKotlinTask>("generateKotlinGrammarSource") {
+    /*
     antlrClasspath = configurations.detachedConfiguration(
-        project.dependencies.create("com.strumenta.antlr-kotlin:antlr-kotlin-target:6304d5c1c4")
+        // project.dependencies.create("com.strumenta.antlr-kotlin:antlr-kotlin-target:6304d5c1c4")
+        project.dependencies.create(libs.antlr.kotlin)
     )
+    */
     // maxHeapSize = "64m"
     packageName = "com.republicate.skorm.parser"
     arguments = listOf("-no-visitor", "-no-listener")
@@ -79,7 +86,7 @@ gradlePlugin {
         create("skormPlugin") {
             id = "skorm-gradle-plugin"
             implementationClass = "com.republicate.skorm.SkormGradlePlugin"
-            version = "0.3"
+            version = "0.4"
         }
     }
  //   isAutomatedPublishing = false

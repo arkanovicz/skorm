@@ -1,86 +1,128 @@
+import org.gradle.kotlin.dsl.support.kotlinCompilerOptions
+import org.jetbrains.dokka.gradle.DokkaTask
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
+
 plugins {
-    kotlin("multiplatform")
+    alias(libs.plugins.multiplatform)
     `maven-publish`
 }
 
-// version = "1.0-SNAPSHOT"
-
-// repositories {
-//     mavenCentral()
-// }
-
-val ktor_version: String by project
-val serialization_version: String by project
-
 kotlin {
-    val hostOs = System.getProperty("os.name")
-    val isMingwX64 = hostOs.startsWith("Windows")
-    val nativeTarget = when {
-//         hostOs == "Mac OS X" -> macosX64("native")
-        hostOs == "Linux" -> linuxX64("native")
-        isMingwX64 -> mingwX64("native")
-        else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
-    }
-    sourceSets.all {
-        languageSettings.apply {
-            languageVersion = "1.7"
-            apiVersion = "1.7"
-        }
-    }
-    jvm {
-        compilations.all {
-            // kotlin compiler compatibility options
-            kotlinOptions {
-                jvmTarget = "1.8"
-                freeCompilerArgs = listOf("-Xjvm-default=all")
+    applyDefaultHierarchyTemplate {
+        common {
+            group("commonJs") {
+                withJs()
+                withWasmJs()
             }
         }
     }
-    js(IR) {
+
+    jvmToolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
+    compilerOptions {
+        apiVersion.set(KotlinVersion.KOTLIN_2_0)
+    }
+    jvm {
+        compilerOptions {
+            jvmTarget = JvmTarget.JVM_17
+        }
+        testRuns["test"].executionTask.configure {
+            useJUnitPlatform()
+        }
+    }
+    js {
         browser {
             testTask {
                 useKarma {
                     useDebuggableChrome()
                     //useChromeHeadless()
-                    //useFirefox()
-                    webpackConfig.cssSupport.enabled = true
+                    // useFirefox()
+                    /*
+                    webpackConfig.cssSupport {
+                        enabled.set(true)
+                    }*/
                 }
             }
         }
+        nodejs()
         compilations.all { compileKotlinTask.kotlinOptions.freeCompilerArgs += listOf("-Xir-minimized-member-names=false") }
-
-        // nodejs() what?!
     }
+    iosX64()
+    iosArm64()
+    iosSimulatorArm64()
+    linuxX64()
+    linuxArm64()
+    androidNativeX64()
+    androidNativeX86()
+    androidNativeArm32()
+    androidNativeArm64()
+    iosX64()
+    iosArm64()
+    iosSimulatorArm64()
+    macosX64()
+    macosArm64()
+    tvosArm64()
+    tvosSimulatorArm64()
+    tvosX64()
+    // watchosArm32()
+    watchosArm64()
+    // watchosDeviceArm64()
+    watchosX64()
+    watchosSimulatorArm64()
+    mingwX64()
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
+        browser()
+    }
+    // Waiting for next version of kotlinx-datetime
+    // wasmWasi()
 
     sourceSets {
 
         val commonMain by getting {
             dependencies {
                 api(project(":skorm-common"))
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$serialization_version")
-                implementation("io.ktor:ktor-client-core:$ktor_version")
+                implementation(libs.kotlinx.serialization.core)
+                implementation(libs.ktor.client.core)
                 // implementation("io.ktor:ktor-client-serialization:$ktor_version")
-                implementation("io.ktor:ktor-client-content-negotiation:$ktor_version")
-                implementation("io.ktor:ktor-client-logging:$ktor_version")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.2")
-                implementation("io.github.microutils:kotlin-logging:2.0.11")
+                implementation(libs.ktor.client.content.negotiation)
+                implementation(libs.ktor.client.logging)
+                implementation(libs.kotlinx.coroutines)
+                implementation(libs.kotlin.logging)
             }
         }
         val commonTest by getting {
             dependencies {
-                implementation(kotlin("test-common"))
-                implementation(kotlin("test-annotations-common"))
+                implementation(libs.kotlin.test)
             }
         }
+        val commonJsMain by getting
+        val commonJsTest by getting
         val jvmMain by getting {
             dependencies {
-                implementation("io.ktor:ktor-client-cio:$ktor_version")
+                implementation(libs.ktor.client.cio)
             }
         }
         val jsMain by getting {
             dependencies {
-                implementation("io.ktor:ktor-client-js:$ktor_version")
+                implementation(libs.ktor.client.js)
             }
         }
+        val wasmJsMain by getting
+        val wasmJsTest by getting
+
+        all {
+            // languageSettings.enableLanguageFeature("InlineClasses")
+            // languageSettings.optIn("expect-actual-classes")
+            // languageSettings.optIn("kotlin.ExperimentalUnsignedTypes")
+            languageSettings.optIn("kotlin.ExperimentalStdlibApi")
+        }
+
     }
 }

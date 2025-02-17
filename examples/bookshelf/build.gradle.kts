@@ -1,18 +1,19 @@
-plugins {
-    kotlin("multiplatform")
+    plugins {
+    alias(libs.plugins.multiplatform)
     application
-    id("skorm-gradle-plugin") version "0.3"
+    id("skorm-gradle-plugin")
 }
 
 buildscript {
     repositories {
         mavenCentral()
-        mavenLocal()
-        maven("https://jitpack.io") // for antlr-kotlin
     }
+    /*
     dependencies {
-        classpath("com.republicate.skorm:skorm-gradle-plugin:0.3")
+        classpath(project(":skorm-gradle-plugin"))
     }
+
+     */
 }
 
 skorm {

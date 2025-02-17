@@ -1,16 +1,25 @@
+import org.gradle.kotlin.dsl.support.kotlinCompilerOptions
+import org.jetbrains.dokka.gradle.DokkaTask
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
+
 plugins {
-    kotlin("multiplatform") version "1.7.20" apply false
-    kotlin("jvm") version "1.7.20" apply false
-    id("org.jetbrains.dokka") version "1.7.0"
+    alias(libs.plugins.multiplatform) apply false
+    alias(libs.plugins.jvm) apply false
+    alias(libs.plugins.dokka)
     signing
     `maven-publish`
-    id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
+    alias(libs.plugins.nexusPublish)
 }
 
 allprojects {
 
     group = "com.republicate.skorm"
-    version = "0.3"
+    version = "0.4"
 
     repositories {
         mavenLocal()
@@ -48,6 +57,14 @@ allprojects {
 //            }
 //        }
     }
+
+    /*
+    tasks.withType<KotlinCompile> {
+        kotlinOptions.freeCompilerArgs = listOf(
+            "-Xopt-in=io.ktor.util.KtorExperimentalAPI"
+        )
+    }
+    */
 }
 
 signing {
