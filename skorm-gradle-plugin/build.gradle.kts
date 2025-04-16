@@ -25,13 +25,8 @@ kotlin.sourceSets.main {
 }
 
 dependencies {
-    // implementation(gradleApi())
     implementation(project(":skorm-common"))
     implementation(project(":skorm-core"))
-    //implementation(projects.skormCommonTarget)
-    //implementation(projects.skormCoreTarget)
-    // implementation("com.republicate.skorm:skorm-common-jvm:0.4")
-    // implementation("com.republicate.skorm:skorm-core-jvm:0.4")
     implementation(libs.velocity.engine.core)
     implementation(libs.velocity.tools.generic)
     implementation(libs.evo.inflector)
