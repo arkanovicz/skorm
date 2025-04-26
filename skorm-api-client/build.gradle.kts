@@ -89,7 +89,6 @@ kotlin {
                 api(project(":skorm-common"))
                 implementation(libs.kotlinx.serialization.core)
                 implementation(libs.ktor.client.core)
-                // implementation("io.ktor:ktor-client-serialization:$ktor_version")
                 implementation(libs.ktor.client.content.negotiation)
                 implementation(libs.ktor.client.logging)
                 implementation(libs.kotlinx.coroutines)

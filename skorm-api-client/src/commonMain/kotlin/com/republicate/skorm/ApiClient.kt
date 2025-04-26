@@ -19,7 +19,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 
 private val logger = KotlinLogging.logger("skorm.client")
 
-fun ContentNegotiation.Config.json() {
+fun ContentNegotiationConfig.json() {
     register(
         contentType = ContentType.Application.Json,
         converter = KsonConverter)
@@ -41,7 +41,7 @@ object KsonConverter: ContentConverter {
         contentType: ContentType,
         charset: Charset,
         typeInfo: TypeInfo,
-        value: Any
+        value: Any?
     ): OutgoingContent? {
         if (value !is Json) throw SkormException("content is not Json")
         return TextContent(value.toString(), ContentType.Application.Json)

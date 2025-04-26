@@ -64,11 +64,13 @@ const val MAX_FIELDS = 64
 
 expect class BitSet(size: Int) {
     operator fun get(index: Int): Boolean
+    fun set(index: Int)
     fun set(index: Int, value: Boolean)
     fun clear(index: Int)
     fun or(another: BitSet)
     fun clear()
-    fun nextSetBit(startIndex: Int /* = 0 */): Int
+    fun nextSetBit(): Int
+    fun nextSetBit(startIndex: Int): Int
 }
 
 // No way to access this class from JVM... CB TODO

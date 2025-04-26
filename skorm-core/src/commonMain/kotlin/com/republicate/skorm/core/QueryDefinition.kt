@@ -1,7 +1,7 @@
 package com.republicate.skorm.core
 
 import com.republicate.skorm.SkormException
-import com.republicate.skorm.concurrentMapOf
+// import com.republicate.skorm.concurrentMapOf
 import com.republicate.skorm.core.AttributeDefinition.Companion.ParserState.*
 
 data class QueryDefinition(val stmt: String, val params: List<String>) {
@@ -79,7 +79,7 @@ sealed interface AttributeDefinition {
         }
     }
 
-    open val schema: String
+    val schema: String
 
     fun queries(params: Collection<String>): List<QueryDefinition>
     fun parameters(): Set<String>
@@ -100,12 +100,17 @@ class MultipleQuery(override val schema: String, val queries: List<QueryDefiniti
 }
 
 class DynamicQuery(override val schema: String, val generator: (Collection<String>)-> QueryDefinition): AttributeDefinition {
+    /* TODO ...
     private val queryCache = concurrentMapOf<String, QueryDefinition>()
     override fun queries(params: Collection<String>): List<QueryDefinition> {
         val key = params.sorted().joinToString("#")
         return listOf(queryCache.getOrPut(key) {
             generator(params)
         })
+     */
+    override fun queries(params: Collection<String>): List<QueryDefinition> {
+        val key = params.sorted().joinToString("#")
+        return listOf(generator(params))
     }
 
     override fun parameters(): Set<String> { throw SkormException("cannot get parameters of a dynamic query") }
