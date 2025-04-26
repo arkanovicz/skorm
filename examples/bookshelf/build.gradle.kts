@@ -1,5 +1,5 @@
-    plugins {
-    alias(libs.plugins.multiplatform)
+plugins {
+    id("org.jetbrains.kotlin.multiplatform")
     application
     id("skorm-gradle-plugin")
 }

@@ -1,5 +1,5 @@
 plugins {
-    alias(libs.plugins.jvm)
+    id("org.jetbrains.kotlin.jvm")
     alias(libs.plugins.antlr)
     `java-gradle-plugin`
     `maven-publish`
