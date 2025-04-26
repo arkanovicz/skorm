@@ -1,5 +1,4 @@
 import org.gradle.kotlin.dsl.support.kotlinCompilerOptions
-import org.jetbrains.dokka.gradle.DokkaTask
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -8,6 +7,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
+    // alias(libs.plugins.multiplatform)
     id("org.jetbrains.kotlin.multiplatform")
     `maven-publish`
     alias(libs.plugins.atomicfu)

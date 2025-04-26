@@ -1,11 +1,23 @@
 plugins {
-    id("org.jetbrains.kotlin.jvm")
+    alias(libs.plugins.jvm)
     alias(libs.plugins.antlr)
     `java-gradle-plugin`
     `maven-publish`
+    signing
+    alias(libs.plugins.nexusPublish)
 }
 
- repositories {
+gradlePlugin {
+  plugins {
+    register("skormGradlePlugin") {
+      id = "skorm.gradle.plugin"
+      implementationClass = "com.republicate.skorm.SkormGradlePlugin"
+    }
+  }
+}
+
+
+repositories {
      mavenCentral()
  }
 
@@ -115,8 +127,23 @@ publishing {
                     url.set("http://gitlab.republicate.com/claude/skorm")
                 }
             }
-            artifact(tasks["dokkaJar"])
         }
     }
 }
 
+apply(plugin = "signing")
+
+signing {
+    useGpgCmd()
+    sign(publishing.publications)
+}
+
+apply(plugin = "io.github.gradle-nexus.publish-plugin")
+
+nexusPublishing {
+    repositories {
+        sonatype {
+            useStaging.set(true)
+        }
+    }
+}

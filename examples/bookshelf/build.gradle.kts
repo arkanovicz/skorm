@@ -1,4 +1,5 @@
 plugins {
+    // alias(libs.plugins.multiplatform)
     id("org.jetbrains.kotlin.multiplatform")
     application
     id("skorm-gradle-plugin")
@@ -8,12 +9,6 @@ buildscript {
     repositories {
         mavenCentral()
     }
-    /*
-    dependencies {
-        classpath(project(":skorm-gradle-plugin"))
-    }
-
-     */
 }
 
 skorm {

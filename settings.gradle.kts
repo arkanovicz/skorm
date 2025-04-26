@@ -7,16 +7,9 @@ include("skorm-jdbc")
 include("examples:bookshelf")
 include("skorm-api-client")
 include("skorm-api-server")
-include("skorm-gradle-plugin")
 
 pluginManagement {
-    resolutionStrategy {
-        eachPlugin {
-            if (requested.id.id == "skorm-gradle-plugin") {
-                useModule("com.republicate.skorm:skorm-gradle-plugin:0.4")
-            }
-        }
-    }
+    includeBuild("skorm-gradle-plugin")
 
     repositories {
         gradlePluginPortal()
