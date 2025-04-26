@@ -3,23 +3,17 @@ plugins {
     alias(libs.plugins.antlr)
     `java-gradle-plugin`
     `maven-publish`
-    signing
-    alias(libs.plugins.nexusPublish)
 }
 
 gradlePlugin {
   plugins {
-    register("skormGradlePlugin") {
+    create("skormGradlePlugin") {
       id = "skorm.gradle.plugin"
       implementationClass = "com.republicate.skorm.SkormGradlePlugin"
+      version = "0.4"
     }
   }
 }
-
-
-repositories {
-     mavenCentral()
- }
 
 buildscript {
     repositories {
@@ -87,18 +81,6 @@ tasks.register<com.strumenta.antlrkotlin.gradle.AntlrKotlinTask>("generateKotlin
 
 tasks.filter { it.name.startsWith("compileKotlin") }.forEach { it.dependsOn("generateKotlinGrammarSource") }
 
-
-gradlePlugin {
-    plugins {
-        create("skormPlugin") {
-            id = "skorm-gradle-plugin"
-            implementationClass = "com.republicate.skorm.SkormGradlePlugin"
-            version = "0.4"
-        }
-    }
- //   isAutomatedPublishing = false
-}
-
 publishing {
     publications {
         create<MavenPublication>("skorm-gradle-plugin") {
@@ -131,19 +113,3 @@ publishing {
     }
 }
 
-apply(plugin = "signing")
-
-signing {
-    useGpgCmd()
-    sign(publishing.publications)
-}
-
-apply(plugin = "io.github.gradle-nexus.publish-plugin")
-
-nexusPublishing {
-    repositories {
-        sonatype {
-            useStaging.set(true)
-        }
-    }
-}

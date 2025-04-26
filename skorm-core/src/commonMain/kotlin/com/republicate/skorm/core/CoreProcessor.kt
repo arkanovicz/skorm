@@ -2,7 +2,7 @@ package com.republicate.skorm.core
 
 import com.republicate.kson.Json
 import com.republicate.skorm.*
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 private val logger = KotlinLogging.logger("core")
 

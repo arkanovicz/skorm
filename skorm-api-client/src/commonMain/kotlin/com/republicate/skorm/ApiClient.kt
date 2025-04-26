@@ -15,7 +15,7 @@ import io.ktor.util.reflect.TypeInfo
 import io.ktor.utils.io.*
 import io.ktor.utils.io.charsets.*
 import kotlinx.coroutines.*
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 private val logger = KotlinLogging.logger("skorm.client")
 

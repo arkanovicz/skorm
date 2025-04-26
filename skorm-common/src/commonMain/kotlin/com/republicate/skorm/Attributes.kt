@@ -7,7 +7,7 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 /*
  * Attributes

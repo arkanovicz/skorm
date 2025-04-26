@@ -7,8 +7,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
-    // alias(libs.plugins.multiplatform)
-    id("org.jetbrains.kotlin.multiplatform")
+    alias(libs.plugins.multiplatform)
     `maven-publish`
     alias(libs.plugins.atomicfu)
 }

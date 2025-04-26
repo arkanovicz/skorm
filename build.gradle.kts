@@ -9,8 +9,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 plugins {
     alias(libs.plugins.multiplatform) apply false
     alias(libs.plugins.jvm) apply false
-    //id("org.jetbrains.kotlin.multiplatform") apply false
-    //id("org.jetbrains.kotlin.jvm") apply false
     alias(libs.plugins.dokka)
     signing
     `maven-publish`

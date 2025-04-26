@@ -5,7 +5,7 @@ import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.w3c.dom.HTMLSelectElement
 import org.w3c.dom.events.EventListener
 import org.w3c.dom.get
