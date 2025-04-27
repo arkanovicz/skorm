@@ -1,3 +1,6 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+
 plugins {
     alias(libs.plugins.jvm)
     alias(libs.plugins.antlr)
@@ -24,10 +27,13 @@ buildscript {
     }
 }
 
-kotlin.sourceSets.main {
-    kotlin.srcDirs(
-        file("$buildDir/generated-src/main/kotlin"),
-    )
+kotlin {
+    sourceSets.main {
+        kotlin.srcDirs(
+            file("$buildDir/generated-src/main/kotlin"),
+        )
+    }
+    jvmToolchain(11)
 }
 
 dependencies {
@@ -48,15 +54,16 @@ dependencies {
 }
 
 tasks {
-    withType<org.jetbrains.kotlin.gradle.dsl.KotlinCompile<*>> {
-        kotlinOptions {
-            languageVersion = "1.7"
-            apiVersion = "1.7"
+
+    named<KotlinCompilationTask<*>>("compileKotlin").configure {
+        compilerOptions {
+            apiVersion.set(KotlinVersion.KOTLIN_1_7)
+            languageVersion.set(KotlinVersion.KOTLIN_1_7)
         }
     }
     withType<JavaCompile>().configureEach {
-        sourceCompatibility = JavaVersion.VERSION_1_8.toString()
-        targetCompatibility = JavaVersion.VERSION_1_8.toString()
+        sourceCompatibility = JavaVersion.VERSION_11.toString()
+        targetCompatibility = JavaVersion.VERSION_11.toString()
     }
 }
 
@@ -112,4 +119,3 @@ publishing {
         }
     }
 }
-

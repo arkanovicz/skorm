@@ -2,7 +2,6 @@
 kotlin = "2.1.0"
 dokka = "1.9.20"
 nexus-publish = "2.0.0"
-
 antlr-kotlin = "1.0.1"
 commons-collections4 = "4.4"
 commons-lang3 = "3.17.0"
@@ -19,6 +18,8 @@ ktor = "3.1.2"
 slf4j = "2.0.16"
 velocity = "2.4"
 velocity-tools = "3.1"
+junit-jupiter = "5.12.2"
+mockito-junit-jupiter = "5.17.0"
 
 [libraries]
 antlr-kotlin = { module = "com.strumenta:antlr-kotlin-runtime", version.ref = "antlr-kotlin" }
@@ -44,8 +45,10 @@ ktor-client-js = { module = "io.ktor:ktor-client-js", version.ref = "ktor" }
 ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
-velocity-engine-core = { module = "org.apache.velocity:velocity-engine-core", version.ref="velocity" }
-velocity-tools-generic = { module = "org.apache.velocity.tools:velocity-tools-generic", version.ref="velocity-tools" }
+velocity-engine-core = { module = "org.apache.velocity:velocity-engine-core", version.ref = "velocity" }
+velocity-tools-generic = { module = "org.apache.velocity.tools:velocity-tools-generic", version.ref = "velocity-tools" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit-jupiter" }
+mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito-junit-jupiter" }
 
 # Gradle - some redundancy with [plugins] sections, TODO
 kotlin-plugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }

@@ -14,9 +14,8 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.commons.collections4)
 
-
-    // testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.0")
-    // testImplementation("org.mockito:mockito-junit-jupiter:4.0.0")
+    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.mockito.junit.jupiter)
 
     testRuntimeOnly(libs.slf4j.simple)
     // testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")

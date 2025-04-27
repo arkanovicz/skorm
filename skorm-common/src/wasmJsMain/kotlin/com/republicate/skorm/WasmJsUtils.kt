@@ -13,7 +13,7 @@ actual fun Any.callGenericGetter(key: String): Any? {
 }
 */
 
-actual fun Any.callGenericGetter(key: String): Any? {
-    val obj = this
-    return js("obj[key]")
-}
+
+fun getProperty(obj: JsAny, prop: String): JsAny? = js("obj[prop]")
+
+actual fun Any.callGenericGetter(key: String): Any? = getProperty(this as JsAny, key) as Any?

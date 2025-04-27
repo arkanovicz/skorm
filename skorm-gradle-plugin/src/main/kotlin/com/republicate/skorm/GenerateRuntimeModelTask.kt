@@ -67,42 +67,42 @@ abstract class GenerateRuntimeModelTask: BaseStructureGenerationTask() {
 
     private fun digestAST(databaseContext: ksqlParser.DatabaseContext): RMDatabase {
         val database = RMDatabase(databaseContext.name?.text ?: nullerr())
-        for (schemaContext in databaseContext.findSchema()) {
+        for (schemaContext in databaseContext.schema()) {
             val schema = RMSchema(schemaContext.name?.text ?: nullerr())
             database.schemas.add(schema)
-            for (itemContext in schemaContext.findItem()) {
+            for (itemContext in schemaContext.item()) {
                 val name = itemContext.name?.text ?: nullerr()
                 val item = RMItem(name)
                 schema.items.add(item)
                 item.receiver = itemContext.receiver?.text
-                item.arguments = itemContext.findArguments()?.findArgument()?.map {
-                    Pair(it.LABEL()?.text!!, it.findSimple_type()?.text ?: "Any?")
+                item.arguments = itemContext.arguments()?.argument()?.map {
+                    Pair(it.LABEL()?.text!!, it.simple_type()?.text ?: "Any?")
                 }?.toSet() ?: setOf()
                 // itemContext.findArguments()?.LABEL()?.map { it.text }?.toSet()
                 item.action = itemContext.attr_type!!.text!!.startsWith("mut")
-                item.transaction = item.action && itemContext.findSql_spec()!!.queries != null
-                val type = itemContext.findType()
+                item.transaction = item.action && itemContext.sql_spec()!!.queries != null
+                val type = itemContext.type()
                 when {
-                    type?.findSimple_type() != null -> item.type = RMSimpleType(type?.findSimple_type()?.text ?: nullerr(), false)
-                    type?.findOut_entity() != null -> item.type = RMSimpleType(type?.findOut_entity()?.text ?: nullerr(), true)
-                    type?.findComplex_type() != null -> {
-                        val composite = type?.findComplex_type()?.findComplex_type_spec() ?: nullerr()
+                    type?.simple_type() != null -> item.type = RMSimpleType(type?.simple_type()?.text ?: nullerr(), false)
+                    type?.out_entity() != null -> item.type = RMSimpleType(type?.out_entity()?.text ?: nullerr(), true)
+                    type?.complex_type() != null -> {
+                        val composite = type?.complex_type()?.complex_type_spec() ?: nullerr()
                         item.type = RMCompositeType(name.capitalize()).also { itemType ->
                             itemType.parent = composite.entity?.text
                             var fieldNames = composite.LABEL()
                             if (itemType.parent != null) fieldNames = fieldNames.subList(1, fieldNames.size)
-                            val fieldTypes = composite.findSimple_type()
+                            val fieldTypes = composite.simple_type()
                             fieldNames.zip(fieldTypes).map { RMField(it.first.text, it.second.text) }.toCollection(itemType.fields)
                         }
                     }
                 }
-                val qualif = itemContext.findQualifier()
+                val qualif = itemContext.qualifier()
                 when {
                     qualif == null -> {}
                     qualif.QM() != null -> item.nullable = true
                     qualif.ST() != null -> item.multiple = true
                 }
-                item.sql = itemContext.findSql_spec()?.query?.text?.trim() ?: itemContext.findSql_spec()?.queries?.text?.trim() ?: nullerr()
+                item.sql = itemContext.sql_spec()?.query?.text?.trim() ?: itemContext.sql_spec()?.queries?.text?.trim() ?: nullerr()
             }
         }
         return database

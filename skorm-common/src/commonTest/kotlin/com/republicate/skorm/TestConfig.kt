@@ -39,9 +39,9 @@ class TestConfig {
             "nullDef" to "nullDef",
         )
         bar.configure(cfg2)
-        assertEquals("noNullNoDef", foo.noNullNoDef)
-        assertEquals("noNullDef", foo.noNullDef)
-        assertEquals("nullNoDef", foo.nullNoDef)
-        assertEquals("nullDef", foo.nullDef)
+        assertEquals("noNullNoDef", bar.noNullNoDef)
+        assertEquals("noNullDef", bar.noNullDef)
+        assertEquals("nullNoDef", bar.nullNoDef)
+        assertEquals("nullDef", bar.nullDef)
     }
 }
