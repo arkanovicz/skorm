@@ -1,0 +1,165 @@
+@startuml
+
+package skorm-common {
+  interface MetaInfos {
+    identifierQuoteChar
+    identifierInternalCase
+  }
+  interface Connector {
+    query(path, params)
+    mutate(path, params)
+    begin(schema)
+  }
+  class TransactionConnector {
+    commit()
+    rollback()
+  }
+  Connector --> MetaInfos
+  TransactionConnector --|> Connector
+  class Configuration {
+    values
+  }
+  interface Configurable {
+    configTag
+    configure(map)
+    initialize()
+  }
+  Configurable --> Configuration
+  interface Processor {
+    register(entity)
+    eval(path, params)
+    retrieve(path, params)
+    query(path, params)
+    perform(path, params)
+    begin(schema)
+    transaction(schema, block)
+  }
+  Processor --|> Configurable
+  interface Transaction {
+    commit()
+    rollback()
+  }
+  Transaction --|> Processor
+  class Attribute {
+    name
+    parameters
+    instanceFactory
+  }
+  class ScalarAttribute
+  ScalarAttribute --|> Attribute
+  class "[Nullable]<ScalarType>Attribute"
+  "[Nullable]<ScalarType>Attribute" --|> ScalarAttribute
+  class "[Nullable]RowAttribute"
+  "[Nullable]RowAttribute" --|> Attribute
+  class "[Nullable]InstanceAttribute"
+  "[Nullable]InstanceAttribute" --|> Attribute
+  class RowSetAttribute
+  RowSetAttribute --|> Attribute
+  class MutationAttribute
+  MutationAttribute --|> Attribute
+  class TransactionAttribute
+  TransactionAttribute --|> Attribute
+  class AttributeHolder {
+    name
+    eval(name, params)
+    retrieve(name, params)
+    query(name, params)
+    perform(name, params)
+  }
+  AttributeHolder --o AttributeHolder: parent
+  AttributeHolder --* Attribute
+  class Field {
+    name
+    isPrimary
+    isGenerated
+  }
+  class Entity {
+    name
+    schema
+    new()
+    fetch(key)
+    browse()
+    iterator()
+  }
+  Entity --* Field
+  class Instance {
+    dirtyFields
+    generatedPrimaryKey
+    isPersisted
+    insert()
+    update()
+    upsert()
+    delete()
+    refresh()
+    setClean()
+    isDirty()
+    put(key, value)
+    eval(name, params)
+    retrieve(name, params)
+    query(name, params)
+    perform(name, params)
+  }
+  Instance --> Entity
+  class InstanceAttributes
+  InstanceAttributes --|> AttributeHolder
+  Entity --> InstanceAttributes
+  class Schema
+  Schema --|> AttributeHolder
+  Schema --* Entity
+  class Database
+  Database --> Processor
+  Database --|> AttributeHolder
+  Database --* Schema
+}
+
+package skorm-core {
+  class CoreProcessor {
+    queries map
+  }
+  CoreProcessor --|> Processor
+}
+
+package skorm-api-client {
+  class ApiClient
+  ApiClient --|> Processor
+  ApiClient --> HttpClient
+}
+
+package skorm-api-server {
+  class ApiServer {
+    Route.rest(entity)
+    Route.rest(schema)
+  }
+}
+
+
+package skorm-jdbc {
+  class Vendor {
+    tablesCaseSensitivity
+    setSchemaQuery
+    lastInsertIdPolicy
+  }
+  Vendor --|> MetaInfos
+  class ConnectionFactory
+  class ConnectionPool {
+    autocommit
+  }
+  ConnectionPool --> ConnectionFactory
+  class JdbcConnector {
+  }
+  JdbcConnector --|> Connector
+  class TxConnector
+  TxConnector --|> TransactionConnector
+  JdbcConnector --> TxConnector
+  JdbcConnector --> ConnectionFactory
+  JdbcConnector --> ConnectionPool
+  JdbcConnector --> ConnectionPool : tx
+  class StatementPool
+  JdbcConnector --> StatementPool
+}
+
+hide empty members
+hide empty methods
+hide circle
+
+@enduml

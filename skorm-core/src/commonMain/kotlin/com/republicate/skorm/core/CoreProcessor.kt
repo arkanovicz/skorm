@@ -113,7 +113,7 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
         val (schema, queries) = getMutationQueries(path, params.keys.filter { it !== GeneratedKeyMarker.PARAM_KEY })
         if (queries.size > 1) {
             var totalChanged = 0L
-            transaction {
+            transaction(schema) {
                 with (this as CoreProcessorTransaction) {
                     for (query in queries) {
                         totalChanged += connector.mutate(schema, query.stmt, *query.params.map { params[it] }.toTypedArray())
@@ -132,8 +132,8 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
         }
     }
 
-    override suspend fun begin(): Transaction {
-        return CoreProcessorTransaction(connector)
+    override suspend fun begin(schema: String): Transaction {
+        return CoreProcessorTransaction(connector, schema)
     }
 
     private inline fun getSingleQuery(path: String, params: Collection<String>) = queries.getOrElse(path) {
@@ -183,7 +183,7 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
         val values = Array(params.size) { "?" }.joinToString(",")
         val stmt = "INSERT INTO ${schema.name}.${writeMapper(name)} ($names) VALUES ($values);"
         var queryParams = params.toMutableList()
-        if (primaryKey.size == 1 && primaryKey.first().generated) {
+        if (primaryKey.size == 1 && primaryKey.first().isGenerated) {
             queryParams.add(GeneratedKeyMarker.PARAM_KEY)
         }
         return QueryDefinition(stmt, queryParams)
@@ -206,7 +206,7 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     }
 }
 
-class CoreProcessorTransaction(parentConnector: Connector) : CoreProcessor(parentConnector.begin()), Transaction {
+class CoreProcessorTransaction(parentConnector: Connector, schema: String) : CoreProcessor(parentConnector.begin(schema)), Transaction {
     private val txConnector: TransactionConnector get() = connector as TransactionConnector
 
     override suspend fun rollback() {

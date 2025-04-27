@@ -21,7 +21,7 @@ val reserveAttributeNames = setOf("insert", "fetch", "update", "delete")
 expect fun Any.hasGenericGetter(): Boolean
 expect fun Any.callGenericGetter(key: String): Any?
 
-sealed class Attribute<out T>(val name: String, private val parameters: Set<String> = emptySet(), val factory: InstanceFactory? = null,  private val useDirtyFields: Boolean = false) {
+sealed class Attribute<out T>(val name: String, private val parameters: Set<String> = emptySet(), val instanceFactory: InstanceFactory? = null, private val useDirtyFields: Boolean = false) {
 
     /**
      * Match attribute named parameters with values found in provided context parameters
@@ -253,16 +253,16 @@ class RowAttribute(name: String, parameters: Set<String>): Attribute<Json.Object
 
 class NullableRowAttribute(name: String, parameters: Set<String>): Attribute<Json.Object?>(name, parameters)
 
-class InstanceAttribute<out T: Instance>(name: String, parameters: Set<String>, factory: InstanceFactory): Attribute<T>(name, parameters, factory = factory) {
+class InstanceAttribute<out T: Instance>(name: String, parameters: Set<String>, factory: InstanceFactory): Attribute<T>(name, parameters, instanceFactory = factory) {
     override fun handleResult(result: Any?) =
         result as T? ?: throw SkormException("attribute $name cannot have a null result")
 }
 
-class NullableInstanceAttribute<out T: Instance>(name: String, parameters: Set<String>, factory: InstanceFactory): Attribute<T?>(name, parameters, factory = factory)
+class NullableInstanceAttribute<out T: Instance>(name: String, parameters: Set<String>, factory: InstanceFactory): Attribute<T?>(name, parameters, instanceFactory = factory)
 
 class RowSetAttribute(name: String, parameters: Set<String>): Attribute<Sequence<Json.Object>>(name, parameters)
 
-class BagAttribute<out T: Instance>(name: String, parameters: Set<String>, factory: InstanceFactory): Attribute<Sequence<T>>(name, parameters, factory = factory)
+class BagAttribute<out T: Instance>(name: String, parameters: Set<String>, factory: InstanceFactory): Attribute<Sequence<T>>(name, parameters, instanceFactory = factory)
     
 class MutationAttribute(name: String, parameters: Set<String> = setOf(), useDirtyFields: Boolean = false): Attribute<Long>(name, parameters, useDirtyFields = useDirtyFields)
 
@@ -316,14 +316,14 @@ abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = 
 
     suspend inline fun <reified T: Json.Object?> retrieve(attribute: Attribute<T>, vararg params: Any?): T {
         val (execPath, execParams) = prepare(attribute, *params)
-        return attribute.handleResult(processor.retrieve(execPath, execParams, attribute.factory))
+        return attribute.handleResult(processor.retrieve(execPath, execParams, attribute.instanceFactory))
     }
 
     suspend inline fun <reified T: Json.Object> query(attrName: String, vararg params: Any?) = query(findAttribute<Sequence<T>>(attrName), *params)
 
     suspend inline fun <reified T: Json.Object> query(attribute: Attribute<Sequence<T>>, vararg params: Any?): Sequence<T> {
         val (execPath, execParams) = prepare(attribute, *params)
-        return attribute.handleResult(processor.query(execPath, execParams, attribute.factory))
+        return attribute.handleResult(processor.query(execPath, execParams, attribute.instanceFactory))
     }
 
     suspend fun perform(attrName: String, vararg params: Any?) = perform(findAttribute<Long>(attrName), *params)

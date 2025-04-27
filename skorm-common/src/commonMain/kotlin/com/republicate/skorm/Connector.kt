@@ -13,7 +13,7 @@ interface MetaInfos {
     val identifierInternalCase: Char // 'U'ppercase, 'L'owercase, 'S'ensitive
 }
 
-interface Connector: Configurable {
+interface Connector: Configurable, AutoCloseable {
     // meta
     @Throws(SkormException::class)
     fun getMetaInfos(): MetaInfos
@@ -28,7 +28,7 @@ interface Connector: Configurable {
 
     // transactions
     @Throws(SkormException::class)
-    fun begin(): TransactionConnector
+    fun begin(schema: String): TransactionConnector
 }
 
 interface TransactionConnector: Connector {
@@ -37,5 +37,4 @@ interface TransactionConnector: Connector {
 
     @Throws(SkormException::class)
     fun rollback()
-
 }

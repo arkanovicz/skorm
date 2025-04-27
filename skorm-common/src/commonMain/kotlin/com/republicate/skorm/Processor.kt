@@ -1,10 +1,13 @@
 package com.republicate.skorm
 
 import com.republicate.kson.Json
+import kotlin.jvm.JvmField
 
 sealed interface Marker
 class StreamMarker<T>(val stream:T)
-class GeneratedKeyMarker(val colName: String) {
+class GeneratedKeyMarker(
+    val colName: String
+) {
     companion object {
         const val PARAM_KEY = "__generated_key__"
     }
@@ -33,14 +36,14 @@ interface Processor: Configurable {
     suspend fun perform(path: String, params: Map<String, Any?>): Long
 
     // transaction
-    suspend fun begin(): Transaction
+    suspend fun begin(schema: String): Transaction
 
     // in rest mode, instances PK are appended to the path
     val restMode: Boolean
 }
 
-suspend fun Processor.transaction(block: Transaction.()->Unit) {
-    val tx = begin()
+suspend fun Processor.transaction(schema: String, block: Transaction.()->Unit) {
+    val tx = begin(schema)
     try {
         block.invoke(tx)
         tx.commit()

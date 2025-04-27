@@ -49,7 +49,7 @@ object KsonConverter: ContentConverter {
 
 }
 
-class ApiClient(val baseUrl: String) : Processor {
+class SkormApiClient(val baseUrl: String) : Processor {
 
     override val configTag = "client"
     override val config = Configuration()

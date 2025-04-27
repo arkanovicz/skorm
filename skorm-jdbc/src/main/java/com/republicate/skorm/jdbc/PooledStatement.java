@@ -24,6 +24,7 @@ import com.republicate.skorm.GeneratedKeyMarker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -38,7 +39,7 @@ import java.util.Set;
  *  @author <a href=mailto:claude.brisson@gmail.com>Claude Brisson</a>
  *
  */
-public class PooledStatement // TODO implements RowValues
+public class PooledStatement implements Closeable // TODO implements RowValues
 {
     protected static Logger logger = LoggerFactory.getLogger("jdbc");
 
@@ -252,14 +253,19 @@ public class PooledStatement // TODO implements RowValues
 
     /**
      * close this statement.
-     *
-     * @exception SQLException thrown by the database engine
      */
-    public synchronized void close() throws SQLException
+    @Override
+    public synchronized void close()
     {
         if(preparedStatement != null)
         {
-            preparedStatement.close();
+            try {
+                preparedStatement.close();
+            }
+            catch (SQLException sqle) {
+                // ignore bug log
+                logger.warn("error while closing prepared statement", sqle);
+            }
         }
     }
 

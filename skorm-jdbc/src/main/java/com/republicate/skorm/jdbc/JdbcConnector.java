@@ -6,13 +6,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.sql.DataSource;
+import java.io.Closeable;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.util.*;
 
-public class JdbcConnector implements Connector
+public class JdbcConnector implements Connector, Closeable
 {
     private DataSource dataSource = null;
     private ConnectionFactory connectionFactory = null;
@@ -27,17 +28,43 @@ public class JdbcConnector implements Connector
         Connection txConnection;
         Deque<Savepoint> savepoints = new LinkedList<>();
 
-        TxConnector() throws SkormException
+        TxConnector(@Nullable String schema) throws SkormException
         {
             try
             {
-                // CB TODO - in which schema?!
-                txConnection = txConnectionPool.getConnection();
+                txConnection = txConnectionPool.getConnection(schema);
             }
             catch (SQLException sqle)
             {
                 throw new SkormException("cannot start transaction", sqle);
             }
+        }
+
+        /* TODO Kotlin default interface methods not seen?! */
+
+        @Override
+        public String getConfigTag() {
+            return null;
+        }
+
+        @Override
+        public void configure(Map<String, ? extends Object> cfg) {
+            // NOP
+        }
+
+        @Override
+        public void initialize() {
+            // NOP
+        }
+
+        @Override
+        public void initialize(Map<String, ? extends Object> cfg) {
+            // NOP
+        }
+
+        @Override
+        public void close() {
+            // NOP
         }
 
         @NotNull
@@ -49,7 +76,7 @@ public class JdbcConnector implements Connector
 
         @NotNull
         @Override
-        public QueryResult query(@NotNull String schema, @NotNull String query, @Nullable Object... params) throws SkormException
+        public QueryResult query(@Nullable String schema, @NotNull String query, @Nullable Object... params) throws SkormException
         {
             try
             {
@@ -64,7 +91,7 @@ public class JdbcConnector implements Connector
         }
 
         @Override
-        public long mutate(@NotNull String schema, @NotNull String query, @Nullable Object... params) throws SkormException
+        public long mutate(@Nullable String schema, @NotNull String query, @Nullable Object... params) throws SkormException
         {
             try
             {
@@ -82,7 +109,7 @@ public class JdbcConnector implements Connector
 
         @NotNull
         @Override
-        public TransactionConnector begin() throws SkormException
+        public TransactionConnector begin(@Nullable String schema) throws SkormException
         {
             try
             {
@@ -167,6 +194,12 @@ public class JdbcConnector implements Connector
     }
 
     @Override
+    public void initialize(Map<String, ? extends Object> cfg) throws SkormException {
+        configure(cfg);
+        initialize();
+    }
+
+    @Override
     public synchronized void initialize() throws SkormException
     {
         try
@@ -197,10 +230,6 @@ public class JdbcConnector implements Connector
         }
     }
 
-    public JdbcConnector()
-    {
-    }
-
     @Override
     public MetaInfos getMetaInfos() throws SkormException {
         try
@@ -213,32 +242,48 @@ public class JdbcConnector implements Connector
         }
     }
 
+    public JdbcConnector() {
+    }
+
     public JdbcConnector(DataSource dataSource)
     {
         this.dataSource = dataSource;
     }
 
     public JdbcConnector(String url) {
-        this(url, null, null, null);
+        this(url, null, null, null, null);
     }
 
     public JdbcConnector(String url, String user, String password) {
-        this(url, user, password, null);
+        this(url, user, password, null, null);
     }
 
     public JdbcConnector(String url, String user, String password, String driver) {
+        this(url, user, password, driver, null);
+    }
+
+    public JdbcConnector(String url, String user, String password, String driver, @Nullable String defaultSchema) {
         config.configure("url", url);
         if (user != null) config.configure("user", user);
         if (password != null) config.configure("password", password);
         if (driver != null) config.configure("driver", driver);
+        if (defaultSchema != null) config.configure("defaultSchema", defaultSchema);
+    }
+
+    @Override
+    public void configure(Map<String, ? extends Object> cfg) {
+        config.configure(cfg);
     }
 
     @NotNull
     @Override
-    public QueryResult query(@NotNull String schema, @NotNull String query, @Nullable Object... params) throws SkormException
+    public QueryResult query(@Nullable String schema, @NotNull String query, @Nullable Object... params) throws SkormException
     {
         try
         {
+            if (schema == null) {
+                schema = config.getString("defaultSchema");
+            }
             PooledStatement stmt = statementPool.prepareQuery(schema, query);
             ResultSet rs = stmt.executeQuery(params);
             return buildQueryResult(rs, stmt);
@@ -250,10 +295,13 @@ public class JdbcConnector implements Connector
     }
 
     @Override
-    public long mutate(@NotNull String schema, @NotNull String query, @Nullable Object... params) throws SkormException
+    public long mutate(@Nullable String schema, @NotNull String query, @Nullable Object... params) throws SkormException
     {
         try
         {
+            if (schema == null) {
+                schema = config.getString("defaultSchema");
+            }
             PooledStatement stmt = statementPool.prepareUpdate(schema, query);
             long changed = stmt.executeUpdate(params);
             return params.length > 0 && params[params.length - 1] instanceof GeneratedKeyMarker
@@ -268,9 +316,9 @@ public class JdbcConnector implements Connector
 
     @NotNull
     @Override
-    public TransactionConnector begin() throws SkormException
+    public TransactionConnector begin(@Nullable String schema) throws SkormException
     {
-        return new TxConnector();
+        return new TxConnector(schema);
     }
 
     private static QueryResult buildQueryResult(ResultSet rs, PooledStatement stmt) throws SQLException
@@ -283,6 +331,13 @@ public class JdbcConnector implements Connector
             names[i] = meta.getColumnName(i + 1);
         }
         return new QueryResult(names, new RowIterator(rs, stmt));
+    }
+
+    @Override
+    public void close() {
+        statementPool.close();
+        txConnectionPool.clear();
+        connectionPool.clear();
     }
 
     private static class RowIterator implements Iterator<Object[]>

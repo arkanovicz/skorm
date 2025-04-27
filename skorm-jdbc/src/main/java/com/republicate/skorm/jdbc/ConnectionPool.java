@@ -19,6 +19,7 @@ package com.republicate.skorm.jdbc;
  * under the License.
  */
 
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,8 +92,11 @@ public class ConnectionPool
      * @return a connection
      * @throws SQLException
      */
-    public synchronized Connection getConnection(String schema) throws SQLException
+    public synchronized Connection getConnection(@Nullable String schema) throws SQLException
     {
+        if (schema == null) {
+            schema = "";
+        }
         List<Connection> connections = connectionsMap.computeIfAbsent(schema, (s) -> new ArrayList<>());
         for(Iterator it = connections.iterator(); it.hasNext(); )
         {
@@ -137,25 +141,6 @@ public class ConnectionPool
     private Connection createConnection() throws SQLException
     {
         logger.info("Creating a new connection");
-
-        // schema TODO
-//        if(schema != null && schema.length() > 0)
-//        {
-//            String schemaQuery = vendor.getSchemaQuery();
-//
-//            if(schemaQuery != null)
-//            {
-//                schemaQuery = schemaQuery.replace("$schema", schema);
-//                Statement stmt = connection.createStatement();
-//                stmt.executeUpdate(schemaQuery);
-//                stmt.close();
-//            }
-//            else
-//            {
-//                connection.setSchema(schema);
-//            }
-//        }
-
         Connection connection = connectionFactory.newConnection();
         connection.setAutoCommit(autocommit);
         return connection;

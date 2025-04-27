@@ -57,7 +57,7 @@ open class Entity protected constructor(val name: String, val schema: Schema) {
         override val schema get() = parent as Schema
 
         override fun prepare(attr: Attribute<*>, vararg params: Any?): Pair<String, Map<String, Any?>> {
-            val doRestPK = processor.restMode && params.isNotEmpty() && params[0] is Instance && (params[0] as Instance).persisted
+            val doRestPK = processor.restMode && params.isNotEmpty() && params[0] is Instance && (params[0] as Instance).isPersisted
             return if (doRestPK) {
                 val instance = params[0] as Instance
                 val pkFields = instance.entity.primaryKey.map { it.name }
@@ -93,7 +93,7 @@ open class Entity protected constructor(val name: String, val schema: Schema) {
         _fields[field.name] = field
     }
 
-    val primaryKey: List<Field> by lazy { _fields.values.filter { it.primary } }
+    val primaryKey: List<Field> by lazy { _fields.values.filter { it.isPrimary } }
 
     private val fetchAttribute: InstanceAttribute<Instance> by lazy {
         InstanceAttribute<Instance>("fetch", primaryKey.map { it.name }.toSet(), this::new).apply {
@@ -133,7 +133,7 @@ open class Entity protected constructor(val name: String, val schema: Schema) {
 
     // Other operations are not visible directly, they are proxied from Instance
     internal suspend fun insert(instance: Instance): Long {
-        return if (primaryKey.size == 1 && primaryKey.first().generated) {
+        return if (primaryKey.size == 1 && primaryKey.first().isGenerated) {
             instanceAttributes.perform(insertAttribute, instance, GeneratedKeyMarker(primaryKey.first().name))
         } else {
             instanceAttributes.perform(insertAttribute, instance)
@@ -149,37 +149,37 @@ open class Entity protected constructor(val name: String, val schema: Schema) {
 
 open class Instance(val entity: Entity) : Json.MutableObject() {
     val dirtyFields = BitSet(MAX_FIELDS) // init size needed for multiplatform
-    val generatedPrimaryKey: Boolean get() = entity.primaryKey.size == 1 && entity.primaryKey.first().generated
-    var persisted = false
+    val generatedPrimaryKey: Boolean get() = entity.primaryKey.size == 1 && entity.primaryKey.first().isGenerated
+    var isPersisted = false
 
     // instance mutations
 
     suspend fun insert() {
-        if (persisted) throw SkormException("cannot insert a persisted instance")
+        if (isPersisted) throw SkormException("cannot insert a persisted instance")
         if (generatedPrimaryKey && containsKey(entity.primaryKey.first().name)) throw SkormException("generated primary key value cannot be specified at insertion")
         val ret = entity.insert(this)
         if (generatedPrimaryKey) put(entity.primaryKey.first().name, ret)
         else if (ret != 1L) throw SkormException("unexpected number of changed rows, expected 1, found $ret")
-        persisted = true
+        isPersisted = true
         setClean()
     }
 
     suspend fun update() {
-        if (!persisted) throw SkormException("cannot update a volatile instance")
+        if (!isPersisted) throw SkormException("cannot update a volatile instance")
         entity.update(this)
         setClean()
     }
 
-    suspend fun upsert() = if (persisted) update() else insert()
+    suspend fun upsert() = if (isPersisted) update() else insert()
 
     suspend fun delete() {
-        if (!persisted) throw SkormException("cannot delete a volatile instance")
+        if (!isPersisted) throw SkormException("cannot delete a volatile instance")
         entity.delete(this)
-        persisted = false
+        isPersisted = false
     }
 
     suspend fun refresh() {
-        if (!persisted) throw SkormException("cannot refresh a volatile instance")
+        if (!isPersisted) throw SkormException("cannot refresh a volatile instance")
         val self = entity.fetch(this) ?: throw SkormException("cannot refresh instance, it doesn't exist")
         putRawFields(self)
     }
@@ -188,7 +188,7 @@ open class Instance(val entity: Entity) : Json.MutableObject() {
 
     fun setClean() {
         dirtyFields.clear()
-        persisted = true
+        isPersisted = true
     }
 
     fun isDirty() = dirtyFields.nextSetBit(0) != -1
@@ -197,8 +197,8 @@ open class Instance(val entity: Entity) : Json.MutableObject() {
         val ret = super.put(key, value)
         // coercitive version
         val field = entity.fields[key] ?: throw SkormException("${entity.name} has no field named $key")
-        if (persisted && field.primary && ret != value) // CB TODO - since 'value' type is lax, 'value' may need a proper conversion before the comparison
-                persisted = false
+        if (isPersisted && field.isPrimary && ret != value) // CB TODO - since 'value' type is lax, 'value' may need a proper conversion before the comparison
+                isPersisted = false
         dirtyFields.set(entity.fieldIndices[key]!!, true)
         // relaxed version
         // val field = entity.fields[key]?.let { field ->

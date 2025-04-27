@@ -129,7 +129,7 @@ public class Vendor implements MetaInfos
     }
 
     /** SQL query to set the current schema */
-    private String schemaQuery = null;
+    private String setSchemaQuery = null;
 
     /** ID generation method */
     public enum LastInsertIdPolicy { NONE, GENERATED_KEYS, RETURNING, QUERY, METHOD }
@@ -189,14 +189,14 @@ public class Vendor implements MetaInfos
         }
     }
 
-    public String getSchemaQuery()
+    public String getSetSchemaQuery()
     {
-        return schemaQuery;
+        return setSchemaQuery;
     }
 
-    public void setSchemaQuery(String schemaQuery)
+    public void setSetSchemaQuery(String setSchemaQuery)
     {
-        this.schemaQuery = schemaQuery;
+        this.setSchemaQuery = setSchemaQuery;
     }
 
     public LastInsertIdPolicy getLastInsertIdPolicy()

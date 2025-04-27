@@ -21,9 +21,11 @@ package com.republicate.skorm.jdbc;
 
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -36,7 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *  @author <a href=mailto:claude.brisson@gmail.com>Claude Brisson</a>
  *
  */
-public class StatementPool
+public class StatementPool implements Closeable
 {
     protected Logger logger = LoggerFactory.getLogger("jdbc");
 
@@ -63,10 +65,13 @@ public class StatementPool
      * @exception SQLException thrown by the database engine
      * @return a valid statement
      */
-    protected synchronized PooledStatement prepareStatement(String schema, String query, boolean update, Connection connection) throws SQLException
+    protected synchronized PooledStatement prepareStatement(@Nullable String schema, String query, boolean update, Connection connection) throws SQLException
     {
         logger.trace("prepare-{}", query);
 
+        if (schema == null) {
+            schema = "";
+        }
         PooledStatement statement;
         List<PooledStatement> availableStatements = null;
         boolean sharedStatement = connection == null;
@@ -120,22 +125,22 @@ public class StatementPool
         return statement;
     }
 
-    public synchronized PooledStatement prepareQuery(String schema, String query) throws SQLException
+    public synchronized PooledStatement prepareQuery(@Nullable String schema, String query) throws SQLException
     {
         return prepareStatement(schema, query, false, null);
     }
 
-    public synchronized PooledStatement prepareQuery(String schema, String query, Connection txConnection) throws SQLException
+    public synchronized PooledStatement prepareQuery(@Nullable String schema, String query, Connection txConnection) throws SQLException
     {
         return prepareStatement(schema, query, false, txConnection);
     }
 
-    public synchronized PooledStatement prepareUpdate(String schema, String query) throws SQLException
+    public synchronized PooledStatement prepareUpdate(@Nullable String schema, String query) throws SQLException
     {
         return prepareStatement(schema, query, true, null);
     }
 
-    public synchronized PooledStatement prepareUpdate(String schema, String query, Connection txConnection) throws SQLException
+    public synchronized PooledStatement prepareUpdate(@Nullable String schema, String query, Connection txConnection) throws SQLException
     {
         return prepareStatement(schema, query, true, txConnection);
     }
@@ -154,9 +159,9 @@ public class StatementPool
                 {
                     jt.next().close();
                 }
-                catch(SQLException e)
+                catch(Exception e)
                 {    // don't care now...
-                    logger.error("error while clearing pool", e);
+                    logger.warn("error while clearing pool", e);
                 }
             }
         }
@@ -179,8 +184,9 @@ public class StatementPool
                     {
                         statement.close();
                     }
-                    catch (SQLException ignored)
+                    catch (Exception e)
                     {
+                        logger.warn("error while dropping connection", e);
                     }
                     statement.setInvalid();
                 }
@@ -194,12 +200,11 @@ public class StatementPool
     }
 
     /**
-     * clear statements on exit.
+     * clear statements closing.
      */
     @Override
-    protected void finalize()
+    public void close()
     {
-        // CB TODO - use Cleaner
         clear();
     }
 
