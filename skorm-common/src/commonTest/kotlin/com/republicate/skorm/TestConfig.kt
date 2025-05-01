@@ -23,8 +23,9 @@ class TestConfig {
         foo.configure(cfg)
         try {
             println("foo.noNullNoDef = ${foo.noNullNoDef}")
-            throw RuntimeException("previous statement should throw a NullPointerException")
+            throw RuntimeException("previous statement should throw a NullPointerException (jvm/native) or a ClassCastException (js)")
         } catch (npe: NullPointerException) {
+        } catch (cce: ClassCastException) {
         }
         foo.configure(mapOf("noNullNoDef" to "someValue"))
         assertEquals("someValue", foo.noNullNoDef)
