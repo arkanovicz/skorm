@@ -33,7 +33,7 @@ kotlin {
             file("$buildDir/generated-src/main/kotlin"),
         )
     }
-    jvmToolchain(11)
+    jvmToolchain(17)
 }
 
 dependencies {
@@ -44,6 +44,9 @@ dependencies {
     implementation(libs.evo.inflector)
     api(libs.kddl)
     testImplementation(gradleTestKit())
+    testImplementation(libs.junit)
+    testImplementation(libs.junit.jupiter.api)
+
     /*
     testImplementation("junit:junit:4.12")
     testImplementation(kotlin("test"))
@@ -62,8 +65,8 @@ tasks {
         }
     }
     withType<JavaCompile>().configureEach {
-        sourceCompatibility = JavaVersion.VERSION_11.toString()
-        targetCompatibility = JavaVersion.VERSION_11.toString()
+        sourceCompatibility = JavaVersion.VERSION_17.toString()
+        targetCompatibility = JavaVersion.VERSION_17.toString()
     }
 }
 

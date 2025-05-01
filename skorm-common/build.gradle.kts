@@ -21,11 +21,9 @@ kotlin {
             }
         }
     }
-
     jvmToolchain {
         languageVersion.set(JavaLanguageVersion.of(17))
     }
-
     compilerOptions {
         apiVersion.set(KotlinVersion.KOTLIN_2_0)
     }
@@ -41,9 +39,10 @@ kotlin {
         browser {
             testTask {
                 useKarma {
-                    useDebuggableChrome()
-                    //useChromeHeadless()
                     // useFirefox()
+                    useChromeHeadless()
+                    // or, for debugging
+                    //useDebuggableChrome()
                     /*
                     webpackConfig.cssSupport {
                         enabled.set(true)

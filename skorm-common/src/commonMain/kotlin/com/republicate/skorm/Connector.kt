@@ -31,6 +31,21 @@ interface Connector: Configurable, AutoCloseable {
     fun begin(schema: String): TransactionConnector
 }
 
+open class ScopedConnector(val connector: Connector, val schema: String) {
+
+    // queries
+    @Throws(SkormException::class)
+    fun query(query: String, vararg params: Any?) = connector.query(schema, query, *params)
+
+    // mutations
+    @Throws(SkormException::class)
+    fun mutate(query: String, vararg params: Any?) = connector.mutate(schema, query, *params)
+
+    // transactions
+    @Throws(SkormException::class)
+    fun begin() = connector.begin(schema)
+}
+
 interface TransactionConnector: Connector {
     @Throws(SkormException::class)
     fun commit()

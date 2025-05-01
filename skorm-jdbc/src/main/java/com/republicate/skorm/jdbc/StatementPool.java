@@ -125,9 +125,19 @@ public class StatementPool implements Closeable
         return statement;
     }
 
+    public synchronized PooledStatement prepareQuery(String query) throws SQLException
+    {
+        return prepareQuery(null, query);
+    }
+
     public synchronized PooledStatement prepareQuery(@Nullable String schema, String query) throws SQLException
     {
         return prepareStatement(schema, query, false, null);
+    }
+
+    public synchronized PooledStatement prepareQuery(String query, Connection txConnection) throws SQLException
+    {
+        return prepareQuery(null, query, txConnection);
     }
 
     public synchronized PooledStatement prepareQuery(@Nullable String schema, String query, Connection txConnection) throws SQLException
@@ -135,9 +145,19 @@ public class StatementPool implements Closeable
         return prepareStatement(schema, query, false, txConnection);
     }
 
+    public synchronized PooledStatement prepareUpdate(String query) throws SQLException
+    {
+        return prepareUpdate(null, query);
+    }
+
     public synchronized PooledStatement prepareUpdate(@Nullable String schema, String query) throws SQLException
     {
         return prepareStatement(schema, query, true, null);
+    }
+
+    public synchronized PooledStatement prepareUpdate(String query, Connection txConnection) throws SQLException
+    {
+        return prepareUpdate(null, query, txConnection);
     }
 
     public synchronized PooledStatement prepareUpdate(@Nullable String schema, String query, Connection txConnection) throws SQLException

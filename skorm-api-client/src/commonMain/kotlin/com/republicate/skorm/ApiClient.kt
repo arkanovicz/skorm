@@ -169,7 +169,7 @@ class ApiClient(val baseUrl: String) : Processor {
         return response.body()
     }
 
-    override suspend fun begin(): Transaction {
+    override suspend fun begin(schema: String): Transaction {
         TODO("Not yet implemented")
     }
 
