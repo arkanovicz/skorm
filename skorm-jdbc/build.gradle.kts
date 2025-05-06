@@ -3,12 +3,13 @@ plugins {
     `maven-publish`
 }
 
-val kotlin_version: String by project
-val datetime_version: String by project
+java {
+  sourceCompatibility = JavaVersion.VERSION_17
+  targetCompatibility = JavaVersion.VERSION_17
+}
 
 dependencies {
     api(project(":skorm-core"))
-    //implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version")
     implementation(libs.slf4j.api)
     implementation(libs.commons.lang3)
     implementation(libs.kotlinx.datetime)
@@ -18,28 +19,8 @@ dependencies {
     testImplementation(libs.mockito.junit.jupiter)
 
     testRuntimeOnly(libs.slf4j.simple)
-    // testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
     testRuntimeOnly(libs.h2)
 }
-
-/*
-tasks {
-    withType<org.jetbrains.kotlin.gradle.dsl.KotlinCompile<*>> {
-        kotlinOptions {
-            languageVersion = "1.7"
-            apiVersion = "1.7"
-        }
-    }
-    withType<JavaCompile>().configureEach {
-        sourceCompatibility = JavaVersion.VERSION_1_8.toString()
-        targetCompatibility = JavaVersion.VERSION_1_8.toString()
-    }
-
-    getByName<Test>("test") {
-        useJUnitPlatform()
-    }
-}
-*/
 
 publishing {
     publications {

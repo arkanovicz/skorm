@@ -19,7 +19,7 @@ import java.util.*
 
 abstract class BaseGenerationTask : DefaultTask() {
 
-    override fun dependsOn(vararg paths: Any?): Task? {
+    override fun dependsOn(vararg paths: Any?): Task {
         return super.dependsOn(*paths)
     }
 
@@ -35,7 +35,7 @@ abstract class BaseGenerationTask : DefaultTask() {
     @Internal
     open val tag = "[skorm]"
 
-    private val engine = VelocityEngine().apply {
+    private fun getVelocityEngine() = VelocityEngine().apply {
         val prop = Properties().apply {
             put("resource.loaders", "class")
             put("resource.loader.class.class", "org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader")
@@ -45,13 +45,11 @@ abstract class BaseGenerationTask : DefaultTask() {
         init(prop)
     }
 
-    private val context: VelocityContext by lazy {
-        VelocityContext().apply {
-            put("kotlin", KotlinTool())
-            put("log", logger)
-            put("package", destPackage.get())
-            populateContext(this)
-        }
+    private fun getVelocityContext() = VelocityContext().apply {
+        put("kotlin", KotlinTool())
+        put("log", logger)
+        put("package", destPackage.get())
+        populateContext(this)
     }
 
     protected open fun populateContext(context: VelocityContext) {}
@@ -64,8 +62,8 @@ abstract class BaseGenerationTask : DefaultTask() {
         destFile.get().asFile.parentFile.mkdirs()
         val writer = FileWriter(destFile.get().asFile)
 
-        val template = engine.getTemplate(templatePath) ?: throw RuntimeException("template not found")
-        template.merge(context, writer)
+        val template = getVelocityEngine().getTemplate(templatePath) ?: throw RuntimeException("template not found")
+        template.merge(getVelocityContext(), writer)
         writer.close()
     }
 }

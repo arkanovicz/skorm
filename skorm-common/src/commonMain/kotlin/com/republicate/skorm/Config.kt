@@ -22,6 +22,8 @@ open class Configuration private constructor(private val config: Json.MutableObj
     fun getInt(key: String) = values.getInt(key)
     fun getArray(key: String) = values.getArray(key)
     fun getObject(key: String) = values.getObject(key)
+
+    override fun toString() = values.toString()
 }
 
 interface Configurable {

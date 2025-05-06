@@ -11,7 +11,7 @@ plugins {
 gradlePlugin {
   plugins {
     create("skormGradlePlugin") {
-      id = "skorm.gradle.plugin"
+      id = "skorm-gradle-plugin"
       implementationClass = "com.republicate.skorm.SkormGradlePlugin"
       version = "0.4"
     }

@@ -1,8 +1,10 @@
 package com.republicate.skorm.core
 
+import com.republicate.skorm.IdentifierMapper
 import com.republicate.skorm.SkormException
 // import com.republicate.skorm.concurrentMapOf
 import com.republicate.skorm.core.AttributeDefinition.Companion.ParserState.*
+import com.republicate.skorm.identityMapper
 
 data class QueryDefinition(val stmt: String, val params: List<String>) {
 }
@@ -23,7 +25,7 @@ sealed interface AttributeDefinition {
             END(start=";")
         }
         private val stateMap = ParserState.values().associateBy { it.start }.toMap()
-        fun parse(qry: String, schema: String = ""): AttributeDefinition {
+        fun parse(qry: String, schema: String = "", parameterIdentifierMapper: IdentifierMapper = identityMapper): AttributeDefinition {
             val trimmed = qry.trim()
             val raw = if (trimmed.endsWith((';'))) trimmed else "$trimmed;"
             val queries = mutableListOf<QueryDefinition>()
@@ -38,7 +40,9 @@ sealed interface AttributeDefinition {
                 val before = qry.substring(pos, match.range.first)
                 if (states.last() == PARAMETER) {
                     if (match.value != PARAMETER.end) throw SkormException("invalid parameter name")
-                    params.add(before.trim().also {
+                    params.add(before.trim().let {
+                        parameterIdentifierMapper(it)
+                    }.also {
                         if (!it.matches(Regex("\\w+")))
                             throw SkormException("invalid parameter name")
                     })

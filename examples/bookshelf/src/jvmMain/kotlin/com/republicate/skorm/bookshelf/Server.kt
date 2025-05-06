@@ -141,9 +141,25 @@ fun Application.configureDatabase() {
 
     println("Creating database...")
     val creationScript = Application::class.java.getResource("/${CREATION_SCRIPT}").readText()
-    exampleDatabase.mutationAttribute("create", creationScript)
+    // @@@
+    //exampleDatabase.mutationAttribute("create", creationScript)
+
+    val tst = creationScript + """
+    SELECT * FROM book;;
+    SELECT * FROM bookshelf.book;;
+    SELECT * FROM BOOKSHELF.book;;
+    """.trimIndent()
+
+    exampleDatabase.mutationAttribute("create", tst)
+
     runBlocking {
         exampleDatabase.perform("create") // or execute attribute directly...
+
+        println("@@@@@@@@@@@@@ DATABASE STRUCTURE CREATED")
+        val authors = Author.browse().toList()
+        assert(authors.size == 0)
+
+        println("@@@@@@@@@@@@@ ENTITIES ARE VISIBLE")
 
         // test data
         val author = Author().apply {
@@ -261,6 +277,6 @@ object KsonConverter: ContentConverter {
         contentType: ContentType,
         charset: Charset,
         typeInfo: TypeInfo,
-        value: Any
-    ): OutgoingContent? = TextContent(value.toString(), contentType.withCharsetIfNeeded(charset))
+        value: Any?
+    ): OutgoingContent? = TextContent(value?.toString() ?: "", contentType.withCharsetIfNeeded(charset))
 }

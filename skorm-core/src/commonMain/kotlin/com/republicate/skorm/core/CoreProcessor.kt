@@ -51,7 +51,10 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     }
 
     override fun initialize() {
-        connector.initialize(connector.configTag?.let { config.getObject(it) })
+        connector.initialize(connector.configTag?.let {
+            println("@@@@@ CoreProcessor init: $config")
+            config.getObject(it)
+        })
         writeMapper =  when (identifierInternalCase) {
             'U' -> {{ "$identifierQuoteChar${it.uppercase()}$identifierQuoteChar" }}
             'L' -> {{ "$identifierQuoteChar${it.lowercase()}$identifierQuoteChar" }}

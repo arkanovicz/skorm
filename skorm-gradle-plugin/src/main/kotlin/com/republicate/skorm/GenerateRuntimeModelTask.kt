@@ -122,7 +122,7 @@ abstract class GenerateRuntimeModelTask: BaseStructureGenerationTask() {
             val dbSchema = database.schemas[schema.name] ?: throw SkormException("schema not found: ${schema.name}")
             for (item in schema.items) {
                 val def = AttributeDefinition.parse(item.sql!!)
-                item.parameters.addAll(def.parameters())
+                item.parameters.addAll(def.parameters()) // CB TODO - is identifiers mapping required here?
                 val externalParameters = mutableSetOf<String>()
                 externalParameters.addAll(def.parameters())
                 if (item.receiver != null) {

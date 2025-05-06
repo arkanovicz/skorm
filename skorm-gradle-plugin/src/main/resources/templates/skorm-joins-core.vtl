@@ -3,6 +3,8 @@ package $package
 import com.republicate.skorm.core.bagAttribute
 import com.republicate.skorm.core.instanceAttribute
 
+#set ($databaseClass = "#pascal($database.name)Database")
+
 // attributes declaration for core
 fun ${databaseClass}.initJoins() {
 #foreach ($schema in $database.schemas.values())

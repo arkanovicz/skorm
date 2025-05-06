@@ -5,7 +5,7 @@ typealias IdentifierMapper = (String) -> String
 val identityMapper: IdentifierMapper = { it }
 
 val snakeToCamel:  IdentifierMapper = { snake ->
-    if (!snake.contains("_")) snake.decapitalize()
+    if (!snake.contains("_")) snake.lowercase()
     else {
         val parts = snake.lowercase().split("_") // CB TODO factorize regex building
         val builder = StringBuilder()
