@@ -22,15 +22,17 @@ class KotlinTool {
         val match = decomp.matchEntire(type) ?: throw SemanticException("invalid type: $type")
         val base = match.groups[1]!!.value.toLowerCase(Locale.ROOT)
         return when (base) {
+            "boolean" -> "Boolean"
             "text", "varchar", "clob" -> "String"
             "enum" -> pascal(name) + "Enum"
             "serial" -> "Int"
             "date" -> "LocalDate"
             "datetime" -> "LocalDateTime"
-            "int", "integer" -> "Int"
-            "long" -> "Long"
+            "int", "integer", "serial" -> "Int"
+            "long", "bigint" -> "Long"
             "float" -> "Float"
             "double" -> "Double"
+            "money", "numeric", "decimal" -> "BigDecimal"
             "blob" -> "ByteArray"
             else -> throw SemanticException("unknown type: $type")
         }
