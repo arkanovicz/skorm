@@ -21,6 +21,7 @@ velocity = "2.4"
 velocity-tools = "3.1"
 junit = "4.13.2"
 junit-jupiter = "5.12.2"
+junit-platform = "1.12.2"
 mockito-junit-jupiter = "5.17.0"
 hsqldb = "2.7.4"
 # TODO migrate to ksoup
@@ -61,6 +62,8 @@ velocity-engine-core = { module = "org.apache.velocity:velocity-engine-core", ve
 velocity-tools-generic = { module = "org.apache.velocity.tools:velocity-tools-generic", version.ref = "velocity-tools" }
 junit = { module = "junit:junit", version.ref = "junit" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit-jupiter" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit-jupiter" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-platform" }
 mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito-junit-jupiter" }
 hsqldb = { module = "org.hsqldb:hsqldb", version.ref = "hsqldb" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }

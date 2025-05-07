@@ -19,11 +19,6 @@ class StaticTests {
                 println("@@@@@ CONFIG: ")
                 println(config)
             }
-            /*
-            application {
-                module()
-            }
-             */
             val response = client.get("/")
             val doc = Jsoup.parse(response.bodyAsText())
             println(doc)

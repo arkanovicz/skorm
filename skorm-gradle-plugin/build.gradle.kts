@@ -46,6 +46,9 @@ dependencies {
     testImplementation(gradleTestKit())
     testImplementation(libs.junit)
     testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.junit.jupiter.engine)
+    testImplementation(libs.junit.platform.launcher)
+    testImplementation(gradleTestKit())
 
     /*
     testImplementation("junit:junit:4.12")
@@ -90,6 +93,11 @@ tasks.register<com.strumenta.antlrkotlin.gradle.AntlrKotlinTask>("generateKotlin
 }
 
 tasks.filter { it.name.startsWith("compileKotlin") }.forEach { it.dependsOn("generateKotlinGrammarSource") }
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
+    jvmArgs("--add-opens", "java.base/java.lang=ALL-UNNAMED")
+}
 
 publishing {
     publications {
