@@ -6,6 +6,7 @@ import io.ktor.http.*
 import io.ktor.server.config.ApplicationConfig
 import io.ktor.server.testing.*
 import org.jsoup.Jsoup
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
@@ -29,6 +30,8 @@ class StaticTests {
             assertEquals(HttpStatusCode.OK, response.status)
             val title = doc.select("h1")
             assertEquals("My Bookshelf", title.text())
+            val book = doc.select("li")
+            assertTrue(book.text().startsWith("Le Language des Pierres"))
         }
     }
 }
