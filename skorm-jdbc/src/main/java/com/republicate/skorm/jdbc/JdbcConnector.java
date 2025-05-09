@@ -194,8 +194,10 @@ public class JdbcConnector implements Connector, Closeable
     }
 
     @Override
-    public void initialize(Map<String, ? extends Object> cfg) throws SkormException {
-        configure(cfg);
+    public void initialize(@Nullable Map<String, ? extends Object> cfg) throws SkormException {
+        if (cfg != null) {
+            configure(cfg);
+        }
         initialize();
     }
 
