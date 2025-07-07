@@ -16,12 +16,12 @@ package $package
       #set($leftInstance = "${leftSchema}.#pascal($left.name)")
       #set($rightInstance = "${rightSchema}.#pascal($right.name)")
       #if($leftFk.fields.size() == 1)
-        #set($rightToLeftAttrBase = "#attributeName($rightFk.fields.iterator().next().name)")
+        #set($rightToLeftAttrBase = "#attributeName($leftFk.fields.iterator().next().name)")
       #else
         #set($rightToLeftAttrBase = "#camel($left.name)")
       #end
       #if($rightFk.fields.size() == 1)
-        #set($leftToRightAttrBase = "#attributeName($leftFk.fields.iterator().next().name)")
+        #set($leftToRightAttrBase = "#attributeName($rightFk.fields.iterator().next().name)")
       #else
         #set($leftToRightAttrBase = "#camel($right.name)")
       #end
