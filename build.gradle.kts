@@ -16,7 +16,7 @@ plugins {
 allprojects {
 
     group = "com.republicate.skorm"
-    version = "0.4"
+    version = "0.5-SNAPSHOT"
 
     repositories {
         mavenCentral()

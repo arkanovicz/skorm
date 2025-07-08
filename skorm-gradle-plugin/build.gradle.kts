@@ -23,7 +23,7 @@ gradlePlugin {
       id = "com.republicate.skorm.skorm-gradle-plugin"
       displayName = "Skorm Gradle Plugin"
       implementationClass = "com.republicate.skorm.SkormGradlePlugin"
-      version = "0.4"
+      version = "0.5-SNAPSHOT"
     }
   }
 }
