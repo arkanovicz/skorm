@@ -23,17 +23,21 @@ class KotlinTool {
         val base = match.groups[1]!!.value.toLowerCase(Locale.ROOT)
         return when (base) {
             "boolean" -> "Boolean"
-            "text", "varchar", "clob" -> "String"
+            "text", "varchar", "clob" -> "String" // TODO streams for "text" and "clob"
             "enum" -> pascal(name) + "Enum"
-            "serial" -> "Int"
             "date" -> "LocalDate"
             "datetime" -> "LocalDateTime"
+            "byte" -> "Byte"
+            "short" -> "Short"
             "int", "integer", "serial" -> "Int"
-            "long", "bigint" -> "Long"
+            "long", "bigserial" -> "Long"
+            "bigint" -> "BigInteger"
             "float" -> "Float"
             "double" -> "Double"
             "money", "numeric", "decimal" -> "BigDecimal"
             "blob" -> "ByteArray"
+            "uuid" -> "Uuid"
+            "binary", "varbinary" -> "ByteArray" // TODO streams
             else -> throw SemanticException("unknown type: $type")
         }
     }
