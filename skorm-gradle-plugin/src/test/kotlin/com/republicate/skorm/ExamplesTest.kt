@@ -11,7 +11,8 @@ class ExamplesTest {
         GradleRunner.create()
             .withProjectDir(projectDir)
             .withDebug(true)
-            .withArguments(":bookshelf:build")
+            // .withArguments(":bookshelf:build")
+            .withArguments(":build")
             .forwardOutput()
             .build()
     }

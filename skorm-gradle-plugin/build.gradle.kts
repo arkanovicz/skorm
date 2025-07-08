@@ -1,5 +1,10 @@
+@file:OptIn(ExperimentalKotlinGradlePluginApi::class)
+
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+
+description = "Skorm Gradle Plugin"
 
 plugins {
     alias(libs.plugins.jvm)
@@ -11,7 +16,8 @@ plugins {
 gradlePlugin {
   plugins {
     create("skormGradlePlugin") {
-      id = "skorm-gradle-plugin"
+      id = "com.republicate.skorm.skorm-gradle-plugin"
+      displayName = "Skorm Gradle Plugin"
       implementationClass = "com.republicate.skorm.SkormGradlePlugin"
       version = "0.4"
     }
@@ -49,18 +55,11 @@ dependencies {
     testImplementation(libs.junit.jupiter.engine)
     testImplementation(libs.junit.platform.launcher)
     testImplementation(gradleTestKit())
-
-    /*
-    testImplementation("junit:junit:4.12")
-    testImplementation(kotlin("test"))
-    testImplementation(kotlin("test-junit"))
-    */
     // as api to expose CharStream
     api(libs.antlr.kotlin)
 }
 
 tasks {
-
     named<KotlinCompilationTask<*>>("compileKotlin").configure {
         compilerOptions {
             apiVersion.set(KotlinVersion.KOTLIN_1_7)
@@ -74,12 +73,6 @@ tasks {
 }
 
 tasks.register<com.strumenta.antlrkotlin.gradle.AntlrKotlinTask>("generateKotlinGrammarSource") {
-    /*
-    antlrClasspath = configurations.detachedConfiguration(
-        // project.dependencies.create("com.strumenta.antlr-kotlin:antlr-kotlin-target:6304d5c1c4")
-        project.dependencies.create(libs.antlr.kotlin)
-    )
-    */
     // maxHeapSize = "64m"
     packageName = "com.republicate.skorm.parser"
     arguments = listOf("-no-visitor", "-no-listener")
@@ -90,43 +83,13 @@ tasks.register<com.strumenta.antlrkotlin.gradle.AntlrKotlinTask>("generateKotlin
         }
     outputDirectory = File("build/generated-src/main/kotlin")
     group = "code generation"
+
 }
 
 tasks.filter { it.name.startsWith("compileKotlin") }.forEach { it.dependsOn("generateKotlinGrammarSource") }
+tasks.findByName("dokkaHtml")?.dependsOn("generateKotlinGrammarSource")
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
     jvmArgs("--add-opens", "java.base/java.lang=ALL-UNNAMED")
-}
-
-publishing {
-    publications {
-        create<MavenPublication>("skorm-gradle-plugin") {
-            from(components["java"])
-            pom {
-                name.set("skorm-gradle-plugin")
-                description.set("skorm-gradle-plugin $version - SKORM code generation gradle plugin")
-                url.set("http://gitlab.republicate.com/claude/skorm")
-                licenses {
-                    license {
-                        name.set("The Apache Software License, Version 2.0")
-                        url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
-                    }
-                }
-                developers {
-                    developer {
-                        name.set("Claude Brisson")
-                        email.set("claude.brisson@gmail.com")
-                        organization.set("republicate.com")
-                        organizationUrl.set("https://republicate.com")
-                    }
-                }
-                scm {
-                    connection.set("scm:git@gitlab.republicate.com:claude/skorm.git")
-                    developerConnection.set("scm:git:ssh://gitlab.republicate.com:claude/skorm.git")
-                    url.set("http://gitlab.republicate.com/claude/skorm")
-                }
-            }
-        }
-    }
 }

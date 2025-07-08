@@ -1,3 +1,9 @@
+@file:OptIn(ExperimentalKotlinGradlePluginApi::class)
+
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+
+description = "Skorm API server"
+
 plugins {
     alias(libs.plugins.jvm)
      java

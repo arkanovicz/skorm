@@ -1,10 +1,11 @@
-import org.gradle.kotlin.dsl.support.kotlinCompilerOptions
+@file:OptIn(ExperimentalKotlinGradlePluginApi::class)
+
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
+
+description = "Skorm core processor"
 
 plugins {
     alias(libs.plugins.multiplatform)

@@ -5,6 +5,8 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 
+description = "Skorm Bookshelf example project"
+
 plugins {
     alias(libs.plugins.multiplatform)
     application
