@@ -38,7 +38,7 @@ class KotlinTool {
             "blob" -> "ByteArray"
             "uuid" -> "Uuid"
             "binary", "varbinary" -> "ByteArray" // TODO streams
-            "json" -> "com.republicate.kson.Json"
+            "json" -> "Json"
             else -> throw SemanticException("unknown type: $type")
         }
     }
