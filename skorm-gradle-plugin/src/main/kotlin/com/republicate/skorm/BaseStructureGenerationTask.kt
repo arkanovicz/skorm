@@ -57,7 +57,7 @@ abstract class BaseStructureGenerationTask: BaseGenerationTask() {
             .map { type -> type.type}
             .toSet()
         context.put("database", database)
-        context.put("datetimes", usedTypes.contains("datetime") || usedTypes.contains("datetime_tz") || usedTypes.contains("time") || usedTypes.contains("time_tz"))
+        context.put("datetimes", usedTypes.contains("timestamp") || usedTypes.contains("timestamp_tz") || usedTypes.contains("time") || usedTypes.contains("time_tz"))
         context.put("uuids", usedTypes.contains("uuid"))
     }
 

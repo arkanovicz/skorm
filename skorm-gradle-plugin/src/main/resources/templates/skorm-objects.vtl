@@ -14,7 +14,7 @@ import com.republicate.skorm.*
 import org.gradle.internal.impldep.org.apache.http.annotation.Experimental
 
 #if($uuids)
-@OptIn(ExperimentalUuidApi::class)
+@OptIn(kotlin.uuid.ExperimentalUuidApi::class)
 #end
 #set ($databaseClass = "#pascal($database.name)Database")
 class $databaseClass(processor: Processor): Database("$database.name", processor) {
