@@ -1,6 +1,7 @@
 package com.republicate.skorm
 
 import com.republicate.kddl.ASTDatabase
+import com.republicate.kddl.ASTSchema
 import com.republicate.kddl.Utils
 import com.republicate.kddl.Utils.getFile
 import com.republicate.kddl.parse
@@ -50,7 +51,14 @@ abstract class BaseStructureGenerationTask: BaseGenerationTask() {
     }
 
     override fun populateContext(context: VelocityContext) {
+        val usedTypes = database.schemas.values
+            .flatMap { schema: ASTSchema -> schema.tables.values }
+            .flatMap { table -> table.fields.values }
+            .map { type -> type.type}
+            .toSet()
         context.put("database", database)
+        context.put("datetimes", usedTypes.contains("datetime") || usedTypes.contains("datetime_tz") || usedTypes.contains("time") || usedTypes.contains("time_tz"))
+        context.put("uuids", usedTypes.contains("uuid"))
     }
 
     override fun generateCode(templatePath: String, destFile: RegularFileProperty) {
