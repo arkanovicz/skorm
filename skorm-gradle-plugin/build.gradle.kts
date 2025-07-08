@@ -13,6 +13,10 @@ plugins {
     `maven-publish`
 }
 
+java {
+    withSourcesJar()
+}
+
 gradlePlugin {
   plugins {
     create("skormGradlePlugin") {
@@ -88,6 +92,7 @@ tasks.register<com.strumenta.antlrkotlin.gradle.AntlrKotlinTask>("generateKotlin
 
 tasks.filter { it.name.startsWith("compileKotlin") }.forEach { it.dependsOn("generateKotlinGrammarSource") }
 tasks.findByName("dokkaHtml")?.dependsOn("generateKotlinGrammarSource")
+tasks.findByName("sourcesJar")?.dependsOn("generateKotlinGrammarSource")
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
