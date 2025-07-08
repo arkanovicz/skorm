@@ -26,7 +26,7 @@ class KotlinTool {
             "text", "varchar", "clob" -> "String" // TODO streams for "text" and "clob"
             "enum" -> pascal(name) + "Enum"
             "date" -> "LocalDate"
-            "datetime" -> "LocalDateTime"
+            "timestamp" -> "LocalDateTime"
             "byte" -> "Byte"
             "short" -> "Short"
             "int", "integer", "serial" -> "Int"
