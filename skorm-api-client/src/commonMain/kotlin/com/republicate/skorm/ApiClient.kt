@@ -173,6 +173,10 @@ class ApiClient(val baseUrl: String) : Processor {
         TODO("Not yet implemented")
     }
 
+    override fun close() {
+        client.close()
+    }
+
 //    override suspend fun savePoint(name: String) {
 //        TODO("Not yet implemented")
 //    }

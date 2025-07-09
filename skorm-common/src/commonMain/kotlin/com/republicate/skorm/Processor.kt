@@ -22,7 +22,7 @@ interface Transaction : Processor {
     suspend fun commit(): Unit
 }
 
-interface Processor: Configurable {
+interface Processor: Configurable, AutoCloseable {
     // configuration
     fun register(entity: Entity) {}
 

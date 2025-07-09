@@ -2,7 +2,7 @@ package com.republicate.skorm
 
 import com.republicate.kson.Json
 
-open class Database protected constructor(name: String, override val processor: Processor): AttributeHolder(name), Configurable {
+open class Database protected constructor(name: String, override val processor: Processor): AttributeHolder(name), Configurable, AutoCloseable {
     var populated by initOnce(false)
     override val config = Configuration()
     override fun configure(cfg: Map<String, Any?>) {
@@ -24,6 +24,10 @@ open class Database protected constructor(name: String, override val processor: 
         for (entity in schemas.flatMap { it.entities }) {
             processor.register(entity)
         }
+    }
+
+    override fun close() {
+        processor.close()
     }
 }
 

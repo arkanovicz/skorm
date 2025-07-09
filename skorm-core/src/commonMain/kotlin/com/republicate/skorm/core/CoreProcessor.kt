@@ -207,6 +207,10 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
         };"
         return QueryDefinition(stmt, primaryKey.map { it.name })
     }
+
+    override fun close() {
+        connector.close()
+    }
 }
 
 class CoreProcessorTransaction(parentConnector: Connector, schema: String) : CoreProcessor(parentConnector.begin(schema)), Transaction {
