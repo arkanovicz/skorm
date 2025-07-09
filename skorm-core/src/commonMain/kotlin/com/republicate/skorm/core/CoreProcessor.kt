@@ -176,7 +176,7 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
         val stmt = "SELECT ${
             fields.values.joinToString(", ") { writeMapper(it.name) }
         } FROM ${schema.name}.$name WHERE ${
-            primaryKey.joinToString(" AND ") { "${writeMapper(it.name)} = ?" }
+            primaryKey.joinToString(" AND ") { "${writeMapper(it.name)} = ${it.parameter()}" }
         };"
         return QueryDefinition(stmt, primaryKey.map { it.name })
     }
@@ -194,7 +194,7 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
 
     private fun Entity.generateDeleteStatement(): QueryDefinition {
         val stmt = "DELETE FROM ${schema.name}.${writeMapper(name)} WHERE ${
-            primaryKey.joinToString(" AND ") { "${writeMapper(it.name)} = ?" }
+            primaryKey.joinToString(" AND ") { "${writeMapper(it.name)} = ${it.parameter()}" }
         };"
         return QueryDefinition(stmt, primaryKey.map { it.name })
     }
@@ -203,9 +203,19 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
         val stmt = "UPDATE ${schema.name}.${writeMapper(name)} SET ${
             params.joinToString(", ") { "${writeMapper(it)} = ?" }
         } WHERE ${
-            primaryKey.map { "${writeMapper(it.name)} = ?" }.joinToString(" AND ")
+            primaryKey.map { "${writeMapper(it.name)} = ${it.parameter()}" }.joinToString(" AND ")
         };"
         return QueryDefinition(stmt, primaryKey.map { it.name })
+    }
+
+    private fun Field.parameter(): String {
+        return connector.getMetaInfos().let { meta ->
+            when {
+                meta.strictColumnTypes && meta.columnMarkers -> "?::${this.type}"
+                meta.strictColumnTypes -> "CAST(? AS ${this.type})"
+                else -> "?"
+            }
+        }
     }
 
     override fun close() {

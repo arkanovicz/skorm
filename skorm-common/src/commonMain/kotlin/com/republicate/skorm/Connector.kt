@@ -1,5 +1,7 @@
 package com.republicate.skorm
 
+import kotlin.jvm.JvmName
+
 class QueryResult(
     val names: Array<String>,
     val values: Iterator<Array<Any?>>
@@ -11,6 +13,12 @@ class QueryResult(
 interface MetaInfos {
     val identifierQuoteChar: Char
     val identifierInternalCase: Char // 'U'ppercase, 'L'owercase, 'S'ensitive
+    @Suppress("INAPPLICABLE_JVM_NAME")
+    @get:JvmName("isStrictColumnTypes")
+    val strictColumnTypes: Boolean
+    @Suppress("INAPPLICABLE_JVM_NAME")
+    @get:JvmName("hasColumnMarkers")
+    val columnMarkers: Boolean
 }
 
 interface Connector: Configurable, AutoCloseable {

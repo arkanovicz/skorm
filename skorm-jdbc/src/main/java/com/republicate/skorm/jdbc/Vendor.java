@@ -255,7 +255,8 @@ public class Vendor implements MetaInfos
         return lastInsertIdMethod;
     }
 
-    public Boolean isStrictColumnTypes()
+    @Override
+    public boolean isStrictColumnTypes()
     {
         return strictColumnTypes;
     }
@@ -297,7 +298,8 @@ public class Vendor implements MetaInfos
         }
     }
 
-    public Boolean hasColumnMarkers()
+    @Override
+    public boolean hasColumnMarkers()
     {
         return columnMarkers;
     }
