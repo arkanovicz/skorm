@@ -8,15 +8,13 @@ pluginManagement {
         mavenCentral()
     }
     includeBuild("..")
-    /*
     resolutionStrategy {
         eachPlugin {
-            if (requested.id.id == "skorm-gradle-plugin") {
-                useModule("com.republicate.skorm:skorm-gradle-plugin:0.4")
+            if (requested.id.id == "com.republicate.skorm.skorm-gradle-plugin") {
+                useModule("com.republicate.skorm:skorm-gradle-plugin:0.5-SNAPSHOT")
             }
         }
     }
-    */
 }
 
 dependencyResolutionManagement {

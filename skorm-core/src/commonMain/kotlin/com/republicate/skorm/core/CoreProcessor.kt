@@ -57,15 +57,6 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
 
     override fun configure(cfg: Map<String, Any?>) {
         super.configure(cfg)
-        // default values
-        readMapper = IdentifiersMapping.snakeToCamel
-        writeMapper =  when (identifierInternalCase) {
-            'U' -> {{ "$identifierQuoteChar${it.uppercase()}$identifierQuoteChar" }}
-            'L' -> {{ "$identifierQuoteChar${it.lowercase()}$identifierQuoteChar" }}
-            else -> { identityMapper }
-        }
-        writeMapper = writeMapper.compose(IdentifiersMapping.camelToSnake)
-        // provided values
         config.getStrings("mapping.read")?.forEachIndexed { i, name ->
             val mapper = IdentifiersMapping[name]
             if (i == 0) {
@@ -98,9 +89,21 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
 
     override fun initialize() {
         connector.initialize(connector.configTag?.let {
-            println("@@@@@ CoreProcessor init: $config")
             config.getObject(it)
         })
+        // provide default values for identifiers mappers based on meta infos
+        // CB TODO - we may not want this, and require an explicit mapping
+        if (readMapper == identityMapper) {
+            readMapper = IdentifiersMapping.snakeToCamel
+        }
+        if (writeMapper == identityMapper) {
+            writeMapper =  when (identifierInternalCase) {
+                'U' -> {{ "$identifierQuoteChar${it.uppercase()}$identifierQuoteChar" }}
+                'L' -> {{ "$identifierQuoteChar${it.lowercase()}$identifierQuoteChar" }}
+                else -> { identityMapper }
+            }
+            writeMapper = writeMapper.compose(IdentifiersMapping.camelToSnake)
+        }
     }
 
     override suspend fun eval(path: String, params: Map<String, Any?>): Any? {

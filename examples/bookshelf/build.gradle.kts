@@ -10,7 +10,7 @@ description = "Skorm Bookshelf example project"
 plugins {
     alias(libs.plugins.multiplatform)
     application
-    id("skorm-gradle-plugin")
+    id("com.republicate.skorm.skorm-gradle-plugin")
 }
 
 buildscript {
