@@ -58,14 +58,25 @@ public class ConfigDigester
             // search for a getter
             if (value instanceof Map)
             {
-                String getterName = getGetterName(name);
-                Method getter = findGetter(getterName, bean.getClass(), false);
-                if (getter != null)
+                Object subBean = null;
+                if (bean instanceof Map map)
                 {
-                    Object subBean = getter.invoke(bean);
-                    setProperties(subBean, (Map) value);
-                    return;
+                    subBean = map.get(name);
                 }
+                else
+                {
+                    String getterName = getGetterName(name);
+                    Method getter = findGetter(getterName, bean.getClass(), false);
+                    if (getter != null)
+                    {
+                        subBean = getter.invoke(bean);
+                    }
+                }
+                if (subBean == null)
+                {
+                    throw new ConfigurationException("Property " + name + " has sub-properties, but target sub-object is null");
+                }
+                setProperties(subBean, (Map) value);
             }
 
             // search for a setter
