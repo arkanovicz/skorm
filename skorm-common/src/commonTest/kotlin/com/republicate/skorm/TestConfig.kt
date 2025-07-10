@@ -14,6 +14,7 @@ class TestConfig {
         val noNullDef by config<String>("noNullDef")
         val nullNoDef by config<String?>()
         val nullDef by config<String?>("nullDef")
+        val sub by configPath<String>("foo.bar")
     }
 
     @Test
@@ -44,5 +45,15 @@ class TestConfig {
         assertEquals("noNullDef", bar.noNullDef)
         assertEquals("nullNoDef", bar.nullNoDef)
         assertEquals("nullDef", bar.nullDef)
+    }
+
+    @Test
+    fun testConfigPath() {
+        val foo = Foo()
+        val cfg = mapOf<String, Any?>(
+            "foo.bar" to "baz"
+        )
+        foo.configure(cfg)
+        assertEquals("baz", foo.sub)
     }
 }

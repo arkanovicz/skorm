@@ -155,6 +155,7 @@ open class Instance(val entity: Entity) : Json.MutableObject() {
     val dirtyFields = BitSet(MAX_FIELDS) // init size needed for multiplatform
     val generatedPrimaryKey: Boolean get() = entity.primaryKey.size == 1 && entity.primaryKey.first().isGenerated
     var isPersisted = false
+    private val processor get() = entity.instanceAttributes.processor
 
     // instance mutations
 
@@ -214,16 +215,20 @@ open class Instance(val entity: Entity) : Json.MutableObject() {
     }
 
     open fun putRawFields(from: Map<out String, Any?>) {
-        from.entries.filter { entity.fields.contains(it.key) }.forEach { putRawValue(it.key, it.value) }
+        from.entries.forEach {
+            entity.fields[it.key]?.also { field ->
+                putRawField(field, it.value)
+            } ?: {
+                // TODO warn
+            }
+        }
     }
 
     // to allow subclasses to add key-value pairs besides entity columns
-    fun putRawValue(key: String, value: Any?): Any? = super.put(key, downstreamFilter(value))
+    fun putRawValue(key: String, value: Any?): Any? = super.put(key, processor.downstreamFilter(key, value))
 
-    private fun downstreamFilter(value: Any?): Any? {
-        return value?.let {
-            value
-        }
+    fun putRawField(field: Field, value: Any?) {
+        super.put(field.name, processor.downstreamFilter(field, value))
     }
 
     suspend inline fun <reified T: Any?> eval(attrName: String, vararg params: Any?) = entity.eval<T>(attrName, this, *params)

@@ -80,3 +80,12 @@ expect class BitSet(size: Int) {
 //    constructor(message: String?, cause: Throwable?)
 //    constructor(cause: Throwable?)
 //}
+
+open class Transformers<String, U>(val transformers: Map<String, (U)->U>, val parent: Transformers<String, U>? = null) {
+    val customTransformers = mutableMapOf<String, (U)->U>()
+    operator fun get(name: String): (U)->U =
+        customTransformers[name] ?: transformers[name] ?: parent?.get(name) ?: throw SkormException("Missing transformer $name")
+    operator fun set(name: String, op: (U)->U) {
+        customTransformers[name] = op
+    }
+}

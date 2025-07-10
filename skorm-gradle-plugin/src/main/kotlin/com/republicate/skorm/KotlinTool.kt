@@ -66,11 +66,11 @@ class KotlinTool {
 
     fun isEnum(type: String) = type.startsWith("enum")
 
-    fun camel(identifier: String) = snakeToCamel(identifier)
+    fun camel(identifier: String) = IdentifiersMapping.snakeToCamel(identifier)
 
-    fun snake(identifier: String) = camelToSnake(identifier)
+    fun snake(identifier: String) = IdentifiersMapping.camelToSnake(identifier)
 
-    fun pascal(identifier: String) = snakeToPascal(identifier)
+    fun pascal(identifier: String) = IdentifiersMapping.snakeToPascal(identifier)
 
 //    fun propertyType(property: GeneratePropertiesCodeTask.ObjectProperty): String {
 //        return when (property.type) {

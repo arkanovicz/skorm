@@ -20,8 +20,13 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     private val identifierQuoteChar: Char by lazy { connector.getMetaInfos().identifierQuoteChar }
     private val identifierInternalCase: Char by lazy { connector.getMetaInfos().identifierInternalCase }
 
+    // Identifiers mapping functors
     internal var readMapper: IdentifierMapper = identityMapper
     internal var writeMapper: IdentifierMapper = identityMapper
+
+    // Values filters, indexed by sql type
+    internal var readFilters = mutableMapOf<String, ValueFilter>()
+    internal var writeFilters = mutableMapOf<String, ValueFilter>()
 
     private fun register(path: String, query: AttributeDefinition) {
         logger.trace { "registering $path to $query" }
@@ -50,18 +55,52 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
         }
     }
 
-    override fun initialize() {
-        connector.initialize(connector.configTag?.let {
-            println("@@@@@ CoreProcessor init: $config")
-            config.getObject(it)
-        })
+    override fun configure(cfg: Map<String, Any?>) {
+        super.configure(cfg)
+        // default values
+        readMapper = IdentifiersMapping.snakeToCamel
         writeMapper =  when (identifierInternalCase) {
             'U' -> {{ "$identifierQuoteChar${it.uppercase()}$identifierQuoteChar" }}
             'L' -> {{ "$identifierQuoteChar${it.lowercase()}$identifierQuoteChar" }}
             else -> { identityMapper }
         }
-        writeMapper = writeMapper.compose(camelToSnake)
-        readMapper = snakeToCamel
+        writeMapper = writeMapper.compose(IdentifiersMapping.camelToSnake)
+        // provided values
+        config.getStrings("mapping.read")?.forEachIndexed { i, name ->
+            val mapper = IdentifiersMapping[name]
+            if (i == 0) {
+                readMapper = mapper
+            } else {
+                readMapper = readMapper.compose(mapper)
+            }
+        }
+        config.getStrings("mapping.write")?.forEachIndexed { i, name ->
+            val mapper = IdentifiersMapping[name]
+            if (i == 0) {
+                writeMapper = mapper
+            } else {
+                writeMapper = writeMapper.compose(mapper)
+            }
+        }
+        config.getObject("filter.read")?.entries?.forEach {
+            val sqlType = it.key
+            val filterName = it.value as String
+            val filter = ValuesFiltering[filterName]
+            readFilters[sqlType] = filter
+        }
+        config.getObject("filter.write")?.entries?.forEach {
+            val sqlType = it.key
+            val filterName = it.value as String
+            val filter = ValuesFiltering[filterName]
+            writeFilters[sqlType] = filter
+        }
+    }
+
+    override fun initialize() {
+        connector.initialize(connector.configTag?.let {
+            println("@@@@@ CoreProcessor init: $config")
+            config.getObject(it)
+        })
     }
 
     override suspend fun eval(path: String, params: Map<String, Any?>): Any? {
@@ -163,6 +202,9 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
             putRawValue(readMapper(name), value)
         }
     }
+
+    override fun downstreamFilter(field: Field, value: Any?) =
+        readFilters[field.type]?.let { filter -> filter(value) } ?: value
 
     // sql utils
     private fun Entity.generateBrowseStatement(): QueryDefinition {

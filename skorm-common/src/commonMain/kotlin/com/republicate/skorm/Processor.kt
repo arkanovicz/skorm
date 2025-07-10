@@ -35,6 +35,14 @@ interface Processor: Configurable, AutoCloseable {
     suspend fun query(path: String, params: Map<String, Any?>, factory: InstanceFactory? = null): Sequence<Json.Object>
     suspend fun perform(path: String, params: Map<String, Any?>): Long
 
+    // filtering
+    // per value filter (typically checking value type)
+    fun downstreamFilter(key: String, value: Any?) = value
+    // per field filter (checking field name and/or type)
+    fun downstreamFilter(field: Field, value: Any?) = value
+
+
+
     // transaction
     suspend fun begin(schema: String): Transaction
 
