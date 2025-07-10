@@ -50,7 +50,7 @@ public class Vendor implements MetaInfos
         InputStream stream = null;
         try
         {
-            String propertiesFile = vendorTag + ".driver.properties";
+            String propertiesFile = "/" + vendorTag + ".driver.properties";
             stream = Vendor.class.getResourceAsStream(propertiesFile);
             if (stream == null)
             {
@@ -138,7 +138,7 @@ public class Vendor implements MetaInfos
     private String lastInsertIdMethod = null;
 
     /** whether the JDBC driver is strict about column types */
-    private Boolean strictColumnTypes = null;
+    private boolean strictColumnTypes = true;
 
     /** ignore tables matching this pattern */
     private Pattern ignoreTablesPattern = null;
@@ -147,7 +147,7 @@ public class Vendor implements MetaInfos
     private Character identifierQuoteChar = null;
 
     /** whether driver supports ::varchar etc... */
-    private Boolean columnMarkers = null;
+    private boolean columnMarkers = false;
 
     /** sql query to get enum values */
     private String describeEnumQuery = null;
