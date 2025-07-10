@@ -77,6 +77,7 @@ public class ConfigDigester
                     throw new ConfigurationException("Property " + name + " has sub-properties, but target sub-object is null");
                 }
                 setProperties(subBean, (Map) value);
+                return;
             }
 
             // search for a setter
