@@ -186,7 +186,7 @@ open class Instance(val entity: Entity) : Json.MutableObject() {
     suspend fun refresh() {
         if (!isPersisted) throw SkormException("cannot refresh a volatile instance")
         val self = entity.fetch(this) ?: throw SkormException("cannot refresh instance, it doesn't exist")
-        putRawFields(self)
+        putFields(self)
     }
 
     // dirty flags handling
@@ -214,21 +214,28 @@ open class Instance(val entity: Entity) : Json.MutableObject() {
         return ret
     }
 
+    fun putFields(from: Map<out String, Any?>) {
+        from.entries.filter { entity.fields.contains(it.key) }.forEach {
+            put(it.key, it.value)
+        }
+    }
+
     open fun putRawFields(from: Map<out String, Any?>) {
         from.entries.forEach {
-            entity.fields[it.key]?.also { field ->
+            val fieldName = processor.downstreamMapping(it.key)
+            entity.fields[fieldName]?.also { field ->
                 putRawField(field, it.value)
             } ?: {
-                // TODO warn
+                putRawValue(fieldName, it.value)
             }
         }
     }
 
     // to allow subclasses to add key-value pairs besides entity columns
-    fun putRawValue(key: String, value: Any?): Any? = super.put(key, processor.downstreamFilter(key, value))
+    fun putRawValue(key: String, value: Any?): Any? = super.put(key, value)
 
     fun putRawField(field: Field, value: Any?) {
-        super.put(field.name, processor.downstreamFilter(field, value))
+        super.put(field.name, processor.downstreamFilter(field.type, value))
     }
 
     suspend inline fun <reified T: Any?> eval(attrName: String, vararg params: Any?) = entity.eval<T>(attrName, this, *params)

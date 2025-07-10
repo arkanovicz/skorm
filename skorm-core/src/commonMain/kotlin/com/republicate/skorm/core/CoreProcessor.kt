@@ -198,13 +198,15 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     }
 
     private fun Instance.putNamesValues(names: Array<String>, values: Array<Any?>) {
-        names.zip(values).forEach { (name, value) ->
-            putRawValue(readMapper(name), value)
-        }
+        putRawFields(names.zip(values).toMap())
     }
 
-    override fun downstreamFilter(field: Field, value: Any?) =
-        readFilters[field.type]?.let { filter -> filter(value) } ?: value
+    override fun downstreamMapping(name: String) = readMapper(name)
+
+    override fun upstreamMapping(name: String) = writeMapper(name)
+
+    override fun downstreamFilter(type: String, value: Any?) =
+        readFilters[type]?.let { filter -> filter(value) } ?: value
 
     // sql utils
     private fun Entity.generateBrowseStatement(): QueryDefinition {
