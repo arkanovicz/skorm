@@ -60,7 +60,7 @@ public class Vendor implements MetaInfos
             {
                 final Properties properties = new Properties();
                 properties.load(stream);
-                ConfigDigester.setProperties(vendor, properties);
+                ConfigDigester.setProperties(Map.of("driver", vendor), properties);
                 configured = true;
             }
         }
