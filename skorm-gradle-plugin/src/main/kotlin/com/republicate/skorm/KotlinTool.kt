@@ -27,6 +27,9 @@ class KotlinTool {
             "enum" -> pascal(name) + "Enum"
             "date" -> "LocalDate"
             "timestamp" -> "LocalDateTime"
+            "timestamptz" -> "LocalDateTime" // for now TODO
+            "time" -> "LocalTime"
+            "timetz" -> "LocalTime" // for now TODO
             "byte" -> "Byte"
             "short" -> "Short"
             "int", "integer", "serial" -> "Int"
@@ -39,7 +42,7 @@ class KotlinTool {
             "uuid" -> "Uuid"
             "binary", "varbinary" -> "ByteArray" // TODO streams
             "json" -> "Json"
-            else -> throw SemanticException("unknown type: $type")
+            else -> throw SemanticException("unsupported type: $type")
         }
     }
 
