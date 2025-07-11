@@ -52,7 +52,7 @@ fun ${package}.${databaseClass}.initRuntimeModel() {
             #end
         #else
             #if($item.multiple)
-                #set($attribute = "rowSetAttribute<$itemClass>")
+                #set($attribute = "rowSetAttribute<$item.type.name>")
             #elseif($item.nullable)
                 ##          #set($attribute = "nullable#capitalize(${item.type.name})Attribute")
                 #set($attribute = "scalarAttribute<${item.type.name}?>")
