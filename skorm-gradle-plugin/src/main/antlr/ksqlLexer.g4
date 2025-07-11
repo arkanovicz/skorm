@@ -22,6 +22,7 @@ INTERVAL: 'DateTimePeriod' ;
 CHAR: 'Char' ;
 STRING: 'String' ;
 JSON: 'Json' ;
+OBJECT: 'Object';
 
 // values
 LABEL: [a-zA-Z_][a-zA-Z0-9_]* ;
@@ -39,7 +40,6 @@ QM: '?' ;
 CM: ',' ;
 EQ: '='  -> pushMode( QUERY );
 SC: ';' ;
-PL: '+';
 
 // whitespaces and comments
 WS: [ \t\n\r]+ -> skip ;

@@ -84,6 +84,7 @@ abstract class GenerateRuntimeModelTask: BaseStructureGenerationTask() {
                 val type = itemContext.type()
                 when {
                     type?.simple_type() != null -> item.type = RMSimpleType(type?.simple_type()?.text ?: nullerr(), false)
+                    type?.json_object_type() != null -> item.type = RMSimpleType(type?.simple_type()?.text ?: nullerr(), false)
                     type?.out_entity() != null -> item.type = RMSimpleType(type?.out_entity()?.text ?: nullerr(), true)
                     type?.complex_type() != null -> {
                         val composite = type?.complex_type()?.complex_type_spec() ?: nullerr()

@@ -20,7 +20,7 @@ arguments: ( argument ( CM argument )* ) ;
 
 argument: LABEL ( FS simple_type )? ;
 
-type: simple_type | out_entity | complex_type ;
+type: simple_type | json_object_type | out_entity | complex_type ;
 
 simple_type:
   BOOLEAN
@@ -38,11 +38,13 @@ simple_type:
 | JSON
 ;
 
+json_object_type: JSON DOT OBJECT ;
+
 out_entity: LABEL ;
 
 complex_type: complex_type_spec | LP complex_type_spec RP ;
 
-complex_type_spec: ( entity=LABEL | field=LABEL FS simple_type ) ( PL field=LABEL FS simple_type )+ ;
+complex_type_spec: ( entity=LABEL | field=LABEL FS simple_type ) ( CM field=LABEL FS simple_type )+ ;
 
 qualifier: ( optional=QM | mmultiple=ST ) ;
 

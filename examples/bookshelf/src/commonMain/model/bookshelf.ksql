@@ -4,7 +4,7 @@ database example {
     attr booksCount: Int =
       SELECT count(*) FROM book;
 
-    attr Book.currentBorrower: (Dude + borrowing_date: LocalDateTime)? =
+    attr Book.currentBorrower: (Dude, borrowing_date: LocalDateTime)? =
       SELECT dude.*, borrowing_date FROM bookshelf.borrowing
         JOIN dude USING (dude_id)
         WHERE book_id = {book_id}
