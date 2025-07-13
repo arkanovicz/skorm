@@ -52,79 +52,6 @@ fun Application.module() {
     configureRouting()
 }
 
-// white waiting for ktor 2.0
-fun ApplicationConfig.toMap(): Map<String, Any> {
-    val map = mutableMapOf<String, Any>()
-    keys().sorted().forEach { key ->
-        val elems = key.split('.')
-        // elems[n+1] determines the nature (list or map) of container at elems[n]
-        var target: Any = map
-        for (i in 0..elems.size - 2) {
-            val elem = elems[i]
-            val next = elems[i + 1]
-            target = when (val nextIndex = next.toIntOrNull()) {
-                null -> {
-                    when (target) {
-                        is Map<*,*> ->
-                            (target as MutableMap<String, Any>).getOrPut(elem) {
-                                mutableMapOf<String, Any>()
-                            }.also {
-                                if (it !is Map<*,*>) throw SkormException("expecting a map")
-                            }
-                        is List<*> ->
-                            if (next != "size" || i != elems.size - 2) throw SkormException("expecting list size")
-                            else if (tryGetString(key)?.toIntOrNull() == target.size) throw SkormException("list size inconsistency")
-                            else continue // ignoring regular "size" list property
-                        else -> throw SkormException("unhandled case")
-                    }
-                }
-                0 -> {
-                    when (target) {
-                        is Map<*,*> ->
-                            mutableListOf<Any>().also {
-                                (target as MutableMap<String, Any>).put(elem, it)?.also {
-                                    throw SkormException("expecting an empty slot")
-                                }
-                            }
-                        is List<*> ->
-                            mutableListOf<Any>().also {
-                                (target as MutableList<Any>).apply {
-                                    if (size != nextIndex) throw SkormException("wrong list size")
-                                    add(it)
-                                }
-                            }
-                        else -> throw SkormException("unhandled case")
-                    }
-                }
-                else -> {
-                    when (target) {
-                        is Map<*,*> ->
-                            target.get(elem)?.also {
-                                if (it !is List<*>) throw SkormException("expecting a list")
-                                if (it.size != nextIndex) throw SkormException("wrong list size")
-                            } ?: throw SkormException("expecting a list")
-                        is List<*> ->
-                            target.lastOrNull()?.also {
-                                if (it !is List<*>) throw SkormException("expecting a list")
-                                if (it.size != nextIndex) throw SkormException("wrong list size")
-                            } ?: throw SkormException("expecting a list")
-                        else -> throw SkormException("unhandled case")
-                    }
-                }
-            }
-        }
-        val value = property(key).getString()
-        when (target) {
-            is Map<*,*> -> (target as MutableMap<String, Any>).put(elems.last(), value)?.also {
-                throw SkormException("expecting empty slot")
-            }
-            is List<*> -> (target as MutableList<Any>).add(value)
-            else -> throw SkormException("unhandled case")
-        }
-    }
-    return map
-}
-
 val exampleDatabase = ExampleDatabase(CoreProcessor(JdbcConnector()))
 
 const val CREATION_SCRIPT = "create-script.sql"
@@ -187,9 +114,7 @@ fun Application.configureRouting() {
         // static {
         //     resources("web")
         // }
-        static("/static") {
-            resources()
-        }
+        staticResources("/static/", "static")
 
         get("/") {
             call.respondRedirect("/index.html")

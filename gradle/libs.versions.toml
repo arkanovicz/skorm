@@ -23,7 +23,6 @@ junit = "4.13.2"
 junit-jupiter = "5.13.3"
 junit-platform = "1.13.3"
 mockito-junit-jupiter = "5.18.0"
-hsqldb = "2.7.4"
 # TODO migrate to ksoup
 jsoup = "1.20.1"
 versionsPlugin = "0.52.0"
@@ -67,7 +66,6 @@ junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.re
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit-jupiter" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-platform" }
 mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito-junit-jupiter" }
-hsqldb = { module = "org.hsqldb:hsqldb", version.ref = "hsqldb" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 
 [plugins]

@@ -11,14 +11,14 @@ class SkormGradlePluginTest {
     @Test
     fun `plugin is applied correctly to the project`() {
         val project = ProjectBuilder.builder().build()
-        project.pluginManager.apply("skorm-gradle-plugin")
+        project.pluginManager.apply("com.republicate.skorm")
         assert(project.tasks.getByName("generateSkormObjectsCode") is GenerateObjectsCodeTask)
     }
 
     @Test
     fun `extension templateExampleConfig is created correctly`() {
         val project = ProjectBuilder.builder().build()
-        project.pluginManager.apply("skorm-gradle-plugin")
+        project.pluginManager.apply("com.republicate.skorm")
 
         assertNotNull(project.extensions.getByName("skorm"))
     }
@@ -26,7 +26,7 @@ class SkormGradlePluginTest {
     @Test
     fun `parameters are passed correctly from extension to task`() {
         val project = ProjectBuilder.builder().build()
-        project.pluginManager.apply("skorm-gradle-plugin")
+        project.pluginManager.apply("com.republicate.skorm")
         val aFile = File(project.projectDir, "example.kt")
         (project.extensions.getByName("skorm") as SkormParams).apply {
             datasource.set("src/test/resources/model.kddl")

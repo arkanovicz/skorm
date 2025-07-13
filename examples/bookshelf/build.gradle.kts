@@ -2,6 +2,7 @@
 
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 
@@ -9,8 +10,7 @@ description = "Skorm Bookshelf example project"
 
 plugins {
     alias(libs.plugins.multiplatform)
-    application
-    id("com.republicate.skorm.skorm-gradle-plugin")
+    id("com.republicate.skorm")
 }
 
 buildscript {
@@ -26,23 +26,12 @@ skorm {
 }
 
 kotlin {
-    /*
-    applyDefaultHierarchyTemplate {
-        common {
-            group("commonJs") {
-                withJs()
-                withWasmJs()
-            }
-        }
-    }
-     */
     jvm {
         compilations.all {
-            kotlinOptions {
-                freeCompilerArgs = listOf("-Xjvm-default=all")
+            compileTaskProvider.configure {
+                compilerOptions.freeCompilerArgs.add("-Xjvm-default=all")
             }
         }
-        withJava()
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
         }
@@ -67,25 +56,15 @@ kotlin {
             }
         }
         nodejs()
-        compilations.all { compileKotlinTask.kotlinOptions.freeCompilerArgs += listOf("-Xir-minimized-member-names=false") }
-    }
-    /*
-    js(IR) {
-        useCommonJs()
-        binaries.executable()
-        browser {
-            commonWebpackConfig {
-                cssSupport {
-                    enabled.set(true)
-                }
+        compilations.all {
+            compileTaskProvider.configure {
+                compilerOptions.freeCompilerArgs.add("-Xir-minimized-member-names=false")
             }
-            compilations.all { compileKotlinTask.kotlinOptions.freeCompilerArgs += listOf("-Xir-minimized-member-names=false") }
         }
     }
-     */
 
     sourceSets {
-        val commonMain by getting {
+        commonMain {
             kotlin.srcDir(file("build/generated-src/commonMain/kotlin"))
             dependencies {
                 implementation("com.republicate.skorm:skorm-common")
@@ -94,12 +73,12 @@ kotlin {
                 implementation(libs.kotlin.logging)
             }
         }
-        val commonTest by getting {
+        commonTest  {
             dependencies {
                 implementation(kotlin("test"))
             }
         }
-        val jvmMain by getting {
+        jvmMain {
             kotlin.srcDir(file("build/generated-src/jvmMain/kotlin"))
             dependencies {
                 implementation("com.republicate.skorm:skorm-api-server")
@@ -112,47 +91,26 @@ kotlin {
                 implementation(libs.ktor.server.content.negotiation)
                 implementation(libs.ktor.server.status.pages)
                 implementation(libs.kotlin.logging)
-                implementation(libs.hsqldb)
                 implementation(libs.slf4j.simple)
+                runtimeOnly(libs.h2)
+                runtimeOnly(libs.slf4j.simple)
             }
         }
-        val jvmTest by getting {
+        jvmTest {
             dependencies {
                 implementation(libs.ktor.server.test.host)
                 implementation(libs.jsoup)
-                implementation(libs.h2)
-                implementation(libs.slf4j.simple)
             }
         }
-        val jsMain by getting {
+        jsMain {
             kotlin.srcDir(file("build/generated-src/jsMain/kotlin"))
             dependencies {
                 implementation("com.republicate.skorm:skorm-api-client")
                 implementation(libs.kotlinx.coroutines)
             }
         }
-        val jsTest by getting
+        jsTest
     }
-}
-
-application {
-    mainClass.set("com.republicate.skorm.bookshelf.ServerKt")
-}
-
-tasks.all {
-    val classes = mutableSetOf<Class<*>>()
-    var cls: Class<*> = this::class.java
-    while (true) {
-        classes.add(cls)
-        val interfaces = cls.interfaces.toSet()
-        classes.addAll(interfaces)
-        val sup = cls.superclass
-        if (sup == null || classes.contains(sup)) { break }
-        cls = sup
-    }
-    println("@@@@@@@@@@@ " + this + " with classes ${
-        classes.joinToString(" / ")
-    }")
 }
 
 tasks.named<Copy>("jvmProcessResources") {
@@ -166,9 +124,24 @@ tasks.named<Copy>("jvmProcessResources") {
      */
 }
 
-tasks.named<JavaExec>("run") {
-    dependsOn(tasks.named<Jar>("jvmJar"))
-    classpath(tasks.named<Jar>("jvmJar"))
+tasks.named<Jar>("jvmJar") {
+    manifest { attributes["Main-Class"] = "com.republicate.skorm.bookshelf.ServerKt" }
+}
+
+tasks.register<JavaExec>("run") {
+    group = "application"
+    description = "Run the bookshelf server application"
+    val jvmJar = tasks.named<Jar>("jvmJar")
+    dependsOn(jvmJar)
+    val jarFile = jvmJar.get().archiveFile.get().asFile
+    classpath = files(jarFile) + configurations.getByName("jvmRuntimeClasspath")
+    mainClass.set("com.republicate.skorm.bookshelf.ServerKt")
+    if (project.hasProperty("args")) {
+        args = (project.property("args") as String).split("\\s+".toRegex())
+    }
+    environment("SKORM_JDBC_URL", "jdbc:h2:mem:example")
+    environment("SKORM_JDBC_USER", "sa")
+    environment("SKORM_JDBC_PASS", "")
 }
 
 tasks.named<ProcessResources>("jvmProcessResources") {
@@ -187,7 +160,7 @@ tasks.named<Jar>("jvmJar") {
 }
  */
 
-tasks.withType<org.jetbrains.kotlin.gradle.dsl.KotlinCompile<*>>().forEach {
+tasks.withType<KotlinCompilationTask<*>>().forEach {
     it.dependsOn("generateSkormObjectsCode")
     it.dependsOn("generateSkormJoinsCode")
     it.dependsOn("generateSkormModelCode")

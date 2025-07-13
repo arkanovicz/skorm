@@ -10,8 +10,8 @@ pluginManagement {
     includeBuild("..")
     resolutionStrategy {
         eachPlugin {
-            if (requested.id.id == "com.republicate.skorm.skorm-gradle-plugin") {
-                useModule("com.republicate.skorm:skorm-gradle-plugin:0.5-SNAPSHOT")
+            if (requested.id.id == "com.republicate.skorm") {
+                useModule("com.republicate.skorm:skorm-gradle-plugin:0.5")
             }
         }
     }
