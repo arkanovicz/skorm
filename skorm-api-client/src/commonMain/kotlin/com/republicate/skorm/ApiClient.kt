@@ -129,6 +129,7 @@ class ApiClient(val baseUrl: String) : Processor {
         } ?: json
     }
 
+    @Suppress("UNCHECKED_CAST")
     override suspend fun query(path: String, params: Map<String, Any?>, factory: InstanceFactory?): Sequence<Json.Object> {
         logger.info { "query $path $params ${factory?.let { "as $factory.name" } ?: ""}" }
         var restPath = path

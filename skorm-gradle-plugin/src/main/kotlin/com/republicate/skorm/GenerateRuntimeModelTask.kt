@@ -76,19 +76,19 @@ abstract class GenerateRuntimeModelTask: BaseStructureGenerationTask() {
                 schema.items.add(item)
                 item.receiver = itemContext.receiver?.text
                 item.arguments = itemContext.arguments()?.argument()?.map {
-                    Pair(it.LABEL()?.text!!, it.simple_type()?.text ?: "Any?")
+                    Pair(it.LABEL().text, it.simple_type()?.text ?: "Any?")
                 }?.toSet() ?: setOf()
                 // itemContext.findArguments()?.LABEL()?.map { it.text }?.toSet()
                 item.action = itemContext.attr_type!!.text!!.startsWith("mut")
-                item.transaction = item.action && itemContext.sql_spec()!!.queries != null
+                item.transaction = item.action && itemContext.sql_spec().queries != null
                 val type = itemContext.type()
                 when {
-                    type?.simple_type() != null -> item.type = RMSimpleType(type?.simple_type()?.text ?: nullerr(), false)
-                    type?.json_object_type() != null -> item.type = RMSimpleType(type?.json_object_type()?.text ?: nullerr(), false)
-                    type?.out_entity() != null -> item.type = RMSimpleType(type?.out_entity()?.text ?: nullerr(), true)
+                    type?.simple_type() != null -> item.type = RMSimpleType(type.simple_type()?.text ?: nullerr(), false)
+                    type?.json_object_type() != null -> item.type = RMSimpleType(type.json_object_type()?.text ?: nullerr(), false)
+                    type?.out_entity() != null -> item.type = RMSimpleType(type.out_entity()?.text ?: nullerr(), true)
                     type?.complex_type() != null -> {
-                        val composite = type?.complex_type()?.complex_type_spec() ?: nullerr()
-                        item.type = RMCompositeType(name.capitalize()).also { itemType ->
+                        val composite = type.complex_type()?.complex_type_spec() ?: nullerr()
+                        item.type = RMCompositeType(name.withCapital()).also { itemType ->
                             itemType.parent = composite.entity?.text
                             var fieldNames = composite.LABEL()
                             if (itemType.parent != null) fieldNames = fieldNames.subList(1, fieldNames.size)
@@ -103,7 +103,7 @@ abstract class GenerateRuntimeModelTask: BaseStructureGenerationTask() {
                     qualif.QM() != null -> item.nullable = true
                     qualif.ST() != null -> item.multiple = true
                 }
-                item.sql = itemContext.sql_spec()?.query?.text?.trim() ?: itemContext.sql_spec()?.queries?.text?.trim() ?: nullerr()
+                item.sql = itemContext.sql_spec().query?.text?.trim() ?: itemContext.sql_spec().queries?.text?.trim() ?: nullerr()
             }
         }
         return database

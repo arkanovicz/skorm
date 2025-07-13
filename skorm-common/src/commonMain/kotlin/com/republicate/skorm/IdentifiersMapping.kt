@@ -15,9 +15,9 @@ fun IdentifierMapper.compose(other: IdentifierMapper): IdentifierMapper {
 class IdentifiersMapping private constructor (): Transformers<String, String>(stockMappings) {
     companion object {
 
-        val lowercase: IdentifierMapper = { it.toLowerCase() }
+        val lowercase: IdentifierMapper = { it.lowercase() }
 
-        val uppercase: IdentifierMapper = { it.toUpperCase() }
+        val uppercase: IdentifierMapper = { it.uppercase() }
 
         val snakeToCamel: IdentifierMapper = { snake ->
             if (!snake.contains("_")) snake.lowercase()
@@ -27,7 +27,7 @@ class IdentifiersMapping private constructor (): Transformers<String, String>(st
                 var first = true
                 for (part in parts) {
                     if (part.length > 0) {
-                        builder.append(if (first) part.decapitalize() else part.capitalize())
+                        builder.append(if (first) part.withoutCapital() else part.withCapital())
                         first = false
                     }
                 }
@@ -52,13 +52,13 @@ class IdentifiersMapping private constructor (): Transformers<String, String>(st
         }
 
         val snakeToPascal: IdentifierMapper = { snake ->
-            if (!snake.contains("_")) snake.capitalize()
+            if (!snake.contains("_")) snake.withCapital()
             else {
                 val parts = snake.lowercase().split("_") // CB TODO factorize regex building
                 val builder = StringBuilder()
                 for (part in parts) {
                     if (part.length > 0) {
-                        builder.append(part.capitalize())
+                        builder.append(part.withCapital())
                     }
                 }
                 if (builder.length == 0) "_" else builder.toString()

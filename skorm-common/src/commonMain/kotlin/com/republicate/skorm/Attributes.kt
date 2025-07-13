@@ -1,9 +1,6 @@
 package com.republicate.skorm
 
-import com.ionspin.kotlin.bignum.decimal.BigDecimal
-import com.ionspin.kotlin.bignum.integer.BigInteger
 import com.republicate.kson.Json
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
@@ -174,14 +171,6 @@ class NullableLongAttribute(name: String, parameters: Set<String>): ScalarAttrib
     override fun handleResult(result: Any?) = Json.TypeUtils.toLong(result)
 }
 
-class BigIntegerAttribute(name: String, parameters: Set<String>): ScalarAttribute<BigInteger>(name, parameters) {
-    override fun handleResult(result: Any?) = Json.TypeUtils.toBigInteger(result)  ?: throw SkormException("attribute $name cannot have a null result")
-}
-
-class NullableBigIntegerAttribute(name: String, parameters: Set<String>): ScalarAttribute<BigInteger?>(name, parameters) {
-    override fun handleResult(result: Any?) = Json.TypeUtils.toBigInteger(result)
-}
-
 class FloatAttribute(name: String, parameters: Set<String>): ScalarAttribute<Float>(name, parameters) {
     override fun handleResult(result: Any?) = Json.TypeUtils.toFloat(result)  ?: throw SkormException("attribute $name cannot have a null result")
 }
@@ -196,22 +185,6 @@ class DoubleAttribute(name: String, parameters: Set<String>): ScalarAttribute<Do
 
 class NullableDoubleAttribute(name: String, parameters: Set<String>): ScalarAttribute<Double?>(name, parameters) {
     override fun handleResult(result: Any?) = Json.TypeUtils.toDouble(result)
-}
-
-class BigDecimalAttribute(name: String, parameters: Set<String>): ScalarAttribute<BigDecimal>(name, parameters) {
-    override fun handleResult(result: Any?) = Json.TypeUtils.toBigDecimal(result)  ?: throw SkormException("attribute $name cannot have a null result")
-}
-
-class NullableBigDecimalAttribute(name: String, parameters: Set<String>): ScalarAttribute<BigDecimal?>(name, parameters) {
-    override fun handleResult(result: Any?) = Json.TypeUtils.toBigDecimal(result)
-}
-
-class InstantAttribute(name: String, parameters: Set<String>): ScalarAttribute<Instant>(name, parameters) {
-    override fun handleResult(result: Any?) = Json.TypeUtils.toInstant(result)  ?: throw SkormException("attribute $name cannot have a null result")
-}
-
-class NullableInstantAttribute(name: String, parameters: Set<String>): ScalarAttribute<Instant?>(name, parameters) {
-    override fun handleResult(result: Any?) = Json.TypeUtils.toInstant(result)
 }
 
 class LocalTimeAttribute(name: String, parameters: Set<String>): ScalarAttribute<LocalTime>(name, parameters) {
@@ -254,6 +227,7 @@ class RowAttribute(name: String, parameters: Set<String>): Attribute<Json.Object
 class NullableRowAttribute(name: String, parameters: Set<String>): Attribute<Json.Object?>(name, parameters)
 
 class InstanceAttribute<out T: Instance>(name: String, parameters: Set<String>, factory: InstanceFactory): Attribute<T>(name, parameters, instanceFactory = factory) {
+    @Suppress("UNCHECKED_CAST")
     override fun handleResult(result: Any?) =
         result as T? ?: throw SkormException("attribute $name cannot have a null result")
 }
@@ -348,11 +322,8 @@ inline fun <reified T> AttributeHolder.scalarAttribute(name: String, params: Set
         Short::class -> NullableShortAttribute(name, params) as ScalarAttribute<T>
         Int::class -> NullableIntAttribute(name, params) as ScalarAttribute<T>
         Long::class -> NullableLongAttribute(name, params) as ScalarAttribute<T>
-        BigInteger::class -> NullableBigIntegerAttribute(name, params) as ScalarAttribute<T>
         Float::class -> NullableFloatAttribute(name, params) as ScalarAttribute<T>
         Double::class -> NullableDoubleAttribute(name, params) as ScalarAttribute<T>
-        BigDecimal::class -> NullableBigDecimalAttribute(name, params) as ScalarAttribute<T>
-        Instant::class -> NullableInstantAttribute(name, params) as ScalarAttribute<T>
         LocalTime::class -> NullableLocalTimeAttribute(name, params) as ScalarAttribute<T>
         LocalDate::class -> NullableLocalDateAttribute(name, params) as ScalarAttribute<T>
         LocalDateTime::class -> NullableLocalDateTimeAttribute(name, params) as ScalarAttribute<T>
@@ -368,11 +339,8 @@ inline fun <reified T> AttributeHolder.scalarAttribute(name: String, params: Set
         Short::class -> ShortAttribute(name, params) as ScalarAttribute<T>
         Int::class -> IntAttribute(name, params) as ScalarAttribute<T>
         Long::class -> LongAttribute(name, params) as ScalarAttribute<T>
-        BigInteger::class -> BigIntegerAttribute(name, params) as ScalarAttribute<T>
         Float::class -> FloatAttribute(name, params) as ScalarAttribute<T>
         Double::class -> DoubleAttribute(name, params) as ScalarAttribute<T>
-        BigDecimal::class -> BigDecimalAttribute(name, params) as ScalarAttribute<T>
-        Instant::class -> InstantAttribute(name, params) as ScalarAttribute<T>
         LocalTime::class -> LocalTimeAttribute(name, params) as ScalarAttribute<T>
         LocalDate::class -> LocalDateAttribute(name, params) as ScalarAttribute<T>
         LocalDateTime::class -> LocalDateTimeAttribute(name, params) as ScalarAttribute<T>

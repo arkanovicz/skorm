@@ -6,6 +6,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 
 private val logger = KotlinLogging.logger("core")
 
+@Suppress("NOTHING_TO_INLINE")
 open class CoreProcessor(protected open val connector: Connector): Processor {
 
     override val configTag = "core"
@@ -250,7 +251,7 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
         val stmt = "UPDATE ${schema.name}.${writeMapper(name)} SET ${
             params.joinToString(", ") { "${writeMapper(it)} = ?" }
         } WHERE ${
-            primaryKey.map { "${writeMapper(it.name)} = ${it.parameter()}" }.joinToString(" AND ")
+            primaryKey.joinToString(" AND ") { "${writeMapper(it.name)} = ${it.parameter()}" }
         };"
         return QueryDefinition(stmt, primaryKey.map { it.name })
     }

@@ -14,13 +14,14 @@ plugins {
 }
 
 java {
+    toolchain.languageVersion.set(JavaLanguageVersion.of(21))
     withSourcesJar()
 }
 
 gradlePlugin {
   plugins {
     create("skormGradlePlugin") {
-      id = "com.republicate.skorm.skorm-gradle-plugin"
+      id = "com.republicate.skorm"
       displayName = "Skorm Gradle Plugin"
       implementationClass = "com.republicate.skorm.SkormGradlePlugin"
       version = "0.5-SNAPSHOT"
@@ -40,10 +41,10 @@ buildscript {
 kotlin {
     sourceSets.main {
         kotlin.srcDirs(
-            file("$buildDir/generated-src/main/kotlin"),
+            file("${layout.buildDirectory.get()}/generated-src/main/kotlin"),
         )
     }
-    jvmToolchain(17)
+    jvmToolchain(21)
 }
 
 dependencies {
@@ -66,13 +67,9 @@ dependencies {
 tasks {
     named<KotlinCompilationTask<*>>("compileKotlin").configure {
         compilerOptions {
-            apiVersion.set(KotlinVersion.KOTLIN_1_7)
-            languageVersion.set(KotlinVersion.KOTLIN_1_7)
+            apiVersion.set(KotlinVersion.KOTLIN_2_0)
+            languageVersion.set(KotlinVersion.KOTLIN_2_0)
         }
-    }
-    withType<JavaCompile>().configureEach {
-        sourceCompatibility = JavaVersion.VERSION_17.toString()
-        targetCompatibility = JavaVersion.VERSION_17.toString()
     }
 }
 

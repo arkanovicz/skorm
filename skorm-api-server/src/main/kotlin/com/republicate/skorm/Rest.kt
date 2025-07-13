@@ -1,7 +1,5 @@
 package com.republicate.skorm
 
-import com.ionspin.kotlin.bignum.decimal.BigDecimal
-import com.ionspin.kotlin.bignum.integer.BigInteger
 import com.republicate.kson.Json
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -10,10 +8,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.util.*
 import io.github.oshai.kotlinlogging.KotlinLogging
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
+import kotlinx.datetime.*
 
 private val logger = KotlinLogging.logger("skorm.api")
 
@@ -95,11 +90,6 @@ fun Route.rest(entity: Entity) {
                             call.respond(entity.instanceAttributes.eval<Long>(attribute.key, call.allParameters()))
                         }
                     }
-                    is BigIntegerAttribute, is NullableBigIntegerAttribute ->  {
-                        get(attribute.key) {
-                            call.respond(entity.instanceAttributes.eval<BigInteger>(attribute.key, call.allParameters()))
-                        }
-                    }
                     is FloatAttribute, is NullableFloatAttribute ->  {
                         get(attribute.key) {
                             call.respond(entity.instanceAttributes.eval<Float>(attribute.key, call.allParameters()))
@@ -108,16 +98,6 @@ fun Route.rest(entity: Entity) {
                     is DoubleAttribute, is NullableDoubleAttribute ->  {
                         get(attribute.key) {
                             call.respond(entity.instanceAttributes.eval<Double>(attribute.key, call.allParameters()))
-                        }
-                    }
-                    is BigDecimalAttribute, is NullableBigDecimalAttribute ->  {
-                        get(attribute.key) {
-                            call.respond(entity.instanceAttributes.eval<BigDecimal>(attribute.key, call.allParameters()))
-                        }
-                    }
-                    is InstantAttribute, is NullableInstantAttribute ->  {
-                        get(attribute.key) {
-                            call.respond(entity.instanceAttributes.eval<Instant>(attribute.key, call.allParameters()))
                         }
                     }
                     is LocalDateAttribute, is NullableLocalDateAttribute ->  {

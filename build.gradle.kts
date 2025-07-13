@@ -11,6 +11,7 @@ plugins {
     signing
     `maven-publish`
     alias(libs.plugins.nexusPublish)
+    alias(libs.plugins.versions)
 }
 
 allprojects {
@@ -20,6 +21,7 @@ allprojects {
 
     repositories {
         mavenCentral()
+        mavenLocal() // temporary
     }
 }
 
@@ -32,7 +34,6 @@ subprojects {
     afterEvaluate {
         publishing {
             publications.withType<MavenPublication> {
-                val task = this
                 pom {
                     name.set(project.name)
                     description.set(project.description)
@@ -75,9 +76,13 @@ subprojects {
         }
     }
 
+    val isRelease = project.hasProperty("release")
     signing {
-      useGpgCmd()
-      sign(publishing.publications)
+        isRequired = isRelease
+        if (isRelease) {
+            useGpgCmd()
+            sign(publishing.publications)
+        }
     }
 
     // Resolves issues with .asc task output of the sign task of native targets.

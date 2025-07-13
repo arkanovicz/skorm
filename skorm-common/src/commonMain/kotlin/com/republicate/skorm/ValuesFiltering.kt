@@ -6,8 +6,8 @@ val identityFilter: ValueFilter = { it }
 
 class ValuesFiltering private constructor(): Transformers<String, Any?>(stockFilters) {
     companion object {
-        private val lowercase: ValueFilter = { it?.toString()?.toLowerCase() }
-        private val uppercase: ValueFilter = { it?.toString()?.toUpperCase() }
+        private val lowercase: ValueFilter = { it?.toString()?.lowercase() }
+        private val uppercase: ValueFilter = { it?.toString()?.uppercase() }
 
         private val stockFilters = mapOf(
             "lowercase" to lowercase,

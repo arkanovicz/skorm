@@ -22,16 +22,19 @@ kotlin {
         }
     }
 
-    jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
-    }
+    jvmToolchain(21)
     compilerOptions {
         apiVersion.set(KotlinVersion.KOTLIN_2_0)
     }
-    jvm {
-        compilerOptions {
-            jvmTarget = JvmTarget.JVM_17
+    targets.configureEach {
+        compilations.configureEach {
+            compileTaskProvider.get().compilerOptions {
+                freeCompilerArgs.add("-Xexpect-actual-classes")
+            }
         }
+    }
+
+    jvm {
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
         }
@@ -51,7 +54,11 @@ kotlin {
             }
         }
         nodejs()
-        compilations.all { compileKotlinTask.kotlinOptions.freeCompilerArgs += listOf("-Xir-minimized-member-names=false") }
+        compilations.all {
+            compileTaskProvider.configure {
+                compilerOptions.freeCompilerArgs.add("-Xir-minimized-member-names=false")
+            }
+        }
     }
     iosX64()
     iosArm64()

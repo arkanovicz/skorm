@@ -8,8 +8,7 @@ import groovyjarjarantlr.SemanticException
 import org.atteo.evo.inflector.English
 import java.util.*
 
-fun String.lowercase() = toLowerCase(Locale.ROOT)
-
+@Suppress("unused")
 class KotlinTool {
     companion object {
         private val decomp =
@@ -20,7 +19,7 @@ class KotlinTool {
 
     fun type(name: String, type: String): String {
         val match = decomp.matchEntire(type) ?: throw SemanticException("invalid type: $type")
-        val base = match.groups[1]!!.value.toLowerCase(Locale.ROOT)
+        val base = match.groups[1]!!.value.lowercase(Locale.ROOT)
         return when (base) {
             "boolean" -> "Boolean"
             "text", "varchar", "clob" -> "String" // TODO streams for "text" and "clob"
@@ -36,7 +35,7 @@ class KotlinTool {
             "long", "bigint", "bigserial" -> "Long"
             "float" -> "Float"
             "double" -> "Double"
-            "money", "numeric", "decimal" -> "BigDecimal"
+            "money", "numeric", "decimal" -> "Double" // TODO
             "blob" -> "ByteArray"
             "uuid" -> "Uuid"
             "binary", "varbinary" -> "ByteArray" // TODO streams
@@ -47,7 +46,7 @@ class KotlinTool {
 
     fun getter(name: String, type: String): String {
         val match = decomp.matchEntire(type) ?: throw SemanticException("invalid type: $type")
-        val base = match.groups[1]!!.value.toLowerCase(Locale.ROOT)
+        val base = match.groups[1]!!.value.lowercase(Locale.ROOT)
         return when (base) {
             "blob" -> "getBytes"
             else -> "get${type(name, base)}"
@@ -82,7 +81,7 @@ class KotlinTool {
 //        }
 //    }
 
-    fun plural(str: String) = enInflector.getPlural(str)
+    fun plural(str: String): String = enInflector.getPlural(str)
 
     fun foreignKeyForwardQuery(fk: ASTForeignKey): String {
         return "SELECT * FROM ${fk.towards.schema.name}.${fk.towards.name} WHERE ${
@@ -125,9 +124,9 @@ class KotlinTool {
     // deprecated
     // fun arguments(fields: Set<String>) = fields.joinToString(",") { "${it}: Any?" }
 
-    fun typedArguments(fields: Set<Pair<String, String?>>) = fields.map {
+    fun typedArguments(fields: Set<Pair<String, String?>>) = fields.joinToString(" ,") {
         "${it.first}: ${it.second ?: "Any?"}"
-    }.joinToString(" ,")
+    }
 
     fun values(fields: Set<Pair<String, String?>>) = fields.joinToString(",") { it.first }
 

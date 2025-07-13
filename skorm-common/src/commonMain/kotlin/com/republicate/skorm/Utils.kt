@@ -49,6 +49,7 @@ inline fun <reified V> initOnce(defaultValue: V) = NotNullInitOnce<V>(defaultVal
 // getOrElse assimilates null and missing values
 // See Maps.kt and https://youtrack.jetbrains.com/issue/KT-21392
 // Two lookups in some cases, though.
+@Suppress("UNCHECKED_CAST")
 inline fun <K, V> Map<K, V>.getOrElseNullable(key: K, defaultValue: () -> V): V {
     val value = get(key)
     return if (value == null && !containsKey(key)) {
@@ -89,3 +90,6 @@ open class Transformers<String, U>(val transformers: Map<String, (U)->U>, val pa
         customTransformers[name] = op
     }
 }
+
+fun String.withCapital() = replaceFirstChar { it.uppercase() }
+fun String.withoutCapital() = replaceFirstChar { it.lowercase() }

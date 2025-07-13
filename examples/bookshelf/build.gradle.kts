@@ -39,7 +39,6 @@ kotlin {
     jvm {
         compilations.all {
             kotlinOptions {
-                jvmTarget = "17"
                 freeCompilerArgs = listOf("-Xjvm-default=all")
             }
         }
@@ -48,9 +47,7 @@ kotlin {
             useJUnitPlatform()
         }
     }
-    jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
-    }
+    jvmToolchain(21)
     compilerOptions {
         apiVersion.set(KotlinVersion.KOTLIN_2_0)
     }

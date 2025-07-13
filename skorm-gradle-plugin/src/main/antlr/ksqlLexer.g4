@@ -17,12 +17,11 @@ DOUBLE: 'Double' ;
 TIME: 'LocalTime' ;
 DATE: 'LocalDate' ;
 DATETIME: 'LocalDateTime' ;
-INSTANT: 'Instant' ;
 INTERVAL: 'DateTimePeriod' ;
 CHAR: 'Char' ;
 STRING: 'String' ;
 JSON: 'Json' ;
-OBJECT: 'Object';
+OBJECT: 'Object' ;
 
 // values
 LABEL: [a-zA-Z_][a-zA-Z0-9_]* ;
