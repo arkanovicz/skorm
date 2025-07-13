@@ -1,9 +1,8 @@
 package com.republicate.skorm
 
 import org.gradle.testfixtures.ProjectBuilder
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
-import org.junit.Test
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Test
 import java.io.File
 
 class SkormGradlePluginTest {
@@ -20,7 +19,7 @@ class SkormGradlePluginTest {
         val project = ProjectBuilder.builder().build()
         project.pluginManager.apply("com.republicate.skorm")
 
-        assertNotNull(project.extensions.getByName("skorm"))
+        Assertions.assertNotNull(project.extensions.getByName("skorm"))
     }
 
     @Test
@@ -36,8 +35,8 @@ class SkormGradlePluginTest {
 
         val task = project.tasks.getByName("generateSkormObjectsCode") as GenerateObjectsCodeTask
 
-        assertEquals("src/test/resources/model.kddl", task.datasource.get())
-        assertEquals("com.republicate.skorm.example", task.destPackage.get())
-        assertEquals(aFile, task.destFile.get().asFile)
+        Assertions.assertEquals("src/test/resources/model.kddl", task.datasource.get())
+        Assertions.assertEquals("com.republicate.skorm.example", task.destPackage.get())
+        Assertions.assertEquals(aFile, task.destFile.get().asFile)
     }
 }

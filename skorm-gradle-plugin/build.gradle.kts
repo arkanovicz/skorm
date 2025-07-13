@@ -24,7 +24,7 @@ gradlePlugin {
       id = "com.republicate.skorm"
       displayName = "Skorm Gradle Plugin"
       implementationClass = "com.republicate.skorm.SkormGradlePlugin"
-      version = "0.5-SNAPSHOT"
+      version = "0.5"
     }
   }
 }
@@ -39,10 +39,13 @@ buildscript {
 }
 
 kotlin {
-    sourceSets.main {
-        kotlin.srcDirs(
-            file("${layout.buildDirectory.get()}/generated-src/main/kotlin"),
-        )
+    sourceSets{
+        main {
+            kotlin.srcDirs(
+                file("${layout.buildDirectory.get()}/generated-src/main/kotlin"),
+            )
+        }
+        test
     }
     jvmToolchain(21)
 }
@@ -94,4 +97,15 @@ tasks.findByName("sourcesJar")?.dependsOn("generateKotlinGrammarSource")
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
     jvmArgs("--add-opens", "java.base/java.lang=ALL-UNNAMED")
+}
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
+}
+
+tasks.named("test") {
+    doFirst {
+        println("Compiled test classes:")
+        fileTree("build/classes/kotlin/test").forEach { println(it) }
+    }
 }
