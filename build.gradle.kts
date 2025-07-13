@@ -37,7 +37,7 @@ subprojects {
                 pom {
                     name.set(project.name)
                     description.set(project.description)
-                    url.set("https://gitlab.republicate.com/claude/skorm")
+                    url.set("https://github.com/arkanovicz/skorm")
                     licenses {
                         license {
                             name.set("The Apache Software License, Version 2.0")
@@ -54,8 +54,8 @@ subprojects {
                         }
                     }
                     scm {
-                        connection.set("scm:git@gitlab.republicate.com:claude/skorm.git")
-                        url.set("https://gitlab.republicate.com/claude/skorm")
+                        connection.set("scm:scm:git@github.com/arkanovicz/skorm.git")
+                        url.set("https://github.com/arkanovicz/skorm")
                     }
                 }
                 // Task ':publish<platform>PublicationToMavenLocal' uses this output of task ':sign<platform>Publication' without declaring an explicit or implicit dependency.
