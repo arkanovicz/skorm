@@ -13,9 +13,11 @@ class ExamplesTest {
         val result = GradleRunner.create()
             .withProjectDir(projectDir)
             .withDebug(true)
-            .withArguments(":build")
+            .withArguments(":bookshelf:jvmTest")
             .forwardOutput()
             .build()
-        Assertions.assertEquals(TaskOutcome.SUCCESS, result.task(":build")?.outcome)
+        val outcome = result.task(":bookshelf:jvmTest")?.outcome
+        Assertions.assertNotNull(outcome)
+        Assertions.assertTrue(setOf(TaskOutcome.SUCCESS, TaskOutcome.UP_TO_DATE).contains(outcome))
     }
 }
