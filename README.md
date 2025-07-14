@@ -27,7 +27,11 @@ The nicest Kotlin multiplatform ORM around. Fully multiplatform. Coroutines-enab
 + Instance.update()
 + Instance.delete()
 
-*Three* what ?
+*Three* main customization points:
+
++ identifiers mapping (snake to camel, prefix/suffix removal, lowercase ...)
++ fields filtering (hide secret field, mark field as read-only, ...)
++ values filtering (transform timestamps
 
 *Two* concrete database connectors, one for <abbr title="Java DataBase Connectivity">JDBC</abbr> and one for a service <abbr title="Application Programmable Interface">API</abbr>. More to come, hopefully.
 
@@ -86,38 +90,5 @@ database bookshelf {
 }
 ```
 
-Using the companion tool `kddl` (command line, `gradle` or `mvn` plugin), I'll get this <a href="#">SQL script</a> (for Postgres in this example) and the following plantuml diagram:
-
-<img src="#"/>
-
-## Usage
-
-### Gradle
-
-### Maven
-
-### Command Line
-
-Happy Debian and Ubuntu users can install the native command line tools using `apt`:
-
-`sudo apt install skorm-tools`
-
-and for diagrams, you'll also need:
-
-`sudo apt install graphviz plantuml`
-
-DDL script generation:
-
-`kddl -i bookshelf.ddl -f postgresql > bookshelf.sql`
-
-DDL image generation:
-
-`kddl -i bookshelf -f plantuml | plantuml -p -tsvg > bookshelf.svg`
-
-## Performances
-
-
-## Reference
-
-See [the online documentation](https://skorm.republicate.com).
+Using the companion tool [`kddl`](https://github.com/arkanovicz/kddl) (command line, `gradle` or `mvn` plugin), I'll get a database SQL creation script and a plantuml diagram.
 
