@@ -1,1 +1,1 @@
-test at $(date)
+test at other date
