@@ -9,6 +9,10 @@ schema: SCHEMA name=LABEL LC ( item )* RC ;
 item:
   attr_type=ATTR ( receiver=LABEL DOT )? name=LABEL ( LP arguments RP )? FS type ( qualifier )? EQ sql_spec
 | attr_type=MUTATION ( receiver=LABEL DOT )? name=LABEL ( LP arguments RP )? EQ sql_spec
+| scalar_type=SCALAR ( receiver=LABEL DOT )? name=LABEL LP arguments? RP FS type EQ sql_spec
+| row_type=ROW ( receiver=LABEL DOT )? name=LABEL LP arguments? RP FS type EQ sql_spec
+| rowset_type=ROWSET ( receiver=LABEL DOT )? name=LABEL LP arguments? RP FS type EQ sql_spec
+| perform_type=PERFORM ( receiver=LABEL DOT )? name=LABEL ( LP arguments RP )? EQ sql_spec
 ;
 
 sql_spec:
