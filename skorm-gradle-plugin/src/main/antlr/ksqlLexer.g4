@@ -7,6 +7,10 @@ DATABASE: 'database' ;
 SCHEMA: 'schema' ;
 ATTR: 'attr' ;
 MUTATION: 'mut' | 'mutation';
+SCALAR: 'scalar' ;
+ROW: 'row' ;
+ROWSET: 'rowset' ;
+PERFORM: 'perform' ;
 
 // types
 BOOLEAN: 'Boolean' ;
