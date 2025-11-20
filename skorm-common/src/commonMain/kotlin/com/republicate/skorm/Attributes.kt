@@ -237,7 +237,7 @@ class NullableInstanceAttribute<out T: Instance>(name: String, parameters: Set<S
 class RowSetAttribute(name: String, parameters: Set<String>): Attribute<Sequence<Json.Object>>(name, parameters)
 
 class BagAttribute<out T: Instance>(name: String, parameters: Set<String>, factory: InstanceFactory): Attribute<Sequence<T>>(name, parameters, instanceFactory = factory)
-    
+
 class MutationAttribute(name: String, parameters: Set<String> = setOf(), useDirtyFields: Boolean = false): Attribute<Long>(name, parameters, useDirtyFields = useDirtyFields)
 
 // WIP
