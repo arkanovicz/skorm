@@ -36,6 +36,8 @@ sealed interface AttributeDefinition {
             var pos = 0
             val queryPart = StringBuilder()
             val params = mutableListOf<String>()
+            // TODO - this regexp lexer is quick and dirty parsing hack, we would need a word-by-word tokenizer.
+            // For instance, BEGIN... CASE WHEN END... END will be unproperly parsed.
             lexer.findAll(raw).forEach { match ->
                 val before = qry.substring(pos, match.range.first)
                 if (states.last() == PARAMETER) {
@@ -56,9 +58,10 @@ sealed interface AttributeDefinition {
                     } else if (state().allowParams && match.value == PARAMETER.start) {
                         push(PARAMETER)
                     } else {
-                        queryPart.append(match.value)
-                        if (state() == INITIAL) {
-                            val nextState = stateMap[match.value.lowercase()] ?: throw SkormException("unhandled case")
+                        val token = match.value
+                        queryPart.append(token)
+                        if (state() == INITIAL && token.lowercase() != BLOCK.end) {
+                            val nextState = stateMap[token.lowercase()] ?: throw SkormException("unhandled case")
                             when (nextState) {
                                 BLOCK, QUOTED, DOUBLE_QUOTED, BRACKETED -> push(nextState)
                                 INITIAL, PARAMETER -> throw SkormException("unexpected case")

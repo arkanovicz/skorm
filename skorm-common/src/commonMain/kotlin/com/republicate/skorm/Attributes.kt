@@ -18,7 +18,7 @@ val reserveAttributeNames = setOf("insert", "fetch", "update", "delete")
 expect fun Any.hasGenericGetter(): Boolean
 expect fun Any.callGenericGetter(key: String): Any?
 
-sealed class Attribute<out T>(val name: String, private val parameters: Set<String> = emptySet(), val instanceFactory: InstanceFactory? = null, private val useDirtyFields: Boolean = false) {
+sealed class Attribute<out T>(val name: String, private val parameters: Set<String> = emptySet(), val instanceFactory: InstanceFactory? = null, val rowFactory: RowFactory? = null, private val useDirtyFields: Boolean = false) {
 
     /**
      * Match attribute named parameters with values found in provided context parameters
@@ -219,12 +219,12 @@ class NullableBytesAttribute(name: String, parameters: Set<String>): ScalarAttri
     override fun handleResult(result: Any?) = Json.TypeUtils.toBytes(result)
 }
 
-class RowAttribute(name: String, parameters: Set<String>): Attribute<Json.Object>(name, parameters) {
+class RowAttribute<out T: Json.MutableObject>(name: String, parameters: Set<String>, factory: RowFactory): Attribute<T>(name, parameters, rowFactory = factory) {
     override fun handleResult(result: Any?) =
-        result as Json.Object? ?: throw SkormException("attribute $name cannot have a null result")
+        result as T? ?: throw SkormException("attribute $name cannot have a null result")
 }
 
-class NullableRowAttribute(name: String, parameters: Set<String>): Attribute<Json.Object?>(name, parameters)
+class NullableRowAttribute<out T: Json.MutableObject>(name: String, parameters: Set<String>, factory: RowFactory): Attribute<T?>(name, parameters, rowFactory = factory)
 
 class InstanceAttribute<out T: Instance>(name: String, parameters: Set<String>, factory: InstanceFactory): Attribute<T>(name, parameters, instanceFactory = factory) {
     @Suppress("UNCHECKED_CAST")
@@ -353,8 +353,8 @@ inline fun <reified T> AttributeHolder.scalarAttribute(name: String, params: Set
     }
 }
 
-fun AttributeHolder.rowAttribute(name: String, params: Set<String>): RowAttribute =
-    RowAttribute(name, params).also {
+fun <T: Json.MutableObject> AttributeHolder.rowAttribute(name: String, params: Set<String>, rowFactory = factory): RowAttribute<Json.MutableObject> =
+    RowAttribute(name, params, factory).also {
         addAttribute(it)
     }
 
@@ -363,18 +363,29 @@ fun AttributeHolder.nullableRowAttribute(name: String, params: Set<String>): Nul
         addAttribute(it)
     }
 
-fun <T: Instance>AttributeHolder.instanceAttribute(name: String, params: Set<String>, resultEntity: Entity) =
+fun <T: Json.MutableObject> AttributeHolder.rowAttribute(name: String, params: Set<String>, ): RowAttribute =
+    RowAttribute(name, params).also {
+        addAttribute(it)
+    }
+
+fun <T: Json.MutableObject> AttributeHolder.nullableRowAttribute(name: String, params: Set<String>, ): RowAttribute =
+    RowAttribute(name, params).also {
+        addAttribute(it)
+    }
+
+
+fun <T: Instance> AttributeHolder.instanceAttribute(name: String, params: Set<String>, resultEntity: Entity) =
     instanceAttribute<T>(name, params, resultEntity::new)
 
-fun <T: Instance>AttributeHolder.instanceAttribute(name: String, params: Set<String>, factory: InstanceFactory): InstanceAttribute<T> =
+fun <T: Instance> AttributeHolder.instanceAttribute(name: String, params: Set<String>, factory: InstanceFactory): InstanceAttribute<T> =
     InstanceAttribute<T>(name, params, factory).also {
         addAttribute(it)
     }
 
-fun <T: Instance>AttributeHolder.nullableInstanceAttribute(name: String, params: Set<String>, resultEntity: Entity) =
+fun <T: Instance> AttributeHolder.nullableInstanceAttribute(name: String, params: Set<String>, resultEntity: Entity) =
     nullableInstanceAttribute<T>(name, params, resultEntity::new)
 
-fun <T: Instance>AttributeHolder.nullableInstanceAttribute(name: String, params: Set<String>, factory: InstanceFactory): NullableInstanceAttribute<T> =
+fun <T: Instance> AttributeHolder.nullableInstanceAttribute(name: String, params: Set<String>, factory: InstanceFactory): NullableInstanceAttribute<T> =
     NullableInstanceAttribute<T>(name, params, factory).also {
         addAttribute(it)
     }

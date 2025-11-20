@@ -17,5 +17,18 @@ database example {
     mut Book.restitute =
       UPDATE borrowing SET restitution_date = NOW()
         WHERE book_id = {book_id} AND restitution_date IS NULL;
+
+    attr Book.stats: (title_length: Int, borrowed: Int) =
+      SELECT
+             CHARACTER_LENGTH(title) title_length,
+             ( SELECT COUNT(*) FROM borrowing WHERE book_id = {book_id} ) borrowed
+        FROM book
+        WHERE book_id = {book_id};
+
+    attr foo: (dude_id: Long, borrowed: Int, borrowing: Int)* =
+      SELECT dude_id,
+             COUNT(restitution_date) borrowed,
+             SUM(CASE WHEN borrowing_date IS NULL THEN 1 ELSE 0 END) borrowing
+        FROM borrowing;
   }
 }

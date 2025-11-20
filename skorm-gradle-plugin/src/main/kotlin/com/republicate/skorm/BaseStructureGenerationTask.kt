@@ -7,6 +7,7 @@ import com.republicate.kddl.Utils.getFile
 import com.republicate.kddl.parse
 import com.republicate.kddl.reverse
 import org.apache.velocity.VelocityContext
+import org.apache.velocity.tools.generic.LogTool
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
@@ -60,6 +61,7 @@ abstract class BaseStructureGenerationTask: BaseGenerationTask() {
         context.put("useDatetimeType", usedTypes.contains("timestamp") || usedTypes.contains("timestamptz") || usedTypes.contains("date") || usedTypes.contains("time") || usedTypes.contains("timetz"))
         context.put("useUuidType", usedTypes.contains("uuid"))
         context.put("useJsonType", usedTypes.contains("uuid"))
+        context.put("logger", LogTool())
     }
 
     override fun generateCode(templatePath: String, destFile: RegularFileProperty) {

@@ -62,7 +62,7 @@ open class $itemClass: ${parent}() {
       #end
       #if($item.multiple)
         #set($verb = 'query')
-      #elseif($item.type.isComposite() && $item.type.parent || $item.type.isEntity())
+      #elseif($item.type.isComposite() && ($item.type.parent || $item.type.fields.size > 1) || $item.type.isEntity())
         #set($verb = 'retrieve')
       #else
         #set($verb = 'eval')

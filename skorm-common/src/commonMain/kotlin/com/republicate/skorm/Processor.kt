@@ -15,6 +15,7 @@ class GeneratedKeyMarker(
     override fun toString() = "out:generated_key($colName)"
 }
 
+typealias RowFactory = () -> Json.MutableObject
 typealias InstanceFactory = () -> Instance
 
 interface Transaction : Processor {
