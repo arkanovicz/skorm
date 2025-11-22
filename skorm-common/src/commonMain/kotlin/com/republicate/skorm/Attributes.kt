@@ -18,7 +18,7 @@ val reserveAttributeNames = setOf("insert", "fetch", "update", "delete")
 expect fun Any.hasGenericGetter(): Boolean
 expect fun Any.callGenericGetter(key: String): Any?
 
-sealed class Attribute<out T>(val name: String, private val parameters: Set<String> = emptySet(), val instanceFactory: RowFactory? = null, val rowFactory: RowFactory? = null, private val useDirtyFields: Boolean = false) {
+sealed class Attribute<out T>(val name: String, private val parameters: Set<String> = emptySet(), val rowFactory: RowFactory? = null, private val useDirtyFields: Boolean = false) {
 
     /**
      * Match attribute named parameters with values found in provided context parameters
@@ -227,7 +227,7 @@ class RowAttribute<out T: Json.MutableObject>(name: String, parameters: Set<Stri
 
 class NullableRowAttribute<out T: Json.MutableObject>(name: String, parameters: Set<String>, factory: RowFactory): Attribute<T?>(name, parameters, rowFactory = factory)
 
-class RowSetAttribute<out T: Json.MutableObject>(name: String, parameters: Set<String>, factory: RowFactory): Attribute<Sequence<T>>(name, parameters, instanceFactory = factory)
+class RowSetAttribute<out T: Json.MutableObject>(name: String, parameters: Set<String>, factory: RowFactory): Attribute<Sequence<T>>(name, parameters, rowFactory = factory)
     
 class MutationAttribute(name: String, parameters: Set<String> = setOf(), useDirtyFields: Boolean = false): Attribute<Long>(name, parameters, useDirtyFields = useDirtyFields)
 
@@ -281,14 +281,14 @@ abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = 
 
     suspend inline fun <reified T: Json.Object?> retrieve(attribute: Attribute<T>, vararg params: Any?): T {
         val (execPath, execParams) = prepare(attribute, *params)
-        return attribute.handleResult(processor.retrieve(execPath, execParams, attribute.instanceFactory))
+        return attribute.handleResult(processor.retrieve(execPath, execParams, attribute.rowFactory))
     }
 
     suspend inline fun <reified T: Json.Object> query(attrName: String, vararg params: Any?) = query(findAttribute<Sequence<T>>(attrName), *params)
 
     suspend inline fun <reified T: Json.Object> query(attribute: Attribute<Sequence<T>>, vararg params: Any?): Sequence<T> {
         val (execPath, execParams) = prepare(attribute, *params)
-        return attribute.handleResult(processor.query(execPath, execParams, attribute.instanceFactory))
+        return attribute.handleResult(processor.query(execPath, execParams, attribute.rowFactory))
     }
 
     suspend fun perform(attrName: String, vararg params: Any?) = perform(findAttribute<Long>(attrName), *params)

@@ -22,22 +22,24 @@ fun ${package}.${databaseClass}.initRuntimeModel() {
             #set($attribute = 'mutationAttribute')
         #elseif($item.type.isComposite())
             #if($item.type.parent)
-                #set($itemClass = "#pascal($item.name)")
+                #set($itemClass = "#pascal($item.type.parent)")
                 #set($factory = "::$itemClass")
                 #if($item.multiple)
                     #set($attribute = "rowSetAttribute<$itemClass>")
                 #elseif($item.nullable)
-                    #set($attribute = "nullableRowSetAttribute<$itemClass>")
+                    #set($attribute = "nullableRowAttribute<$itemClass>")
                 #else
                     #set($attribute = "rowAttribute<$itemClass>")
                 #end
             #else
+                #set($itemClass = "#pascal($item.name)")
+                #set($factory = "::$itemClass")
                 #if($item.multible)
-                    #set($attribute = 'rowSetAttribute<Json.MutableObject>')
+                    #set($attribute = "rowSetAttribute<$itemClass>")
                 #elseif($item.nullable)
-                    #set($attribute = 'nullableRowAttribute<Json.MutableObject>')
+                    #set($attribute = "nullableRowAttribute<$itemClass>")
                 #else
-                    #set($attribute = 'rowAttribute<Json.MutableObject>')
+                    #set($attribute = "rowAttribute<$itemClass>")
                 #end
             #end
         #elseif ($item.type.isEntity())

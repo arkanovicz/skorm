@@ -21,14 +21,29 @@ inline fun <reified T: Json.MutableObject> AttributeHolder.rowAttribute(name: St
     return rowAttribute(name, queryDef.parameters(), resultEntity)
 }
 
+inline fun <reified T: Json.MutableObject> AttributeHolder.rowAttribute(name: String, query: String, noinline factory: RowFactory): RowAttribute<T> {
+    val queryDef = parseAndDefine(name, query)
+    return rowAttribute(name, queryDef.parameters(), factory)
+}
+
 inline fun <reified T: Json.MutableObject> AttributeHolder.nullableRowAttribute(name: String, query: String, resultEntity: Entity? = null): NullableRowAttribute<T> {
     val queryDef = parseAndDefine(name, query)
     return nullableRowAttribute(name, queryDef.parameters(), resultEntity)
 }
 
+inline fun <reified T: Json.MutableObject> AttributeHolder.nullableRowAttribute(name: String, query: String, noinline factory: RowFactory): NullableRowAttribute<T> {
+    val queryDef = parseAndDefine(name, query)
+    return nullableRowAttribute(name, queryDef.parameters(), factory)
+}
+
 inline fun <reified T: Json.MutableObject> AttributeHolder.rowSetAttribute(name: String, query: String, resultEntity: Entity? = null): RowSetAttribute<T> {
     val queryDef = parseAndDefine(name, query)
     return rowSetAttribute(name,queryDef.parameters(), resultEntity)
+}
+
+inline fun <reified T: Json.MutableObject> AttributeHolder.rowSetAttribute(name: String, query: String, noinline factory: RowFactory): RowSetAttribute<T> {
+    val queryDef = parseAndDefine(name, query)
+    return rowSetAttribute(name, queryDef.parameters(), factory)
 }
 
 fun AttributeHolder.mutationAttribute(name: String, query: String): MutationAttribute {

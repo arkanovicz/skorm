@@ -137,16 +137,12 @@ fun Application.configureRouting() {
                                 val authorName = book.author().name
                                 val currentBorrower = book.currentBorrower()
                                 val stats = book.stats()
-                                val bar = ExampleDatabase.bookshelf.foo().toList()
                                 li {
                                     +book.title
                                     i { +" by " }
                                     +authorName
                                     br()
                                     +"Stats: ${stats.titleLength}, ${stats.borrowed}"
-                                    for (baz in bar) {
-                                        +"$baz"
-                                    }
                                     if (currentBorrower != null) {
                                         +"borrowed by ${currentBorrower.name} on ${currentBorrower.borrowingDate}"
                                         br()

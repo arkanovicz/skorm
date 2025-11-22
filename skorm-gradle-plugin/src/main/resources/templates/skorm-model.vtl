@@ -14,9 +14,9 @@ import com.republicate.kson.Json
         #if($item.type.parent)
           #set($parent = "#pascal($database.name)Database.#pascal($schema.name)Schema.#pascal($item.type.parent)")
         #else
-          #set($parent = "Json.Object")
+          #set($parent = "Json.MutableObject")
         #end
-open class $itemClass: ${parent}() {
+open class $itemClass(): ${parent}() {
       #foreach ($field in $item.type.fields)
     val #camel($field.name): ${field.type}#if($field.nullable)?#end
         get() = get${field.type}("$field.name")#if(!$field.nullable)!!#end
