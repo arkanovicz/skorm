@@ -92,3 +92,100 @@ database bookshelf {
 
 Using the companion tool [`kddl`](https://github.com/arkanovicz/kddl) (command line, `gradle` or `mvn` plugin), I'll get a database SQL creation script and a plantuml diagram.
 
+## Custom Queries (ksql format)
+
+Beyond the basic CRUD operations, skorm allows you to define custom queries and mutations using the `ksql` format. These definitions generate type-safe Kotlin objects and extension functions.
+
+#### **`bookshelf.ksql`:**
+```kotlin
+database example {
+  schema bookshelf {
+
+    // Schema-level scalar attribute
+    attr booksCount: Int =
+      SELECT count(*) FROM book;
+
+    // Entity-level attribute returning a composite object
+    attr Book.currentBorrower: (Dude, borrowing_date: LocalDateTime)? =
+      SELECT dude.*, borrowing_date FROM bookshelf.borrowing
+        JOIN dude USING (dude_id)
+        WHERE book_id = {book_id}
+        AND restitution_date IS NULL;
+
+    // Mutation with parameters
+    mut Book.lend(dude_id: Long) =
+      INSERT INTO borrowing (dude_id, book_id, borrowing_date)
+        VALUES ({dude_id}, {book_id}, now());
+
+    // Mutation without parameters
+    mut Book.restitute =
+      UPDATE borrowing SET restitution_date = NOW()
+        WHERE book_id = {book_id} AND restitution_date IS NULL;
+
+    // Attribute returning an anonymous object
+    attr Book.stats: (title_length: Int, borrowed: Int) =
+      SELECT
+        CHARACTER_LENGTH(title) title_length,
+        (SELECT COUNT(*) FROM borrowing WHERE book_id = {book_id}) borrowed
+      FROM book
+      WHERE book_id = {book_id};
+
+    // Attribute returning a sequence
+    attr foo: (dude_id: Long, borrowed: Int, borrowing: Int)* =
+      SELECT dude_id,
+        COUNT(restitution_date) borrowed,
+        SUM(CASE WHEN borrowing_date IS NULL THEN 1 ELSE 0 END) borrowing
+      FROM borrowing;
+  }
+}
+```
+
+### Attribute Syntax
+
+**Declaration:**
+- `attr [Entity.]name: ReturnType = SQL` - defines a query attribute
+- `mut [Entity.]name[(params)] = SQL` - defines a mutation attribute
+
+**Return Types:**
+- `Type` - non-nullable scalar (Int, Long, String, Boolean, LocalDate, LocalDateTime, etc.)
+- `Type?` - nullable scalar
+- `(Entity, extra_field: Type, ...)` - composite object extending an entity with extra fields
+- `(Entity, extra_field: Type, ...)?` - nullable composite object
+- `(field: Type, ...)` - anonymous object with named fields
+- `(field: Type, ...)?` - nullable anonymous object
+- `(...)* ` - sequence (rowset) of objects
+
+**Parameters:**
+- SQL parameters are enclosed in curly braces: `{param_name}`
+- For entity-level attributes, entity fields are automatically available as parameters
+- Mutation parameters are declared in the signature: `mut Entity.action(param: Type)`
+
+### Generated Code
+
+From the above definitions, skorm generates:
+
+```kotlin
+// Schema-level function
+suspend fun BookshelfSchema.booksCount(): Int
+
+// Entity-level function returning composite object
+suspend fun Book.currentBorrower(): CurrentBorrower?
+// where CurrentBorrower extends Dude with borrowingDate property
+
+// Mutation with parameter
+suspend fun Book.lend(dude_id: Long): Long
+
+// Mutation without parameter
+suspend fun Book.restitute(): Long
+
+// Function returning anonymous object
+suspend fun Book.stats(): Stats
+// where Stats has titleLength and borrowed properties
+
+// Function returning sequence
+suspend fun BookshelfSchema.foo(): Sequence<Foo>
+// where Foo has dudeId, borrowed, and borrowing properties
+```
+
+All generated functions are coroutine-based (`suspend`) and type-safe, providing compile-time checking of parameters and return types.
+
