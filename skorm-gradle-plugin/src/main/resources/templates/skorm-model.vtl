@@ -19,7 +19,7 @@ import com.republicate.kson.Json
 open class $itemClass(): ${parent}() {
       #foreach ($field in $item.type.fields)
     val #camel($field.name): ${field.type}#if($field.nullable)?#end
-        get() = get${field.type}("$field.name")#if(!$field.nullable)!!#end
+        get() = get${field.type}("#camel($field.name)")#if(!$field.nullable)!!#end
       #end
       #if($item.type.parent)
     override fun putRawFields(from: Map<out String, Any?>) {
