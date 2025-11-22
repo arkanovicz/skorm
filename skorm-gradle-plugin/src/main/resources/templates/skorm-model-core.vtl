@@ -25,34 +25,34 @@ fun ${package}.${databaseClass}.initRuntimeModel() {
                 #set($itemClass = "#pascal($item.name)")
                 #set($factory = "::$itemClass")
                 #if($item.multiple)
-                    #set($attribute = "bagAttribute<$itemClass>")
+                    #set($attribute = "rowSetAttribute<$itemClass>")
                 #elseif($item.nullable)
-                    #set($attribute = "nullableInstanceAttribute<$itemClass>")
+                    #set($attribute = "nullableRowSetAttribute<$itemClass>")
                 #else
-                    #set($attribute = "instanceAttribute<$itemClass>")
+                    #set($attribute = "rowAttribute<$itemClass>")
                 #end
             #else
                 #if($item.multible)
-                    #set($attribute = 'rowSetAttribute')
+                    #set($attribute = 'rowSetAttribute<Json.MutableObject>')
                 #elseif($item.nullable)
-                    #set($attribute = 'nullableRowAttribute')
+                    #set($attribute = 'nullableRowAttribute<Json.MutableObject>')
                 #else
-                    #set($attribute = 'rowAttribute')
+                    #set($attribute = 'rowAttribute<Json.MutableObject>')
                 #end
             #end
         #elseif ($item.type.isEntity())
             #set($itemClass = "#pascal($database.name)Database.#pascal($schema.name)Schema.#pascal($item.type.name)")
             #set($factory = "$itemClass::new")
             #if($item.multiple)
-                #set($attribute = "bagAttribute<$itemClass>")
+                #set($attribute = "rowSetAttribute<$itemClass>")
             #elseif($item.nullable)
-                #set($attribute = "nullableInstanceAttribute<$itemClass>")
+                #set($attribute = "nullableRowSetAttribute<$itemClass>")
             #else
-                #set($attribute = "instanceAttribute<$itemClass>")
+                #set($attribute = "rowAttribute<$itemClass>")
             #end
         #else
             #if($item.multiple)
-                #set($attribute = "rowSetAttribute")
+                #set($attribute = "rowSetAttribute<Json.MutableObject>")
             #elseif($item.nullable)
                 ##          #set($attribute = "nullable#capitalize(${item.type.name})Attribute")
                 #set($attribute = "scalarAttribute<${item.type.name}?>")

@@ -16,7 +16,6 @@ class GeneratedKeyMarker(
 }
 
 typealias RowFactory = () -> Json.MutableObject
-typealias InstanceFactory = () -> Instance
 
 interface Transaction : Processor {
     suspend fun rollback(): Unit
@@ -32,8 +31,8 @@ interface Processor: Configurable, AutoCloseable {
 
     // attributes
     suspend fun eval(path: String, params: Map<String, Any?>): Any?
-    suspend fun retrieve(path: String, params: Map<String, Any?>, factory: InstanceFactory? = null): Json.Object?
-    suspend fun query(path: String, params: Map<String, Any?>, factory: InstanceFactory? = null): Sequence<Json.Object>
+    suspend fun retrieve(path: String, params: Map<String, Any?>, factory: RowFactory? = null): Json.Object?
+    suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory? = null): Sequence<Json.Object>
     suspend fun perform(path: String, params: Map<String, Any?>): Long
 
     // identifiers mapping

@@ -107,7 +107,7 @@ class ApiClient(val baseUrl: String) : Processor {
         return response.body()
     }
 
-    override suspend fun retrieve(path: String, params: Map<String, Any?>, factory: InstanceFactory?): Json.Object? {
+    override suspend fun retrieve(path: String, params: Map<String, Any?>, factory: RowFactory?): Json.Object? {
         logger.info { "retrieve $path $params with params ${params.entries.joinToString(" ") { "${it.key}=${it.value}" }}" }
         var restPath = path
         var restParams = params
@@ -124,13 +124,17 @@ class ApiClient(val baseUrl: String) : Processor {
         val response = get(restPath, restParams)
         val json = response.body<Json.Object>()
         return factory?.invoke()?.also {
-            it.putRawFields(json)
-            it.setClean()
+            if (it is Instance) {
+                it.putRawFields(json)
+                it.setClean()
+            } else {
+                it.putAll(json)
+            }
         } ?: json
     }
 
     @Suppress("UNCHECKED_CAST")
-    override suspend fun query(path: String, params: Map<String, Any?>, factory: InstanceFactory?): Sequence<Json.Object> {
+    override suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory?): Sequence<Json.Object> {
         logger.info { "query $path $params ${factory?.let { "as $factory.name" } ?: ""}" }
         var restPath = path
         var restParams = params
@@ -154,10 +158,14 @@ class ApiClient(val baseUrl: String) : Processor {
 
         return factory?.let { sequence.map { obj ->
             factory().also {
-                it.putRawFields(obj)
-                it.setClean()
+                if (it is Instance) {
+                    it.putRawFields(obj)
+                    it.setClean()
+                } else {
+                    it.putAll(obj)
+                }
             }
-        } }?.asSequence() ?: sequence
+        } } ?: sequence
     }
 
     override suspend fun perform(path: String, params: Map<String, Any?>): Long {

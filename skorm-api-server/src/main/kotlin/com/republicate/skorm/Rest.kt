@@ -120,24 +120,14 @@ fun Route.rest(entity: Entity) {
                             call.respond(entity.instanceAttributes.eval<Array<Byte>>(attribute.key, call.allParameters()))
                         }
                     }
-                    is RowAttribute, is NullableRowAttribute -> {
-                        get(attribute.key) {
-                            call.respond(entity.instanceAttributes.retrieve<Json.Object>(attribute.key, call.allParameters()))
-                        }
-                    }
-                    is InstanceAttribute<*>, is NullableInstanceAttribute<*> -> {
+                    is RowAttribute<*>, is NullableRowAttribute<*> -> {
                         get(attribute.key) {
                             call.respond(entity.instanceAttributes.retrieve<Instance>(attribute.key, call.allParameters()))
                         }
                     }
-                    is RowSetAttribute -> {
+                    is RowSetAttribute<*> -> {
                         get(attribute.key) {
                             call.respond(entity.instanceAttributes.query<Json.Object>(attribute.key, call.allParameters()))
-                        }
-                    }
-                    is BagAttribute<*> -> {
-                        get(attribute.key) {
-                            call.respond(entity.instanceAttributes.query<Instance>(attribute.key, call.allParameters()))
                         }
                     }
                     is MutationAttribute -> {

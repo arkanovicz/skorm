@@ -1,7 +1,7 @@
 package $package
 
-import com.republicate.skorm.core.bagAttribute
-import com.republicate.skorm.core.instanceAttribute
+import com.republicate.skorm.core.rowSetAttribute
+import com.republicate.skorm.core.rowAttribute
 
 #set ($databaseClass = "#pascal($database.name)Database")
 
@@ -33,9 +33,9 @@ fun ${databaseClass}.initJoins() {
               #set($leftToRightAttrBase = "#camel($right.name)")
           #end
   // left to right n-n join attribute
-  ${leftSchemaInstance}.entity("#camel(${left.name})").instanceAttributes.bagAttribute<$rightInstance>("#plural($leftToRightAttrBase)", "$kotlin.joinTableQuery($table, true)", $rightInstance)
+  ${leftSchemaInstance}.entity("#camel(${left.name})").instanceAttributes.rowSetAttribute<$rightInstance>("#plural($leftToRightAttrBase)", "$kotlin.joinTableQuery($table, true)", $rightInstance)
   // right to left n-n join attribute
-  ${rightSchemaInstance}.entity("#camel(${right.name})").instanceAttributes.bagAttribute<$leftInstance>("#plural($rightToLeftAttrBase)", "$kotlin.joinTableQuery($table, false)", $leftInstance)
+  ${rightSchemaInstance}.entity("#camel(${right.name})").instanceAttributes.rowSetAttribute<$leftInstance>("#plural($rightToLeftAttrBase)", "$kotlin.joinTableQuery($table, false)", $leftInstance)
       #else
         #foreach($fk in $table.foreignKeys)
           #set($instanceClass = "${schemaClass}.#pascal($fk.towards.name)")
@@ -45,7 +45,7 @@ fun ${databaseClass}.initJoins() {
             #set($attrName = "#camel($fk.towards.name)")
           #end
    // forward foreign key attribute
-   ${schemaInstance}.entity("#camel($fk.from.name)").instanceAttributes.#if($fk.nonNull)instanceAttribute#{else}nullableInstanceAttribute#end<$instanceClass>("$attrName", "$kotlin.foreignKeyForwardQuery($fk)", $instanceClass)
+   ${schemaInstance}.entity("#camel($fk.from.name)").instanceAttributes.#if($fk.nonNull)rowAttribute#{else}nullableRowAttribute#end<$instanceClass>("$attrName", "$kotlin.foreignKeyForwardQuery($fk)", $instanceClass)
           #set($instanceClass = "${schemaClass}.#pascal($fk.from.name)")
           #if($kotlin.isUniqueFkDest($fk))
             #set($attrName = "#camel($fk.from.name)")
@@ -53,7 +53,7 @@ fun ${databaseClass}.initJoins() {
             #set($attrName = "#attributeName($fk.fields.iterator().next().name)#pascal($fk.from.name)")
           #end
    // reverse foreign key attribute
-   ${schemaInstance}.entity("#camel($fk.towards.name)").instanceAttributes.bagAttribute<$instanceClass>("#plural($attrName)", "$kotlin.foreignKeyReverseQuery($fk)", $instanceClass)
+   ${schemaInstance}.entity("#camel($fk.towards.name)").instanceAttributes.rowSetAttribute<$instanceClass>("#plural($attrName)", "$kotlin.foreignKeyReverseQuery($fk)", $instanceClass)
         #end
       #end
     #end

@@ -117,7 +117,7 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
         return ret
     }
 
-    override suspend fun retrieve(path: String, params: Map<String, Any?>, factory: InstanceFactory?): Json.Object? {
+    override suspend fun retrieve(path: String, params: Map<String, Any?>, factory: RowFactory?): Json.Object? {
         val (schema, query) = getSingleQuery(path, params.keys)
         val (names, it) = connector.query(schema, query.stmt, *query.params.map { params[it] }.toTypedArray())
         if (!it.hasNext()) return null // CB TODO - non-null result should be specifiable
@@ -128,13 +128,17 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
                 putAll(names, rawValues)
             }
             else -> factory().apply {
-                putNamesValues(names, rawValues)
-                setClean()
+                if (this is Instance) {
+                    putNamesValues(names, rawValues)
+                    setClean()
+                } else {
+                    putAll(names, rawValues)
+                }
             }
         }
     }
 
-    override suspend fun query(path: String, params: Map<String, Any?>, factory: InstanceFactory?): Sequence<Json.Object> {
+    override suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory?): Sequence<Json.Object> {
         val (schema, query) = getSingleQuery(path, params.keys)
         val (names, it) = connector.query(schema, query.stmt, *query.params.map {
             params[it]
@@ -148,8 +152,12 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
                     putAll(names, it)
                 }
                 else -> factory().apply {
-                    putNamesValues(names, it)
-                    setClean()
+                    if (this is Instance) {
+                        putNamesValues(names, it)
+                        setClean()
+                    } else {
+                        putAll(names, it)
+                    }
                 }
             }
         }

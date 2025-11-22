@@ -1,5 +1,6 @@
 package com.republicate.skorm.core
 
+import com.republicate.kson.Json
 import com.republicate.skorm.*
 
 fun AttributeHolder.parseAndDefine(name: String, query: String): AttributeDefinition {
@@ -15,43 +16,19 @@ inline fun <reified T> AttributeHolder.scalarAttribute(name: String, query: Stri
     return scalarAttribute<T>(name, queryDef.parameters())
 }
 
-fun AttributeHolder.rowAttribute(name: String, query: String): RowAttribute {
+inline fun <reified T: Json.MutableObject> AttributeHolder.rowAttribute(name: String, query: String, resultEntity: Entity? = null): RowAttribute<T> {
     val queryDef = parseAndDefine(name, query)
-    return rowAttribute(name, queryDef.parameters())
+    return rowAttribute(name, queryDef.parameters(), resultEntity)
 }
 
-fun AttributeHolder.nullableRowAttribute(name: String, query: String): NullableRowAttribute {
+inline fun <reified T: Json.MutableObject> AttributeHolder.nullableRowAttribute(name: String, query: String, resultEntity: Entity? = null): NullableRowAttribute<T> {
     val queryDef = parseAndDefine(name, query)
-    return nullableRowAttribute(name, queryDef.parameters())
+    return nullableRowAttribute(name, queryDef.parameters(), resultEntity)
 }
 
-fun <T: Instance>AttributeHolder.instanceAttribute(name: String, query: String, resultEntity: Entity) =
-    instanceAttribute<T>(name, query, resultEntity::new)
-
-fun <T: Instance>AttributeHolder.instanceAttribute(name: String, query: String, factory: InstanceFactory): InstanceAttribute<T> {
+inline fun <reified T: Json.MutableObject> AttributeHolder.rowSetAttribute(name: String, query: String, resultEntity: Entity? = null): RowSetAttribute<T> {
     val queryDef = parseAndDefine(name, query)
-    return instanceAttribute<T>(name, queryDef.parameters(), factory)
-}
-
-fun <T: Instance>AttributeHolder.nullableInstanceAttribute(name: String, query: String, resultEntity: Entity) =
-    nullableInstanceAttribute<T>(name, query, resultEntity::new)
-
-fun <T: Instance>AttributeHolder.nullableInstanceAttribute(name: String, query: String, factory: InstanceFactory): NullableInstanceAttribute<T> {
-    val queryDef = parseAndDefine(name, query)
-    return nullableInstanceAttribute<T>(name, queryDef.parameters(), factory)
-}
-
-fun AttributeHolder.rowSetAttribute(name: String, query: String): RowSetAttribute {
-    val queryDef = parseAndDefine(name, query)
-    return rowSetAttribute(name,queryDef.parameters())
-}
-
-fun <T: Instance>AttributeHolder.bagAttribute(name: String, query: String, resultEntity: Entity) =
-    bagAttribute<T>(name, query, resultEntity::new)
-
-fun <T: Instance>AttributeHolder.bagAttribute(name: String, query: String, factory: InstanceFactory): BagAttribute<T> {
-    val queryDef = parseAndDefine(name, query)
-    return bagAttribute<T>(name, queryDef.parameters(), factory)
+    return rowSetAttribute(name,queryDef.parameters(), resultEntity)
 }
 
 fun AttributeHolder.mutationAttribute(name: String, query: String): MutationAttribute {

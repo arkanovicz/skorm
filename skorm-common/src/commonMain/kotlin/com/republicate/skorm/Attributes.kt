@@ -18,7 +18,7 @@ val reserveAttributeNames = setOf("insert", "fetch", "update", "delete")
 expect fun Any.hasGenericGetter(): Boolean
 expect fun Any.callGenericGetter(key: String): Any?
 
-sealed class Attribute<out T>(val name: String, private val parameters: Set<String> = emptySet(), val instanceFactory: InstanceFactory? = null, val rowFactory: RowFactory? = null, private val useDirtyFields: Boolean = false) {
+sealed class Attribute<out T>(val name: String, private val parameters: Set<String> = emptySet(), val instanceFactory: RowFactory? = null, val rowFactory: RowFactory? = null, private val useDirtyFields: Boolean = false) {
 
     /**
      * Match attribute named parameters with values found in provided context parameters
@@ -219,24 +219,15 @@ class NullableBytesAttribute(name: String, parameters: Set<String>): ScalarAttri
     override fun handleResult(result: Any?) = Json.TypeUtils.toBytes(result)
 }
 
+@Suppress("UNCHECKED_CAST")
 class RowAttribute<out T: Json.MutableObject>(name: String, parameters: Set<String>, factory: RowFactory): Attribute<T>(name, parameters, rowFactory = factory) {
     override fun handleResult(result: Any?) =
-        result as T? ?: throw SkormException("attribute $name cannot have a null result")
+        result as? T? ?: throw SkormException("attribute $name cannot have a null result")
 }
 
 class NullableRowAttribute<out T: Json.MutableObject>(name: String, parameters: Set<String>, factory: RowFactory): Attribute<T?>(name, parameters, rowFactory = factory)
 
-class InstanceAttribute<out T: Instance>(name: String, parameters: Set<String>, factory: InstanceFactory): Attribute<T>(name, parameters, instanceFactory = factory) {
-    @Suppress("UNCHECKED_CAST")
-    override fun handleResult(result: Any?) =
-        result as T? ?: throw SkormException("attribute $name cannot have a null result")
-}
-
-class NullableInstanceAttribute<out T: Instance>(name: String, parameters: Set<String>, factory: InstanceFactory): Attribute<T?>(name, parameters, instanceFactory = factory)
-
-class RowSetAttribute(name: String, parameters: Set<String>): Attribute<Sequence<Json.Object>>(name, parameters)
-
-class BagAttribute<out T: Instance>(name: String, parameters: Set<String>, factory: InstanceFactory): Attribute<Sequence<T>>(name, parameters, instanceFactory = factory)
+class RowSetAttribute<out T: Json.MutableObject>(name: String, parameters: Set<String>, factory: RowFactory): Attribute<Sequence<T>>(name, parameters, instanceFactory = factory)
     
 class MutationAttribute(name: String, parameters: Set<String> = setOf(), useDirtyFields: Boolean = false): Attribute<Long>(name, parameters, useDirtyFields = useDirtyFields)
 
@@ -353,53 +344,27 @@ inline fun <reified T> AttributeHolder.scalarAttribute(name: String, params: Set
     }
 }
 
-fun <T: Json.MutableObject> AttributeHolder.rowAttribute(name: String, params: Set<String>, rowFactory = factory): RowAttribute<Json.MutableObject> =
-    RowAttribute(name, params, factory).also {
+fun <T: Json.MutableObject> AttributeHolder.rowAttribute(name: String, params: Set<String>, resultEntity: Entity? = null): RowAttribute<T> =
+    rowAttribute(name, params, resultEntity?.let { it ::new } ?: Json::MutableObject)
+
+fun <T: Json.MutableObject> AttributeHolder.rowAttribute(name: String, params: Set<String>, factory: RowFactory): RowAttribute<T> =
+    RowAttribute<T>(name, params, factory).also {
         addAttribute(it)
     }
 
-fun AttributeHolder.nullableRowAttribute(name: String, params: Set<String>): NullableRowAttribute =
-    NullableRowAttribute(name, params).also {
+fun <T: Json.MutableObject> AttributeHolder.nullableRowAttribute(name: String, params: Set<String>, resultEntity: Entity? = null): NullableRowAttribute<T> =
+    nullableRowAttribute(name, params, resultEntity?.let { it ::new } ?: Json::MutableObject)
+
+fun <T: Json.MutableObject> AttributeHolder.nullableRowAttribute(name: String, params: Set<String>, factory: RowFactory): NullableRowAttribute<T> =
+    NullableRowAttribute<T>(name, params, factory).also {
         addAttribute(it)
     }
 
-fun <T: Json.MutableObject> AttributeHolder.rowAttribute(name: String, params: Set<String>, ): RowAttribute =
-    RowAttribute(name, params).also {
-        addAttribute(it)
-    }
+fun <T: Json.MutableObject>AttributeHolder.rowSetAttribute(name: String, params: Set<String>, resultEntity: Entity? = null) =
+    rowSetAttribute<T>(name, params, resultEntity?.let { it ::new } ?: Json::MutableObject)
 
-fun <T: Json.MutableObject> AttributeHolder.nullableRowAttribute(name: String, params: Set<String>, ): RowAttribute =
-    RowAttribute(name, params).also {
-        addAttribute(it)
-    }
-
-
-fun <T: Instance> AttributeHolder.instanceAttribute(name: String, params: Set<String>, resultEntity: Entity) =
-    instanceAttribute<T>(name, params, resultEntity::new)
-
-fun <T: Instance> AttributeHolder.instanceAttribute(name: String, params: Set<String>, factory: InstanceFactory): InstanceAttribute<T> =
-    InstanceAttribute<T>(name, params, factory).also {
-        addAttribute(it)
-    }
-
-fun <T: Instance> AttributeHolder.nullableInstanceAttribute(name: String, params: Set<String>, resultEntity: Entity) =
-    nullableInstanceAttribute<T>(name, params, resultEntity::new)
-
-fun <T: Instance> AttributeHolder.nullableInstanceAttribute(name: String, params: Set<String>, factory: InstanceFactory): NullableInstanceAttribute<T> =
-    NullableInstanceAttribute<T>(name, params, factory).also {
-        addAttribute(it)
-    }
-
-fun AttributeHolder.rowSetAttribute(name: String, params: Set<String>): RowSetAttribute =
-    RowSetAttribute(name, params).also {
-        addAttribute(it)
-    }
-
-fun <T: Instance>AttributeHolder.bagAttribute(name: String, params: Set<String>, resultEntity: Entity) =
-    bagAttribute<T>(name, params, resultEntity::new)
-
-fun <T: Instance>AttributeHolder.bagAttribute(name: String, params: Set<String>, factory: InstanceFactory): BagAttribute<T> =
-    BagAttribute<T>(name, params, factory).also {
+fun <T: Json.MutableObject> AttributeHolder.rowSetAttribute(name: String, params: Set<String>, factory: RowFactory): RowSetAttribute<T> =
+    RowSetAttribute<T>(name, params, factory).also {
         addAttribute(it)
     }
 

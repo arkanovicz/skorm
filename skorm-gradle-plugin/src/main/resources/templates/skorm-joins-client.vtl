@@ -1,7 +1,7 @@
 package $package
 
-import com.republicate.skorm.bagAttribute
-import com.republicate.skorm.instanceAttribute
+import com.republicate.skorm.rowSetAttribute
+import com.republicate.skorm.rowAttribute
 
 #set ($databaseClass = "#pascal($database.name)Database")
 
@@ -23,7 +23,7 @@ fun ${databaseClass}.initJoins() {
           #set($attrName = "#attributeName($fk.fields.iterator().next().name)#pascal($fk.towards.name)")
         #end
     // forward foreign key attribute
-    ${schemaInstance}.entity("#camel($fk.from.name)").instanceAttributes.#if($fk.nonNull)instanceAttribute#{else}nullableInstanceAttribute#end<$instanceClass>("$attrName", setOf(#fieldNames($fk.towards.primaryKey)), $instanceClass)
+    ${schemaInstance}.entity("#camel($fk.from.name)").instanceAttributes.#if($fk.nonNull)rowAttribute#{else}nullableRowAttribute#end<$instanceClass>("$attrName", setOf(#fieldNames($fk.towards.primaryKey)), $instanceClass)
         #set($instanceClass = "${schemaClass}.#pascal($fk.from.name)")
         #if($kotlin.isUniqueFkDest($fk))
           #set($attrName = "#camel($fk.from.name)")
@@ -31,7 +31,7 @@ fun ${databaseClass}.initJoins() {
           #set($attrName = "#attributeName($fk.fields.iterator().next().name)#pascal($fk.from.name)")
         #end
     // reverse foreign key attribute
-    ${schemaInstance}.entity("#camel($fk.towards.name)").instanceAttributes.bagAttribute<$instanceClass>("#plural($attrName)", setOf(#fieldNames($fk.fields)), $instanceClass)
+    ${schemaInstance}.entity("#camel($fk.towards.name)").instanceAttributes.rowSetAttribute<$instanceClass>("#plural($attrName)", setOf(#fieldNames($fk.fields)), $instanceClass)
       #end
     #end
   #end
