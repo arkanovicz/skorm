@@ -42,7 +42,7 @@ The nicest Kotlin multiplatform ORM around. Fully multiplatform. Coroutines-enab
 ## Configuration
 
 + A <abbr title="Data definition Language">DDL</abbr> dialect, `kddl`, for database creation and versioning, as well as UML diagrams and Kotlin classes generation
-+ A <abbr title="Data definition Language">DML</abbr> dialect for custom queries, with automatic undo handling and Kotlin extension functions
++ A <abbr title="Data definition Language">DML</abbr> dialect, `kddl`, for custom queries, with Kotlin objects and extension functions generation
 
 ```
 Database ⁎—— Schema ⁎—— Entity ⁎—— Instance
@@ -56,8 +56,7 @@ Database ⁎—— Schema ⁎—— Entity ⁎—— Instance
 + `perform(name, params...)` for atomic mutations
 + `attempt(name, params...)` for transactions
 
-*Many* features:
-+ automatic generation of undo statements
+*Many* features...
 
 ## Example
 
