@@ -261,7 +261,7 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
         } WHERE ${
             primaryKey.joinToString(" AND ") { "${writeMapper(it.name)} = ${it.parameter()}" }
         };"
-        return QueryDefinition(stmt, primaryKey.map { it.name })
+        return QueryDefinition(stmt, params.toList() + primaryKey.map { it.name })
     }
 
     private fun Field.parameter(): String {
