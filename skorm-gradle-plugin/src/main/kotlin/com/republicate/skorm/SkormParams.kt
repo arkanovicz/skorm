@@ -72,4 +72,6 @@ abstract class SkormParams @Inject constructor(project: Project) {
     val destCreationScriptFile: RegularFileProperty = objects.fileProperty().convention(
         project.layout.buildDirectory.file("$DEFAULT_JVM_RESOURCES_PATH/$DEFAULT_OUTPUT_CREATION_SCRIPT_FILE")
     )
+
+    val dialect: Property<String> = objects.property(String::class.java)
 }

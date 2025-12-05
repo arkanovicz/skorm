@@ -67,6 +67,7 @@ abstract class SkormGradlePlugin : Plugin<Project> {
         project.tasks.register(GEN_DATABASE_CREATION_SCRIPT_TASK_NAME, GenerateCreationScriptTask::class.java) {
             it.structure.set(extension.structure)
             it.destFile.set(extension.destCreationScriptFile)
+            it.dialect.set(extension.dialect)
         }
     }
 }
