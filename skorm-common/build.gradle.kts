@@ -98,6 +98,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api(libs.essential.kson)
+                api(libs.kotlinx.datetime)
                 implementation(libs.kotlinx.atomicfu)
                 implementation(libs.kotlin.logging)
             }

@@ -31,6 +31,7 @@ gradlePlugin {
 
 buildscript {
     repositories {
+        mavenLocal()
         mavenCentral()
     }
     dependencies {

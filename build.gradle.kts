@@ -20,6 +20,7 @@ allprojects {
     version = "0.8-dev"
 
     repositories {
+        mavenLocal()
         mavenCentral()
     }
 }

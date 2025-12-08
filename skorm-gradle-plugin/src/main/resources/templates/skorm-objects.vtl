@@ -45,7 +45,7 @@ class $databaseClass(processor: Processor): Database("$database.name", processor
     class $schemaClass(db: Database): Schema("$schema.name", db) {
   #set ($enums = $kotlin.enums($schema))
   #foreach ($field in $enums)
-        enum class #pascal($field.name) {
+        enum class $kotlin.enumName($field) {
     #foreach ($value in $kotlin.enumValues($field))
             $value#if ($foreach.hasNext),#end
     #end
@@ -81,7 +81,7 @@ class $databaseClass(processor: Processor): Database("$database.name", processor
       #end
             $def #camel($field.name): #type($field)#if(!$field.nonNull)?#end
       #if($kotlin.isEnum($field.type))
-                get() = getString("#camel($field.name)")#if($field.nonNull)!!#else?#end.let { #pascal($field.name).valueOf(it) }
+                get() = getString("#camel($field.name)")#if($field.nonNull)!!#else?#end.let { ${kotlin.enumName($field)}.valueOf(it) }
         #if(!$pk)
                 set(v) { put("#camel($field.name)", v#if(!$field.nonNull)?#end.toString()) }
         #end

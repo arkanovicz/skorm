@@ -17,13 +17,15 @@ class KotlinTool {
         private val enInflector = English(English.MODE.ENGLISH_CLASSICAL)
     }
 
-    fun type(name: String, type: String): String {
+    fun type(field: ASTField): String = type(field.name, field.type, field.alias)
+
+    fun type(name: String, type: String, alias: String? = null): String {
         val match = decomp.matchEntire(type) ?: throw SemanticException("invalid type: $type")
         val base = match.groups[1]!!.value.lowercase(Locale.ROOT)
         return when (base) {
             "boolean" -> "Boolean"
             "text", "varchar", "clob" -> "String" // TODO streams for "text" and "clob"
-            "enum" -> pascal(name)
+            "enum" -> alias ?: pascal(name)
             "date" -> "LocalDate"
             "timestamp" -> "LocalDateTime"
             "timestamptz" -> "LocalDateTime" // for now TODO
@@ -64,6 +66,8 @@ class KotlinTool {
     fun enumValues(field: ASTField): List<String> {
         return field.type.substringAfter('(').substringBeforeLast(')').split(',').map { it.removeSurrounding("'") }
     }
+
+    fun enumName(field: ASTField): String = field.alias ?: pascal(field.name)
 
     fun isEnum(type: String) = type.startsWith("enum")
 

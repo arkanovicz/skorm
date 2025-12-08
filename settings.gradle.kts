@@ -11,6 +11,7 @@ include("skorm-gradle-plugin")
 
 pluginManagement {
     repositories {
+        mavenLocal()
         gradlePluginPortal()
         mavenCentral()
     }
