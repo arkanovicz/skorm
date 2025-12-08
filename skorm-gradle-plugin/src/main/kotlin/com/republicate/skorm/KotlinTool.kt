@@ -23,7 +23,7 @@ class KotlinTool {
         return when (base) {
             "boolean" -> "Boolean"
             "text", "varchar", "clob" -> "String" // TODO streams for "text" and "clob"
-            "enum" -> pascal(name) + "Enum"
+            "enum" -> pascal(name)
             "date" -> "LocalDate"
             "timestamp" -> "LocalDateTime"
             "timestamptz" -> "LocalDateTime" // for now TODO
