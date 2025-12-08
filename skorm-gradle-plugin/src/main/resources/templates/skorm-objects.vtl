@@ -46,7 +46,7 @@ class $databaseClass(processor: Processor): Database("$database.name", processor
   #set ($enums = $kotlin.enums($schema))
   #foreach ($field in $enums)
         enum class #pascal($field.name)Enum {
-    #foreach ($value in $kotlin.enumValues($field.type))
+    #foreach ($value in $kotlin.enumValues($field))
             $value#if ($foreach.hasNext),#end
     #end
         }
