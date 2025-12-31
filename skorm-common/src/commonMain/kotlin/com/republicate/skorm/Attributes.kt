@@ -40,7 +40,8 @@ sealed class Attribute<out T>(val name: String, private val parameters: Set<Stri
                 }
                 val instance = rawValues.first() as Instance
                 if (rawValues.size == 2) ret[GeneratedKeyMarker.PARAM_KEY] = rawValues.last()
-                instance.dirtyFieldNames().asSequence().toSet()
+                // Include both dirty fields and primary key fields (needed for UPDATE WHERE clause)
+                instance.dirtyFieldNames().asSequence().toSet() + instance.entity.primaryKey.map { it.name }
             } else {
                 parameters
             }
