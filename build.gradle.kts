@@ -17,7 +17,7 @@ plugins {
 allprojects {
 
     group = "com.republicate.skorm"
-    version = "0.8.2"
+    version = "0.9-dev"
 
     repositories {
         mavenLocal()

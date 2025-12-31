@@ -2,6 +2,12 @@
 
 All notable changes to Skorm are documented in this file.
 
+## [0.9] - Unreleased yet
+
+### Fixed
+
+Fix getLastInsertId: convert property name to DB column name, strip quotes
+
 ## [0.8] - 2025-12-31
 
 ### Added
