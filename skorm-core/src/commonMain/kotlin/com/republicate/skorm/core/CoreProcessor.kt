@@ -264,11 +264,19 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
         return QueryDefinition(stmt, params.toList() + primaryKey.map { it.name })
     }
 
+    // Map pseudo-types to actual SQL types for parameter casting
+    private fun Field.castType(): String = when (type) {
+        "serial" -> "integer"
+        "bigserial" -> "bigint"
+        "smallserial" -> "smallint"
+        else -> type
+    }
+
     private fun Field.parameter(): String {
         return connector.getMetaInfos().let { meta ->
             when {
-                meta.strictColumnTypes && meta.columnMarkers -> "?::${this.type}"
-                meta.strictColumnTypes -> "CAST(? AS ${this.type})"
+                meta.strictColumnTypes && meta.columnMarkers -> "?::${this.castType()}"
+                meta.strictColumnTypes -> "CAST(? AS ${this.castType()})"
                 else -> "?"
             }
         }
