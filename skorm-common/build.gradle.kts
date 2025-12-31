@@ -17,17 +17,10 @@ plugins {
 }
 
 kotlin {
-    applyDefaultHierarchyTemplate {
-        common {
-            group("commonJs") {
-                withJs()
-                withWasmJs()
-            }
-        }
-    }
+    applyDefaultHierarchyTemplate()
     jvmToolchain(21)
     compilerOptions {
-        apiVersion.set(KotlinVersion.KOTLIN_2_0)
+        apiVersion.set(KotlinVersion.KOTLIN_2_2)
     }
     targets.configureEach {
         compilations.configureEach {
@@ -101,6 +94,7 @@ kotlin {
                 api(libs.kotlinx.datetime)
                 implementation(libs.kotlinx.atomicfu)
                 implementation(libs.kotlin.logging)
+                implementation(libs.kotlinx.serialization.core)
             }
         }
         val commonTest by getting {
@@ -114,8 +108,7 @@ kotlin {
             }
         }
         val jvmTest by getting
-        val commonJsMain by getting
-        val commonJsTest by getting
+        val webMain by getting
         val jsMain by getting
         val jsTest by getting
         val wasmJsMain by getting

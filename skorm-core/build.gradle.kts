@@ -26,7 +26,7 @@ kotlin {
     jvmToolchain(21)
 
     compilerOptions {
-        apiVersion.set(KotlinVersion.KOTLIN_2_0)
+        apiVersion.set(KotlinVersion.KOTLIN_2_2)
     }
 
     targets.configureEach {

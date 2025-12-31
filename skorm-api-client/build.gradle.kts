@@ -13,18 +13,11 @@ plugins {
 }
 
 kotlin {
-    applyDefaultHierarchyTemplate {
-        common {
-            group("commonJs") {
-                withJs()
-                withWasmJs()
-            }
-        }
-    }
+    applyDefaultHierarchyTemplate()
 
     jvmToolchain(21)
     compilerOptions {
-        apiVersion.set(KotlinVersion.KOTLIN_2_0)
+        apiVersion.set(KotlinVersion.KOTLIN_2_2)
     }
     targets.configureEach {
         compilations.configureEach {
@@ -108,8 +101,6 @@ kotlin {
                 implementation(libs.kotlin.test)
             }
         }
-        val commonJsMain by getting
-        val commonJsTest by getting
         val jvmMain by getting {
             dependencies {
                 implementation(libs.ktor.client.cio)
@@ -120,9 +111,6 @@ kotlin {
                 implementation(libs.ktor.client.js)
             }
         }
-        val wasmJsMain by getting
-        val wasmJsTest by getting
-
         all {
             // languageSettings.enableLanguageFeature("InlineClasses")
             // languageSettings.optIn("expect-actual-classes")
