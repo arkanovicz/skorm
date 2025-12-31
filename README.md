@@ -33,7 +33,7 @@ The nicest Kotlin multiplatform ORM around. Fully multiplatform. Coroutines-enab
 + fields filtering (hide secret field, mark field as read-only, ...)
 + values filtering (transform timestamps, etc.)
 
-*Two* concrete database connectors, one for <abbr title="Java DataBase Connectivity">JDBC</abbr> and one for a service <abbr title="Application Programmable Interface">API</abbr>. More to come, hopefully.
+*Two* model definition formats: kddl for <abbr title="Data Definition Language">DDL</abbr> (schema structure), ksql for <abbr title="Data Manipulation Language">DML</abbr> (custom queries and mutations).
 
 *One* goal: maximum simplicity without conceeding anyting to extensibility.
 
