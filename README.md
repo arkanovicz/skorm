@@ -56,7 +56,21 @@ database todo_app {
 }
 ```
 
-### 2. Configure the Gradle plugin (`build.gradle.kts`)
+### 2. Add custom queries and mutations (`todo.ksql`, optional)
+
+```
+database todo_app {
+  schema todos {
+    attr pendingCount: Int =
+      SELECT count(*) FROM task WHERE completed = false;
+
+    mut Task.toggle =
+      UPDATE task SET completed = NOT completed WHERE task_id = {task_id};
+  }
+}
+```
+
+### 3. Configure the Gradle plugin (`build.gradle.kts`)
 
 ```kotlin
 plugins {
@@ -66,6 +80,7 @@ plugins {
 
 skorm {
     structure.set(File("src/commonMain/model/todo.kddl"))
+    runtimeModel.set(File("src/commonMain/model/todo.ksql"))  // optional
     destPackage.set("com.example.todo")
 }
 
@@ -79,7 +94,7 @@ dependencies {
 }
 ```
 
-### 3. Use the generated code
+### 4. Use the generated code
 
 ```kotlin
 // Initialize database (JVM)
