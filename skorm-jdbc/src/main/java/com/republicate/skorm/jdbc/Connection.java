@@ -1022,7 +1022,14 @@ public class Connection
                 int colNum = meta.getColumnCount();
                 if (rs.next())
                 {
-                    ret = colNum == 1 ? rs.getLong(1) : rs.getLong(keyColumn);
+                    // Strip SQL quotes from column name for ResultSet lookup
+                    String col = keyColumn;
+                    char quote = vendor.getIdentifierQuoteChar();
+                    if (quote != ' ' && col.length() > 2 && col.charAt(0) == quote && col.charAt(col.length() - 1) == quote)
+                    {
+                        col = col.substring(1, col.length() - 1);
+                    }
+                    ret = colNum == 1 ? rs.getLong(1) : rs.getLong(col);
                     if (rs.wasNull())
                     {
                         ret = -1;

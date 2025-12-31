@@ -138,7 +138,9 @@ open class Entity protected constructor(val name: String, val schema: Schema) {
     // Other operations are not visible directly, they are proxied from Instance
     internal suspend fun insert(instance: Instance): Long {
         return if (primaryKey.size == 1 && primaryKey.first().isGenerated) {
-            instanceAttributes.perform(insertAttribute, instance, GeneratedKeyMarker(primaryKey.first().name))
+            // Convert property name to database column name
+            val dbColName = instanceAttributes.processor.upstreamMapping(primaryKey.first().name)
+            instanceAttributes.perform(insertAttribute, instance, GeneratedKeyMarker(dbColName))
         } else {
             instanceAttributes.perform(insertAttribute, instance)
         }
