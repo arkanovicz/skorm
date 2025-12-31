@@ -2,7 +2,7 @@
 
 All notable changes to Skorm are documented in this file.
 
-## [0.8] - 2025-12-30
+## [0.8] - 2025-12-31
 
 ### Added
 - Enum alias support in code generation
