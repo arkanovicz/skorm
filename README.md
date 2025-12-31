@@ -117,7 +117,7 @@ That's it! The skorm Gradle plugin generates all the necessary Kotlin classes fr
 ### Configuration
 
 ```
-Database ⁎—— Schema ⁎—— Entity ⁎—— Instance
+Database *—— Schema *—— Entity *—— Instance
 ```
 
 *Five* main verbs to interact with attributes:
@@ -147,16 +147,6 @@ Built-in mappers:
 - `snakeToCamel` / `camelToSnake`
 - `lowercase` / `uppercase`
 - Custom mappers can be registered
-
-#### Fields Filtering
-
-Control which fields are visible or writable:
-
-```kotlin
-// Hide sensitive fields
-// Mark fields as read-only
-// (Documentation TODO - implementation details needed)
-```
 
 #### Values Filtering
 
