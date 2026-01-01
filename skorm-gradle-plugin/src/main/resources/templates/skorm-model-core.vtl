@@ -48,7 +48,7 @@ fun ${package}.${databaseClass}.initRuntimeModel() {
             #if($item.multiple)
                 #set($attribute = "rowSetAttribute<$itemClass>")
             #elseif($item.nullable)
-                #set($attribute = "nullableRowSetAttribute<$itemClass>")
+                #set($attribute = "nullableRowAttribute<$itemClass>")
             #else
                 #set($attribute = "rowAttribute<$itemClass>")
             #end
