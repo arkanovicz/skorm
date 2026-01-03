@@ -39,7 +39,7 @@ sealed interface AttributeDefinition {
             // TODO - this regexp lexer is quick and dirty parsing hack, we would need a word-by-word tokenizer.
             // For instance, BEGIN... CASE WHEN END... END will be unproperly parsed.
             lexer.findAll(raw).forEach { match ->
-                val before = qry.substring(pos, match.range.first)
+                val before = raw.substring(pos, match.range.first)
                 if (states.last() == PARAMETER) {
                     if (match.value != PARAMETER.end) throw SkormException("invalid parameter name")
                     params.add(before.trim().let {

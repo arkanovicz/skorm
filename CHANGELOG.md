@@ -10,6 +10,8 @@ All notable changes to Skorm are documented in this file.
 - Map serial pseudo-types to actual SQL types for parameter casting
 - Fix update() not persisting: include primary key in dirty field params
 - Fix nullable entity attribute template
+- Fix query parameter extraction using wrong string (qry vs raw) in QueryDefinition.parse()
+- Fix templates to use nullableRowAttribute/retrieve for Json.Object return types instead of scalarAttribute/eval
 
 ## [0.8] - 2025-12-31
 

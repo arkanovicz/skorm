@@ -55,11 +55,16 @@ fun ${package}.${databaseClass}.initRuntimeModel() {
         #else
             #if($item.multiple)
                 #set($attribute = "rowSetAttribute<Json.MutableObject>")
+            #elseif($item.type.name == "Json.Object")
+                ## Json.Object returns a row, not a scalar
+                #if($item.nullable)
+                    #set($attribute = "nullableRowAttribute<Json.MutableObject>")
+                #else
+                    #set($attribute = "rowAttribute<Json.MutableObject>")
+                #end
             #elseif($item.nullable)
-                ##          #set($attribute = "nullable#capitalize(${item.type.name})Attribute")
                 #set($attribute = "scalarAttribute<${item.type.name}?>")
             #else
-                ##          #set($attribute = "#decapitalize($item.type.name)Attribute") // item.type.name = $item.type.name, decapitalize = $item.type.name.decapitalize()
                 #set($attribute = "scalarAttribute<${item.type.name}>")
             #end
         #end

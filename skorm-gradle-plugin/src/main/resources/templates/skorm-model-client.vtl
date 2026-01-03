@@ -49,7 +49,16 @@ fun ${package}.${databaseClass}.initRuntimeModel() {
           #set($attribute = "instanceAttribute<$itemClass>")
         #end
       #else
-        #if($item.nullable)
+        #if($item.multiple)
+          #set($attribute = "scalarAttribute<${item.type.name}>")
+        #elseif($item.type.name == "Json.Object")
+          ## Json.Object returns a row, not a scalar
+          #if($item.nullable)
+            #set($attribute = "scalarAttribute<Json.Object?>")
+          #else
+            #set($attribute = "scalarAttribute<Json.Object>")
+          #end
+        #elseif($item.nullable)
           #set($attribute = "scalarAttribute<${item.type.name}?>")
         #else
           #set($attribute = "scalarAttribute<${item.type.name}>")
