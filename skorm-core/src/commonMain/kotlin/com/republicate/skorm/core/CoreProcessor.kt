@@ -112,9 +112,9 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
         val (names, it) = connector.query(schema, query.stmt, *query.params.map { params[it] }.toTypedArray())
         if (names.size != 1) throw SkormException("scalar attribute $path expects only one column")
         if (!it.hasNext()) throw SkormException("scalar attribute $path has no result row")
-        val ret = it.next()
+        val row = it.next()
         if (it.hasNext()) throw SkormException("scalar attribute $path has more than one result row")
-        return ret
+        return row[0]  // Return the scalar value, not the row array
     }
 
     override suspend fun retrieve(path: String, params: Map<String, Any?>, factory: RowFactory?): Json.Object? {

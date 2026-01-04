@@ -6,6 +6,7 @@ All notable changes to Skorm are documented in this file.
 
 ### Fixed
 
+- Fix eval() returning row array instead of scalar value
 - Fix getLastInsertId: convert property name to DB column name, strip quotes
 - Map serial pseudo-types to actual SQL types for parameter casting
 - Fix update() not persisting: include primary key in dirty field params
