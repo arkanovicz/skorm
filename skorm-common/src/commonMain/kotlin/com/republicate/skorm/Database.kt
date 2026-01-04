@@ -99,8 +99,8 @@ open class Entity protected constructor(val name: String, val schema: Schema) {
 
     val primaryKey: List<Field> by lazy { _fields.values.filter { it.isPrimary } }
 
-    private val fetchAttribute: RowAttribute<Instance> by lazy {
-        RowAttribute<Instance>("fetch", primaryKey.map { it.name }.toSet(), this::new).apply {
+    private val fetchAttribute: NullableRowAttribute<Instance> by lazy {
+        NullableRowAttribute<Instance>("fetch", primaryKey.map { it.name }.toSet(), this::new).apply {
             check(schema.database.populated)
         }
     }

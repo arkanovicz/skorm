@@ -6,6 +6,7 @@ All notable changes to Skorm are documented in this file.
 
 ### Fixed
 
+- Fix fetch() throwing exception instead of returning null when entity not found
 - Fix eval() returning row array instead of scalar value
 - Fix getLastInsertId: convert property name to DB column name, strip quotes
 - Map serial pseudo-types to actual SQL types for parameter casting
