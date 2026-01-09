@@ -74,26 +74,27 @@ sealed class Attribute<out T>(val name: String, private val parameters: Set<Stri
                             break@params
                         }
                     }
-                    hasGenericGetter() -> {
-                        logger.trace { "  found getter"}
-                        val found = value.callGenericGetter(p)
-                        if (found != null) {
-                            logger.trace { "  found with getter: $found"}
-                            ret[p] = found
-                            break@params
-                        }
-                    }
                     is GeneratedKeyMarker -> {
                         ret[GeneratedKeyMarker.PARAM_KEY] = value
                         break@params
                     }
                     else -> {
-                        logger.trace { "  searching among raw params"}
-                        if (!consumedParam[i]) {
-                            logger.trace { "  consuming raw param $i: $value"}
-                            ret[p] = value
-                            consumedParam.set(i, true)
-                            break@params
+                        if (value != null && value.hasGenericGetter()) {
+                            logger.trace { "  found getter"}
+                            val found = value.callGenericGetter(p)
+                            if (found != null) {
+                                logger.trace { "  found with getter: $found"}
+                                ret[p] = found
+                                break@params
+                            }
+                        } else {
+                            logger.trace { "  searching among raw params"}
+                            if (!consumedParam[i]) {
+                                logger.trace { "  consuming raw param $i: $value"}
+                                ret[p] = value
+                                consumedParam.set(i, true)
+                                break@params
+                            }
                         }
                     }
                 }

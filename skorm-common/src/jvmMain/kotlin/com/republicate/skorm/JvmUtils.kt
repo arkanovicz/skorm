@@ -29,11 +29,12 @@ private fun Any.findGenericGetter(): KFunction<*> {
             val params = (it as KFunction<*>).parameters
             params.size == 2 &&
                     params[0].kind == KParameter.Kind.INSTANCE &&
-                    params[1].kind == KParameter.Kind.VALUE
+                    params[1].kind == KParameter.Kind.VALUE &&
+                    params[1].type.classifier == String::class  // Must take String key
         }
         if (candidates.size == 1) candidates[0] as KFunction<*> else cacheMiss
     }
 }
 actual fun Any.hasGenericGetter() = findGenericGetter() != cacheMiss
 
-actual fun Any.callGenericGetter(key: String) = findGenericGetter().call(key)
+actual fun Any.callGenericGetter(key: String) = findGenericGetter().call(this, key)
