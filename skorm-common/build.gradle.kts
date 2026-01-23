@@ -90,6 +90,8 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
+                // Force proper stdlib resolution for metadata compilation
+                implementation(kotlin("stdlib"))
                 api(libs.essential.kson)
                 api(libs.kotlinx.datetime)
                 implementation(libs.kotlinx.atomicfu)
