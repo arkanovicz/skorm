@@ -2,6 +2,11 @@
 
 All notable changes to Skorm are documented in this file.
 
+## [0.10] - 2026-01-24
+
+### Changed
+- Upgrade Ktor to 3.4.0
+
 ## [0.9] - 2026-01-23
 
 ### Fixed
