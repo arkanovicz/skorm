@@ -141,4 +141,86 @@ public class JsonColumnTest {
         Object filtered = processor.downstreamFilter(type, row[0]);
         assertNull(filtered);
     }
+
+    // === SQL Array Tests ===
+
+    @Test
+    public void testIntegerArray() throws Exception {
+        try (var conn = DriverManager.getConnection(URL)) {
+            Statement stmt = conn.createStatement();
+            stmt.execute("DROP TABLE IF EXISTS array_test");
+            stmt.execute("CREATE TABLE array_test (id INT PRIMARY KEY, nums INT ARRAY)");
+            stmt.execute("INSERT INTO array_test VALUES (1, ARRAY[10, 20, 30])");
+        }
+
+        QueryResult result = connector.query("PUBLIC", "SELECT nums FROM array_test WHERE id = 1");
+        assertTrue(result.getValues().hasNext());
+        Object[] row = result.getValues().next();
+
+        // ClassMapper should convert java.sql.Array to List
+        assertInstanceOf(java.util.List.class, row[0]);
+        @SuppressWarnings("unchecked")
+        java.util.List<Integer> nums = (java.util.List<Integer>) row[0];
+        assertEquals(3, nums.size());
+        assertEquals(10, nums.get(0));
+        assertEquals(20, nums.get(1));
+        assertEquals(30, nums.get(2));
+    }
+
+    @Test
+    public void testStringArray() throws Exception {
+        try (var conn = DriverManager.getConnection(URL)) {
+            Statement stmt = conn.createStatement();
+            stmt.execute("DROP TABLE IF EXISTS array_test");
+            stmt.execute("CREATE TABLE array_test (id INT PRIMARY KEY, names VARCHAR(100) ARRAY)");
+            stmt.execute("INSERT INTO array_test VALUES (1, ARRAY['alice', 'bob', 'charlie'])");
+        }
+
+        QueryResult result = connector.query("PUBLIC", "SELECT names FROM array_test WHERE id = 1");
+        assertTrue(result.getValues().hasNext());
+        Object[] row = result.getValues().next();
+
+        assertInstanceOf(java.util.List.class, row[0]);
+        @SuppressWarnings("unchecked")
+        java.util.List<String> names = (java.util.List<String>) row[0];
+        assertEquals(3, names.size());
+        assertEquals("alice", names.get(0));
+        assertEquals("bob", names.get(1));
+        assertEquals("charlie", names.get(2));
+    }
+
+    @Test
+    public void testEmptyArray() throws Exception {
+        try (var conn = DriverManager.getConnection(URL)) {
+            Statement stmt = conn.createStatement();
+            stmt.execute("DROP TABLE IF EXISTS array_test");
+            stmt.execute("CREATE TABLE array_test (id INT PRIMARY KEY, nums INT ARRAY)");
+            stmt.execute("INSERT INTO array_test VALUES (1, ARRAY[])");
+        }
+
+        QueryResult result = connector.query("PUBLIC", "SELECT nums FROM array_test WHERE id = 1");
+        assertTrue(result.getValues().hasNext());
+        Object[] row = result.getValues().next();
+
+        assertInstanceOf(java.util.List.class, row[0]);
+        @SuppressWarnings("unchecked")
+        java.util.List<?> nums = (java.util.List<?>) row[0];
+        assertTrue(nums.isEmpty());
+    }
+
+    @Test
+    public void testNullArray() throws Exception {
+        try (var conn = DriverManager.getConnection(URL)) {
+            Statement stmt = conn.createStatement();
+            stmt.execute("DROP TABLE IF EXISTS array_test");
+            stmt.execute("CREATE TABLE array_test (id INT PRIMARY KEY, nums INT ARRAY)");
+            stmt.execute("INSERT INTO array_test VALUES (1, NULL)");
+        }
+
+        QueryResult result = connector.query("PUBLIC", "SELECT nums FROM array_test WHERE id = 1");
+        assertTrue(result.getValues().hasNext());
+        Object[] row = result.getValues().next();
+
+        assertNull(row[0]);
+    }
 }

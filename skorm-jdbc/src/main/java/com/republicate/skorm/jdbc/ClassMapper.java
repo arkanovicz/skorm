@@ -1,7 +1,10 @@
 package com.republicate.skorm.jdbc;
 import kotlinx.datetime.ConvertersKt;
 import kotlin.uuid.Uuid;
+import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -31,7 +34,34 @@ public class ClassMapper {
 
     public static Object read(Object obj) {
         if (obj == null) return null;
-        else return Optional.ofNullable(readMap.get(obj.getClass())).map(converter -> converter.convert(obj)).orElse(obj);
+        // Handle java.sql.Array (interface - can't use map lookup)
+        if (obj instanceof java.sql.Array) {
+            return convertSqlArray((java.sql.Array) obj);
+        }
+        return Optional.ofNullable(readMap.get(obj.getClass())).map(converter -> converter.convert(obj)).orElse(obj);
+    }
+
+    private static List<?> convertSqlArray(java.sql.Array sqlArray) {
+        try {
+            Object arr = sqlArray.getArray();
+            if (arr instanceof Object[]) {
+                // Recursively convert elements (handles nested arrays, dates, etc.)
+                Object[] objArr = (Object[]) arr;
+                Object[] converted = new Object[objArr.length];
+                for (int i = 0; i < objArr.length; i++) {
+                    converted[i] = read(objArr[i]);
+                }
+                return Arrays.asList(converted);
+            }
+            // Primitive arrays - convert to List
+            if (arr instanceof int[]) return Arrays.stream((int[]) arr).boxed().toList();
+            if (arr instanceof long[]) return Arrays.stream((long[]) arr).boxed().toList();
+            if (arr instanceof double[]) return Arrays.stream((double[]) arr).boxed().toList();
+            // Fallback
+            return List.of(arr);
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to convert SQL array", e);
+        }
     }
 
     public static Object write(Object obj)
