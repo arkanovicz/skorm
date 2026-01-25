@@ -4,10 +4,12 @@ import kotlin.jvm.JvmName
 
 class QueryResult(
     val names: Array<String>,
-    val values: Iterator<Array<Any?>>
+    val values: Iterator<Array<Any?>>,
+    val types: Array<String> = emptyArray()
 ) {
     operator fun component1() = names
     operator fun component2() = values
+    operator fun component3() = types
 }
 
 interface MetaInfos {

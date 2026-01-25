@@ -328,11 +328,13 @@ public class JdbcConnector implements Connector, Closeable
         ResultSetMetaData meta = rs.getMetaData();
         int n = meta.getColumnCount();
         String names[] = new String[n];
+        String types[] = new String[n];
         for (int i = 0; i < n; ++i)
         {
             names[i] = meta.getColumnName(i + 1);
+            types[i] = meta.getColumnTypeName(i + 1);
         }
-        return new QueryResult(names, new RowIterator(rs, stmt));
+        return new QueryResult(names, new RowIterator(rs, stmt), types);
     }
 
     @Override

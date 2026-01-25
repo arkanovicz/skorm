@@ -25,8 +25,12 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     internal var readMapper: IdentifierMapper = identityMapper
     internal var writeMapper: IdentifierMapper = identityMapper
 
-    // Values filters, indexed by sql type
-    internal var readFilters = mutableMapOf<String, ValueFilter>()
+    // Values filters, indexed by sql type (defaults for json/jsonb)
+    @Suppress("USELESS_ELVIS")
+    internal var readFilters = mutableMapOf<String, ValueFilter>(
+        "json" to (ValuesFiltering["parseJson"] ?: identityFilter),
+        "jsonb" to (ValuesFiltering["parseJson"] ?: identityFilter)
+    )
     internal var writeFilters = mutableMapOf<String, ValueFilter>()
 
     private fun register(path: String, query: AttributeDefinition) {
@@ -119,20 +123,21 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
 
     override suspend fun retrieve(path: String, params: Map<String, Any?>, factory: RowFactory?): Json.Object? {
         val (schema, query) = getSingleQuery(path, params.keys)
-        val (names, it) = connector.query(schema, query.stmt, *query.params.map { params[it] }.toTypedArray())
+        val (names, it, types) = connector.query(schema, query.stmt, *query.params.map { params[it] }.toTypedArray())
         if (!it.hasNext()) return null // CB TODO - non-null result should be specifiable
         val rawValues = it.next()
         if (it.hasNext()) throw SkormException("raw attribute $path has more than one result row") // CB TODO - could be relaxed by config
         return when (factory) {
             null -> Json.MutableObject().apply {
-                putAll(names, rawValues)
+                putAll(names, rawValues, types)
             }
-            else -> factory().apply {
-                if (this is Instance) {
-                    putNamesValues(names, rawValues)
-                    setClean()
-                } else {
-                    putAll(names, rawValues)
+            else -> factory().also { result ->
+                when (result) {
+                    is Instance -> {
+                        result.putNamesValues(names, rawValues, types)
+                        result.setClean()
+                    }
+                    is Json.MutableObject -> result.putAll(names, rawValues, types)
                 }
             }
         }
@@ -140,7 +145,7 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
 
     override suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory?): Sequence<Json.Object> {
         val (schema, query) = getSingleQuery(path, params.keys)
-        val (names, it) = connector.query(schema, query.stmt, *query.params.map {
+        val (names, it, types) = connector.query(schema, query.stmt, *query.params.map {
             params[it]
                 ?:
                 if (params.containsKey(it)) null
@@ -149,14 +154,15 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
         return it.asSequence().map {
             when (factory) {
                 null -> Json.MutableObject().apply {
-                    putAll(names, it)
+                    putAll(names, it, types)
                 }
-                else -> factory().apply {
-                    if (this is Instance) {
-                        putNamesValues(names, it)
-                        setClean()
-                    } else {
-                        putAll(names, it)
+                else -> factory().also { result ->
+                    when (result) {
+                        is Instance -> {
+                            result.putNamesValues(names, it, types)
+                            result.setClean()
+                        }
+                        is Json.MutableObject -> result.putAll(names, it, types)
                     }
                 }
             }
@@ -203,14 +209,19 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
         Pair(it.schema, it.queries(params))
     }
 
-    private fun Json.MutableObject.putAll(names: Array<String>, values: Array<Any?>) {
-        names.zip(values).forEach { (name, value) ->
-            put(readMapper(name), value)
+    private fun Json.MutableObject.putAll(names: Array<String>, values: Array<Any?>, types: Array<String>) {
+        for (i in names.indices) {
+            val filtered = if (i < types.size) downstreamFilter(types[i], values[i]) else values[i]
+            put(readMapper(names[i]), filtered)
         }
     }
 
-    private fun Instance.putNamesValues(names: Array<String>, values: Array<Any?>) {
-        putRawFields(names.zip(values).toMap())
+    private fun Instance.putNamesValues(names: Array<String>, values: Array<Any?>, types: Array<String>) {
+        // Apply filters based on column types from metadata
+        val filteredValues = values.mapIndexed { i, value ->
+            if (i < types.size) downstreamFilter(types[i], value) else value
+        }.toTypedArray()
+        putRawFields(names.zip(filteredValues).toMap())
     }
 
     override fun downstreamMapping(name: String) = readMapper(name)
