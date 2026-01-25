@@ -29,7 +29,8 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     @Suppress("USELESS_ELVIS")
     internal var readFilters = mutableMapOf<String, ValueFilter>(
         "json" to (ValuesFiltering["parseJson"] ?: identityFilter),
-        "jsonb" to (ValuesFiltering["parseJson"] ?: identityFilter)
+        "jsonb" to (ValuesFiltering["parseJson"] ?: identityFilter),
+        "JSON" to (ValuesFiltering["parseJson"] ?: identityFilter)  // H2
     )
     internal var writeFilters = mutableMapOf<String, ValueFilter>()
 

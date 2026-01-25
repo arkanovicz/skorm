@@ -22,6 +22,12 @@ dependencies {
 
     testRuntimeOnly(libs.slf4j.simple)
     testRuntimeOnly(libs.h2)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testRuntimeOnly(libs.junit.platform.launcher)
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 publishing {
