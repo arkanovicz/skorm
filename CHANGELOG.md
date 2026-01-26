@@ -2,6 +2,21 @@
 
 All notable changes to Skorm are documented in this file.
 
+## [0.11] - 2026-01-26
+
+### Added
+- Automatic json/jsonb column parsing via column type metadata in QueryResult
+- SQL array support: java.sql.Array automatically converted to List<?>
+- Stock `parseJson` value filter for JSON types (handles String, ByteArray, H2's double-encoding)
+- Default read filters for `json`, `jsonb`, and `JSON` types
+
+### Changed
+- QueryResult now includes `types` array from JDBC metadata
+- Value filters applied to ALL columns (including computed ones in custom queries), not just entity fields
+
+### Fixed
+- `@Suppress("UNCHECKED_CAST")` added to generated `fetch()` and `browse()` methods
+
 ## [0.10] - 2026-01-24
 
 ### Changed
