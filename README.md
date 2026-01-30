@@ -75,7 +75,7 @@ database todo_app {
 ```kotlin
 plugins {
     kotlin("multiplatform") version "2.3.0"
-    id("com.republicate.skorm") version "0.11"
+    id("com.republicate.skorm") version "0.12"
 }
 
 skorm {
@@ -126,6 +126,32 @@ Task.browse().forEach { println(it.title) }
 ```
 
 That's it! The skorm Gradle plugin generates all the necessary Kotlin classes from your `.kddl` file.
+
+### Dynamic Usage (Without Code Generation)
+
+You can also use skorm without the code generator, accessing entities dynamically:
+
+```kotlin
+// Navigate the model
+val schema = database.schema("todos")
+val taskEntity = schema.entity("task")
+
+// CRUD operations
+val task = taskEntity.new()
+task["title"] = "Learn skorm"
+task["completed"] = false
+task.insert()
+
+val fetched = taskEntity.fetch(task["taskId"])
+fetched?.let {
+    it["completed"] = true
+    it.update()
+}
+
+taskEntity.browse().forEach { println(it["title"]) }
+```
+
+This is useful for generic tools, migrations, or when the schema is only known at runtime.
 
 ## Reference
 
