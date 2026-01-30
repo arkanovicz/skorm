@@ -2,6 +2,16 @@
 
 All notable changes to Skorm are documented in this file.
 
+## [0.12] - 2026-01-30
+
+### Fixed
+- Nullable scalar attributes not being registered (missing `addAttribute` call for nullable types)
+- Scalar `eval` returning exception instead of null for empty result sets
+
+### Notes
+- Nullable scalar attributes return `null` for both empty result sets and NULL column values.
+  Use `retrieve` if you need to distinguish "no row" from "row with NULL value".
+
 ## [0.11] - 2026-01-26
 
 ### Added

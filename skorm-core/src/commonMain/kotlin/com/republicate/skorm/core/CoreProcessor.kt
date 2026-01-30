@@ -116,7 +116,8 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
         val (schema, query) = getSingleQuery(path, params.keys)
         val (names, it) = connector.query(schema, query.stmt, *query.params.map { params[it] }.toTypedArray())
         if (names.size != 1) throw SkormException("scalar attribute $path expects only one column")
-        if (!it.hasNext()) throw SkormException("scalar attribute $path has no result row")
+        // No result row -> return null (indistinguishable from row with NULL value for nullable scalars)
+        if (!it.hasNext()) return null
         val row = it.next()
         if (it.hasNext()) throw SkormException("scalar attribute $path has more than one result row")
         return row[0]  // Return the scalar value, not the row array

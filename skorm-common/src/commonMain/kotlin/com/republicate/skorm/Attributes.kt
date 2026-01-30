@@ -307,7 +307,7 @@ abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = 
 
 @Suppress("UNCHECKED_CAST")
 inline fun <reified T> AttributeHolder.scalarAttribute(name: String, params: Set<String>): ScalarAttribute<T> {
-    return if (null is T) when (T::class) {
+    return (if (null is T) when (T::class) {
         String::class -> NullableStringAttribute(name, params) as ScalarAttribute<T>
         Char::class -> NullableCharAttribute(name, params) as ScalarAttribute<T>
         Boolean::class -> NullableBooleanAttribute(name, params) as ScalarAttribute<T>
@@ -341,7 +341,7 @@ inline fun <reified T> AttributeHolder.scalarAttribute(name: String, params: Set
         // not supported yet
         // else -> throw SkormException("unhandled type: ${T::class.qualifiedName}")
         else -> throw SkormException("unhandled type: ${T::class.simpleName}")
-    }.also {
+    }).also {
         addAttribute(it)
     }
 }
