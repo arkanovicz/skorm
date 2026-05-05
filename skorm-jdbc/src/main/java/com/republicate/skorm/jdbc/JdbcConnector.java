@@ -266,7 +266,7 @@ public class JdbcConnector implements Connector, Closeable
 
     public JdbcConnector(String url, String user, String password, String driver, @Nullable String defaultSchema) {
         config.configure("url", url);
-        if (user != null) config.configure("user", user);
+        if (user != null) config.configure("login", user);
         if (password != null) config.configure("password", password);
         if (driver != null) config.configure("driver", driver);
         if (defaultSchema != null) config.configure("defaultSchema", defaultSchema);

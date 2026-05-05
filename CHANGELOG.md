@@ -2,6 +2,12 @@
 
 All notable changes to Skorm are documented in this file.
 
+## [0.14] - 2026-05-05
+
+### Fixed
+- `JdbcConnector(url, user, password, ...)` constructor was storing the login under a dead `"user"` config key while `getLogin()` reads `"login"`, so credentials passed via the constructor were silently dropped. Constructor now writes to `"login"`. Connections worked anyway against credential-less DBs (H2 in-memory), which is why the bug went unnoticed.
+- Bookshelf example `application.conf` was using `user`/`pass` keys (also silently dropped); fixed to `login`/`password`.
+
 ## [0.13] - 2026-05-05
 
 ### Fixed
