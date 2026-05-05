@@ -2,6 +2,11 @@
 
 All notable changes to Skorm are documented in this file.
 
+## [0.13] - 2026-05-05
+
+### Fixed
+- `skorm-api-server` artifact now actually published. The JVM module had `maven-publish` applied but no `MavenPublication` declared, so `publishToMavenLocal`/`publishToSonatype` were silent no-ops. Added explicit publication and `withSourcesJar()` to mirror `skorm-jdbc`.
+
 ## [0.12] - 2026-01-30
 
 ### Fixed
