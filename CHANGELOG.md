@@ -2,7 +2,7 @@
 
 All notable changes to Skorm are documented in this file.
 
-## [0.14] - 2026-05-05
+## [0.14] - 2026-05-12
 
 ### Changed
 - Bumped kddl 0.18 → 0.19. `ASTField.type` is now a sealed `FieldType` (`Primitive`/`InlineEnum`/`NamedEnum`); `KotlinTool` migrated to pattern-match on it, and `isEnum(String)` is replaced by `isEnum(FieldType)`.
