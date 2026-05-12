@@ -13,9 +13,6 @@ import java.util.*
 @Suppress("unused")
 class KotlinTool {
     companion object {
-        private val decomp =
-            Regex("^(\\w+)\\s*(?:\\((?:(\\d+|'(?:[^']|'')*')(?:\\s*,\\s*(\\d+|'(?:[^']|'')*'))*)?\\))?$")
-        private val text = setOf("text", "varchar")
         private val enInflector = English(English.MODE.ENGLISH_CLASSICAL)
     }
 
@@ -23,49 +20,35 @@ class KotlinTool {
     fun type(field: ASTField): String = when (val t = field.type) {
         is FieldType.NamedEnum -> pascal(t.enum.name)
         is FieldType.InlineEnum -> field.alias ?: pascal(field.name)
-        is FieldType.Primitive -> primitiveType(t.name)
+        is FieldType.Primitive -> kotlinType(t.base)
     }
 
-    private fun primitiveType(type: String): String {
-        val match = decomp.matchEntire(type) ?: throw SemanticException("invalid type: $type")
-        val base = match.groups[1]!!.value.lowercase(Locale.ROOT)
-        return when (base) {
-            "boolean" -> "Boolean"
-            "text", "varchar", "clob" -> "String" // TODO streams for "text" and "clob"
-            "date" -> "LocalDate"
-            "timestamp" -> "LocalDateTime"
-            "timestamptz" -> "LocalDateTime" // for now TODO
-            "time" -> "LocalTime"
-            "timetz" -> "LocalTime" // for now TODO
-            "byte" -> "Byte"
-            "short" -> "Short"
-            "int", "integer", "serial" -> "Int"
-            "long", "bigint", "bigserial" -> "Long"
-            "float" -> "Float"
-            "double" -> "Double"
-            "money", "numeric", "decimal" -> "Double" // TODO
-            "blob" -> "ByteArray"
-            "uuid" -> "Uuid"
-            "binary", "varbinary" -> "ByteArray" // TODO streams
-            "json" -> "Json"
-            else -> throw SemanticException("unsupported type: $type")
-        }
+    private fun kotlinType(base: String): String = when (base.lowercase(Locale.ROOT)) {
+        "boolean" -> "Boolean"
+        "text", "varchar", "clob" -> "String" // TODO streams for "text" and "clob"
+        "date" -> "LocalDate"
+        "timestamp" -> "LocalDateTime"
+        "timestamptz" -> "LocalDateTime" // for now TODO
+        "time" -> "LocalTime"
+        "timetz" -> "LocalTime" // for now TODO
+        "byte" -> "Byte"
+        "short" -> "Short"
+        "int", "integer", "serial" -> "Int"
+        "long", "bigint", "bigserial" -> "Long"
+        "float" -> "Float"
+        "double" -> "Double"
+        "money", "numeric", "decimal" -> "Double" // TODO
+        "blob" -> "ByteArray"
+        "uuid" -> "Uuid"
+        "binary", "varbinary" -> "ByteArray" // TODO streams
+        "json" -> "Json"
+        else -> throw SemanticException("unsupported type: $base")
     }
 
     /** Velocity helper: getter method name for a field, based on its Kotlin type. */
     fun getter(field: ASTField): String = when (val t = field.type) {
         is FieldType.NamedEnum, is FieldType.InlineEnum -> "getString"
-        is FieldType.Primitive -> {
-            val base = t.base.lowercase(Locale.ROOT)
-            if (base == "blob") "getBytes" else "get${primitiveType(base)}"
-        }
-    }
-
-    /** Used by macros.vtl#getter for non-field uses (e.g. RM types). */
-    fun getter(name: String, type: String): String {
-        val match = decomp.matchEntire(type) ?: throw SemanticException("invalid type: $type")
-        val base = match.groups[1]!!.value.lowercase(Locale.ROOT)
-        return if (base == "blob") "getBytes" else "get${primitiveType(base)}"
+        is FieldType.Primitive -> if (t.base.equals("blob", ignoreCase = true)) "getBytes" else "get${kotlinType(t.base)}"
     }
 
     /** Enum class declarations to emit for a schema:
