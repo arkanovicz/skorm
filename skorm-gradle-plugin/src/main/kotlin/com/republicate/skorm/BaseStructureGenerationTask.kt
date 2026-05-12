@@ -61,7 +61,7 @@ abstract class BaseStructureGenerationTask: BaseGenerationTask() {
         context.put("database", database)
         context.put("useDatetimeType", usedPrimitiveBases.any { it in setOf("timestamp", "timestamptz", "date", "time", "timetz") })
         context.put("useUuidType", "uuid" in usedPrimitiveBases)
-        context.put("useJsonType", "uuid" in usedPrimitiveBases)
+        context.put("useJsonType", "json" in usedPrimitiveBases || "jsonb" in usedPrimitiveBases)
         context.put("logger", LogTool())
     }
 
