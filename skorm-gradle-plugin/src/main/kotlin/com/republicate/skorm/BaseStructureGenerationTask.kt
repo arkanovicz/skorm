@@ -2,6 +2,7 @@ package com.republicate.skorm
 
 import com.republicate.kddl.ASTDatabase
 import com.republicate.kddl.ASTSchema
+import com.republicate.kddl.FieldType
 import com.republicate.kddl.Utils
 import com.republicate.kddl.Utils.getFile
 import com.republicate.kddl.parse
@@ -52,15 +53,15 @@ abstract class BaseStructureGenerationTask: BaseGenerationTask() {
     }
 
     override fun populateContext(context: VelocityContext) {
-        val usedTypes = database.schemas.values
+        val usedPrimitiveBases = database.schemas.values
             .flatMap { schema: ASTSchema -> schema.tables.values }
             .flatMap { table -> table.fields.values }
-            .map { type -> type.type}
+            .mapNotNull { field -> (field.type as? FieldType.Primitive)?.base?.lowercase() }
             .toSet()
         context.put("database", database)
-        context.put("useDatetimeType", usedTypes.contains("timestamp") || usedTypes.contains("timestamptz") || usedTypes.contains("date") || usedTypes.contains("time") || usedTypes.contains("timetz"))
-        context.put("useUuidType", usedTypes.contains("uuid"))
-        context.put("useJsonType", usedTypes.contains("uuid"))
+        context.put("useDatetimeType", usedPrimitiveBases.any { it in setOf("timestamp", "timestamptz", "date", "time", "timetz") })
+        context.put("useUuidType", "uuid" in usedPrimitiveBases)
+        context.put("useJsonType", "uuid" in usedPrimitiveBases)
         context.put("logger", LogTool())
     }
 

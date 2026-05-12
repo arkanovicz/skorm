@@ -4,6 +4,10 @@ All notable changes to Skorm are documented in this file.
 
 ## [0.14] - 2026-05-05
 
+### Changed
+- Bumped kddl 0.18 → 0.19. `ASTField.type` is now a sealed `FieldType` (`Primitive`/`InlineEnum`/`NamedEnum`); `KotlinTool` migrated to pattern-match on it, and `isEnum(String)` is replaced by `isEnum(FieldType)`.
+- Named enums declared at schema level (`enum status(...)`) now emit a single shared Kotlin enum class per `ASTEnum`, named after the enum (PascalCase). Inline `enum('a','b')` field declarations keep per-field naming. `KotlinTool.enums(schema)` is replaced by `enumDecls(schema): List<EnumDecl>` (deduped by `ASTEnum` identity).
+
 ### Fixed
 - `JdbcConnector(url, user, password, ...)` constructor was storing the login under a dead `"user"` config key while `getLogin()` reads `"login"`, so credentials passed via the constructor were silently dropped. Constructor now writes to `"login"`. Connections worked anyway against credential-less DBs (H2 in-memory), which is why the bug went unnoticed.
 - Bookshelf example `application.conf` was using `user`/`pass` keys (also silently dropped); fixed to `login`/`password`.

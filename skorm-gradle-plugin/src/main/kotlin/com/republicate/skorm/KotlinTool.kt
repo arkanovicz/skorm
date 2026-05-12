@@ -1,9 +1,11 @@
 package com.republicate.skorm
 
+import com.republicate.kddl.ASTEnum
 import com.republicate.kddl.ASTField
 import com.republicate.kddl.ASTForeignKey
 import com.republicate.kddl.ASTSchema
 import com.republicate.kddl.ASTTable
+import com.republicate.kddl.FieldType
 import groovyjarjarantlr.SemanticException
 import org.atteo.evo.inflector.English
 import java.util.*
@@ -17,15 +19,19 @@ class KotlinTool {
         private val enInflector = English(English.MODE.ENGLISH_CLASSICAL)
     }
 
-    fun type(field: ASTField): String = type(field.name, field.type, field.alias)
+    /** Kotlin type name for a field's value. */
+    fun type(field: ASTField): String = when (val t = field.type) {
+        is FieldType.NamedEnum -> pascal(t.enum.name)
+        is FieldType.InlineEnum -> field.alias ?: pascal(field.name)
+        is FieldType.Primitive -> primitiveType(t.name)
+    }
 
-    fun type(name: String, type: String, alias: String? = null): String {
+    private fun primitiveType(type: String): String {
         val match = decomp.matchEntire(type) ?: throw SemanticException("invalid type: $type")
         val base = match.groups[1]!!.value.lowercase(Locale.ROOT)
         return when (base) {
             "boolean" -> "Boolean"
             "text", "varchar", "clob" -> "String" // TODO streams for "text" and "clob"
-            "enum" -> alias ?: pascal(name)
             "date" -> "LocalDate"
             "timestamp" -> "LocalDateTime"
             "timestamptz" -> "LocalDateTime" // for now TODO
@@ -46,30 +52,51 @@ class KotlinTool {
         }
     }
 
+    /** Velocity helper: getter method name for a field, based on its Kotlin type. */
+    fun getter(field: ASTField): String = when (val t = field.type) {
+        is FieldType.NamedEnum, is FieldType.InlineEnum -> "getString"
+        is FieldType.Primitive -> {
+            val base = t.base.lowercase(Locale.ROOT)
+            if (base == "blob") "getBytes" else "get${primitiveType(base)}"
+        }
+    }
+
+    /** Used by macros.vtl#getter for non-field uses (e.g. RM types). */
     fun getter(name: String, type: String): String {
         val match = decomp.matchEntire(type) ?: throw SemanticException("invalid type: $type")
         val base = match.groups[1]!!.value.lowercase(Locale.ROOT)
-        return when (base) {
-            "blob" -> "getBytes"
-            else -> "get${type(name, base)}"
+        return if (base == "blob") "getBytes" else "get${primitiveType(base)}"
+    }
+
+    /** Enum class declarations to emit for a schema:
+     *  - one per [ASTEnum] referenced by [FieldType.NamedEnum] fields (deduped by identity)
+     *  - one per [FieldType.InlineEnum] field (still per-field — collision policy revisited in a future kddl milestone)
+     */
+    fun enumDecls(schema: ASTSchema): List<EnumDecl> {
+        val named = LinkedHashSet<ASTEnum>()
+        val inline = mutableListOf<EnumDecl>()
+        for (table in schema.tables.values) {
+            for (field in table.fields.values) {
+                when (val t = field.type) {
+                    is FieldType.NamedEnum -> named.add(t.enum)
+                    is FieldType.InlineEnum -> inline.add(EnumDecl(field.alias ?: pascal(field.name), t.values))
+                    is FieldType.Primitive -> {}
+                }
+            }
         }
+        return named.map { EnumDecl(pascal(it.name), it.values) } + inline
     }
 
-    fun enums(schema: ASTSchema): List<ASTField> {
-        return schema.tables.values.flatMap {
-            it.fields.values
-        }.filter {
-            it.type.startsWith("enum")
-        }
+    /** Enum class name to reference from the getter/setter of an enum-typed [field]. */
+    fun enumName(field: ASTField): String = when (val t = field.type) {
+        is FieldType.NamedEnum -> pascal(t.enum.name)
+        is FieldType.InlineEnum -> field.alias ?: pascal(field.name)
+        is FieldType.Primitive -> throw IllegalArgumentException("not an enum field: ${field.name}")
     }
 
-    fun enumValues(field: ASTField): List<String> {
-        return field.type.substringAfter('(').substringBeforeLast(')').split(',').map { it.removeSurrounding("'") }
-    }
+    fun isEnum(type: FieldType) = type is FieldType.NamedEnum || type is FieldType.InlineEnum
 
-    fun enumName(field: ASTField): String = field.alias ?: pascal(field.name)
-
-    fun isEnum(type: String) = type.startsWith("enum")
+    data class EnumDecl(val name: String, val values: List<String>)
 
     fun camel(identifier: String) = IdentifiersMapping.snakeToCamel(identifier)
 

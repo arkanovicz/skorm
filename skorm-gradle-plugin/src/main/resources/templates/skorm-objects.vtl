@@ -43,10 +43,10 @@ class $databaseClass(processor: Processor): Database("$database.name", processor
   #set ($schemaClass = "#pascal($schema.name)Schema")
   #set ($schemaObject = "#camel($schema.name)")
     class $schemaClass(db: Database): Schema("$schema.name", db) {
-  #set ($enums = $kotlin.enums($schema))
-  #foreach ($field in $enums)
-        enum class $kotlin.enumName($field) {
-    #foreach ($value in $kotlin.enumValues($field))
+  #set ($enumDecls = $kotlin.enumDecls($schema))
+  #foreach ($enumDecl in $enumDecls)
+        enum class $enumDecl.name {
+    #foreach ($value in $enumDecl.values)
             $value#if ($foreach.hasNext),#end
     #end
         }

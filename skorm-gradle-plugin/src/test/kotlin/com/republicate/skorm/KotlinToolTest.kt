@@ -1,10 +1,12 @@
 package com.republicate.skorm
 
 import com.republicate.kddl.ASTDatabase
+import com.republicate.kddl.ASTEnum
 import com.republicate.kddl.ASTField
 import com.republicate.kddl.ASTForeignKey
 import com.republicate.kddl.ASTSchema
 import com.republicate.kddl.ASTTable
+import com.republicate.kddl.FieldType
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.assertThrows
@@ -225,121 +227,75 @@ class KotlinToolTest {
 
     // ==================== Enum Tests ====================
 
-    /**
-     * Test isEnum detects enum types correctly.
-     */
+    private fun inlineEnumField(table: ASTTable, name: String, values: List<String>, alias: String? = null): ASTField =
+        ASTField(table, name, FieldType.InlineEnum(values), false, true, false, false, null, alias)
+
+    private fun namedEnumField(table: ASTTable, name: String, enum: ASTEnum, alias: String? = null): ASTField =
+        ASTField(table, name, FieldType.NamedEnum(enum), false, true, false, false, null, alias)
+
     @Test
-    fun `isEnum returns true for enum types`() {
-        assertTrue(tool.isEnum("enum('a','b')"))
-        assertTrue(tool.isEnum("enum('human','bot')"))
-        assertTrue(tool.isEnum("enum('pending','active','completed')"))
+    fun `isEnum returns true for enum FieldTypes`() {
+        assertTrue(tool.isEnum(FieldType.InlineEnum(listOf("a", "b"))))
+        val db = ASTDatabase("d"); val s = ASTSchema(db, "s")
+        assertTrue(tool.isEnum(FieldType.NamedEnum(ASTEnum(s, "status", listOf("p", "a")))))
     }
 
     @Test
-    fun `isEnum returns false for non-enum types`() {
-        assertFalse(tool.isEnum("varchar"))
-        assertFalse(tool.isEnum("integer"))
-        assertFalse(tool.isEnum("boolean"))
-        assertFalse(tool.isEnum("serial"))
+    fun `isEnum returns false for primitive FieldTypes`() {
+        assertFalse(tool.isEnum(FieldType.Primitive("varchar")))
+        assertFalse(tool.isEnum(FieldType.Primitive("integer")))
+        assertFalse(tool.isEnum(FieldType.Primitive("boolean")))
+        assertFalse(tool.isEnum(FieldType.Primitive("serial")))
     }
 
-    /**
-     * Test enumValues extracts enum values correctly.
-     */
     @Test
-    fun `enumValues extracts values from enum field`() {
+    fun `enumName returns alias when present on inline enum`() {
         val db = ASTDatabase("test_db")
         val schema = ASTSchema(db, "test_schema")
         val table = ASTTable(schema, "test_table")
 
-        val field = ASTField(table, "status", "enum('pending','active','completed')", false, true, false)
-
-        val values = tool.enumValues(field)
-        assertEquals(listOf("pending", "active", "completed"), values)
-    }
-
-    @Test
-    fun `enumValues handles two-value enum`() {
-        val db = ASTDatabase("test_db")
-        val schema = ASTSchema(db, "test_schema")
-        val table = ASTTable(schema, "test_table")
-
-        val field = ASTField(table, "mode", "enum('human','bot')", false, true, false)
-
-        val values = tool.enumValues(field)
-        assertEquals(listOf("human", "bot"), values)
-    }
-
-    @Test
-    fun `enumValues handles single-value enum`() {
-        val db = ASTDatabase("test_db")
-        val schema = ASTSchema(db, "test_schema")
-        val table = ASTTable(schema, "test_table")
-
-        val field = ASTField(table, "single", "enum('only')", false, true, false)
-
-        val values = tool.enumValues(field)
-        assertEquals(listOf("only"), values)
-    }
-
-    /**
-     * Test enumName returns alias when present.
-     */
-    @Test
-    fun `enumName returns alias when present`() {
-        val db = ASTDatabase("test_db")
-        val schema = ASTSchema(db, "test_schema")
-        val table = ASTTable(schema, "test_table")
-
-        val field = ASTField(table, "mode", "enum('human','bot')", false, true, false, false, null, "GameMode")
-
+        val field = inlineEnumField(table, "mode", listOf("human", "bot"), alias = "GameMode")
         assertEquals("GameMode", tool.enumName(field))
     }
 
     @Test
-    fun `enumName returns pascal-cased field name when no alias`() {
+    fun `enumName returns pascal-cased field name for inline enum without alias`() {
         val db = ASTDatabase("test_db")
         val schema = ASTSchema(db, "test_schema")
         val table = ASTTable(schema, "test_table")
 
-        val field = ASTField(table, "game_status", "enum('a','b')", false, true, false, false, null, null)
-
+        val field = inlineEnumField(table, "game_status", listOf("a", "b"))
         assertEquals("GameStatus", tool.enumName(field))
     }
 
     @Test
-    fun `enumName handles simple field name without alias`() {
+    fun `enumName uses ASTEnum name for named enum (ignoring field alias)`() {
         val db = ASTDatabase("test_db")
         val schema = ASTSchema(db, "test_schema")
         val table = ASTTable(schema, "test_table")
+        val enum = ASTEnum(schema, "order_status", listOf("pending", "active"))
 
-        val field = ASTField(table, "status", "enum('a','b')", false, true, false)
-
-        assertEquals("Status", tool.enumName(field))
+        val field = namedEnumField(table, "s", enum, alias = "Ignored")
+        assertEquals("OrderStatus", tool.enumName(field))
     }
 
-    /**
-     * Test type() returns correct enum type name.
-     */
     @Test
-    fun `type returns enum alias when present`() {
+    fun `type returns enum alias when present on inline enum`() {
         val db = ASTDatabase("test_db")
         val schema = ASTSchema(db, "test_schema")
         val table = ASTTable(schema, "test_table")
 
-        val field = ASTField(table, "mode", "enum('human','bot')", false, true, false, false, null, "GameMode")
-
+        val field = inlineEnumField(table, "mode", listOf("human", "bot"), alias = "GameMode")
         assertEquals("GameMode", tool.type(field))
     }
 
     @Test
-    fun `type returns pascal-cased name for enum without alias`() {
+    fun `type returns pascal-cased name for inline enum without alias`() {
         val db = ASTDatabase("test_db")
         val schema = ASTSchema(db, "test_schema")
         val table = ASTTable(schema, "test_table")
 
-        val field = ASTField(table, "status", "enum('a','b')", false, true, false)
-
+        val field = inlineEnumField(table, "status", listOf("a", "b"))
         assertEquals("Status", tool.type(field))
     }
 
@@ -356,54 +312,68 @@ class KotlinToolTest {
         assertEquals("Double", tool.type(ASTField(table, "amount", "double", false, true, false)))
     }
 
-    /**
-     * Test enums() collects all enum fields from schema.
-     */
     @Test
-    fun `enums collects all enum fields from schema`() {
+    fun `enumDecls collects inline enum fields from schema`() {
         val db = ASTDatabase("test_db")
         val schema = ASTSchema(db, "test_schema")
         db.schemas[schema.name] = schema
 
         val table = ASTTable(schema, "game")
         table.fields["id"] = ASTField(table, "id", "serial", true, true, true)
-        table.fields["mode"] = ASTField(table, "mode", "enum('human','bot')", false, true, false, false, null, "GameMode")
-        table.fields["status"] = ASTField(table, "status", "enum('waiting','playing','finished')", false, true, false)
+        table.fields["mode"] = inlineEnumField(table, "mode", listOf("human", "bot"), alias = "GameMode")
+        table.fields["status"] = inlineEnumField(table, "status", listOf("waiting", "playing", "finished"))
         table.fields["name"] = ASTField(table, "name", "varchar(50)", false, true, false)
         schema.tables[table.name] = table
 
-        val enums = tool.enums(schema)
+        val decls = tool.enumDecls(schema)
 
-        assertEquals(2, enums.size)
-        assertTrue(enums.any { it.name == "mode" })
-        assertTrue(enums.any { it.name == "status" })
-        assertFalse(enums.any { it.name == "id" })
-        assertFalse(enums.any { it.name == "name" })
+        assertEquals(2, decls.size)
+        assertTrue(decls.any { it.name == "GameMode" && it.values == listOf("human", "bot") })
+        assertTrue(decls.any { it.name == "Status" && it.values == listOf("waiting", "playing", "finished") })
     }
 
     @Test
-    fun `enums collects from multiple tables`() {
+    fun `enumDecls deduplicates shared NamedEnum across tables`() {
         val db = ASTDatabase("test_db")
-        val schema = ASTSchema(db, "test_schema")
+        val schema = ASTSchema(db, "s")
         db.schemas[schema.name] = schema
+        val sharedEnum = ASTEnum(schema, "status", listOf("pending", "active"))
+        schema.enums[sharedEnum.name] = sharedEnum
 
-        val table1 = ASTTable(schema, "game")
-        table1.fields["status"] = ASTField(table1, "status", "enum('a','b')", false, true, false)
-        schema.tables[table1.name] = table1
+        val tableA = ASTTable(schema, "a").also { schema.tables[it.name] = it }
+        tableA.fields["id"] = ASTField(tableA, "id", "serial", true, true, true)
+        tableA.fields["s"] = namedEnumField(tableA, "s", sharedEnum)
 
-        val table2 = ASTTable(schema, "player")
-        table2.fields["role"] = ASTField(table2, "role", "enum('admin','user')", false, true, false, false, null, "UserRole")
-        schema.tables[table2.name] = table2
+        val tableB = ASTTable(schema, "b").also { schema.tables[it.name] = it }
+        tableB.fields["id"] = ASTField(tableB, "id", "serial", true, true, true)
+        tableB.fields["s"] = namedEnumField(tableB, "s", sharedEnum)
 
-        val enums = tool.enums(schema)
+        val decls = tool.enumDecls(schema)
 
-        assertEquals(2, enums.size)
-        assertTrue(enums.any { it.name == "status" })
-        assertTrue(enums.any { it.name == "role" && it.alias == "UserRole" })
+        assertEquals(1, decls.size)
+        assertEquals("Status", decls[0].name)
+        assertEquals(listOf("pending", "active"), decls[0].values)
     }
 
     @Test
-    fun `enums returns empty list when no enums in schema`() {
+    fun `enumDecls mixes named and inline enums`() {
+        val db = ASTDatabase("test_db")
+        val schema = ASTSchema(db, "s")
+        db.schemas[schema.name] = schema
+        val sharedEnum = ASTEnum(schema, "role", listOf("admin", "user"))
+
+        val table = ASTTable(schema, "t").also { schema.tables[it.name] = it }
+        table.fields["role"] = namedEnumField(table, "role", sharedEnum)
+        table.fields["status"] = inlineEnumField(table, "status", listOf("a", "b"))
+
+        val decls = tool.enumDecls(schema)
+        assertEquals(2, decls.size)
+        assertTrue(decls.any { it.name == "Role" })
+        assertTrue(decls.any { it.name == "Status" })
+    }
+
+    @Test
+    fun `enumDecls returns empty list when no enums in schema`() {
         val db = ASTDatabase("test_db")
         val schema = ASTSchema(db, "test_schema")
         db.schemas[schema.name] = schema
@@ -413,7 +383,6 @@ class KotlinToolTest {
         table.fields["name"] = ASTField(table, "name", "varchar(50)", false, true, false)
         schema.tables[table.name] = table
 
-        val enums = tool.enums(schema)
-        assertTrue(enums.isEmpty())
+        assertTrue(tool.enumDecls(schema).isEmpty())
     }
 }
