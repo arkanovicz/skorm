@@ -2,6 +2,11 @@
 
 All notable changes to Skorm are documented in this file.
 
+## [0.15] - 2026-05-21
+
+### Changed
+- Bumped kddl 0.19 → 0.21. Pulls in kddl 0.21's `mysql-connector-j` downgrade to 8.4.0 (last release on protobuf-java 3.x). Avoids forcing protobuf 4.x onto consumer buildscript classpaths, which broke AGP's Tink-based release tasks with `NoSuchMethodError` on `Keyset.makeExtensionsImmutable`. Also picks up kddl 0.20's inheritance-INSERT fix (`COALESCE(NEW.col, <default>)` in view INSERT rules so omitted DEFAULT columns actually take their default instead of NULL).
+
 ## [0.14] - 2026-05-12
 
 ### Changed
