@@ -3,6 +3,7 @@ package com.republicate.skorm
 import com.republicate.kson.Json
 
 open class Database protected constructor(name: String, override val processor: Processor): AttributeHolder(name), Configurable, AutoCloseable {
+    override val database get() = this
     var populated by initOnce(false)
     override val config = Configuration()
     override fun configure(cfg: Map<String, Any?>) {
@@ -37,7 +38,7 @@ open class Schema protected constructor(name: String, parent: Database) : Attrib
         parent.addSchema(this)
     }
 
-    val database: Database get() = parent as Database
+    override val database: Database get() = parent as Database
     override val processor get() = database.processor
     override val schema get() = this
 

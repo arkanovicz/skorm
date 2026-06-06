@@ -94,6 +94,7 @@ kotlin {
                 implementation(kotlin("stdlib"))
                 api(libs.essential.kson)
                 api(libs.kotlinx.datetime)
+                implementation(libs.kotlinx.coroutines)
                 implementation(libs.kotlinx.atomicfu)
                 implementation(libs.kotlin.logging)
                 implementation(libs.kotlinx.serialization.core)

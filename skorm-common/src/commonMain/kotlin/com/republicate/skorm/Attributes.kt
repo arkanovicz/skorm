@@ -243,6 +243,7 @@ class TransactionAttribute(name: String, parameters: Set<String> = setOf(), useD
 abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = null) {
     abstract val processor: Processor
     open val schema: Schema? = null
+    open val database: Database? get() = parent?.database
     private val _attributes = mutableMapOf<String, Attribute<*>>()
     val attributes: Map<String, Attribute<*>> get() = _attributes
     val path: String by lazy { (parent?.path ?: "") + "/$name" }
@@ -276,28 +277,28 @@ abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = 
 
     suspend inline fun <reified T> eval(attribute: Attribute<T>, vararg params: Any?): T {
         val (execPath, execParams) = prepare(attribute, *params)
-        return attribute.handleResult(processor.eval(execPath, execParams))
+        return attribute.handleResult(currentProcessor().eval(execPath, execParams))
     }
 
     suspend inline fun <reified T: Json.Object?> retrieve(attrName: String, vararg params: Any?) = retrieve(findAttribute<T>(attrName), *params)
 
     suspend inline fun <reified T: Json.Object?> retrieve(attribute: Attribute<T>, vararg params: Any?): T {
         val (execPath, execParams) = prepare(attribute, *params)
-        return attribute.handleResult(processor.retrieve(execPath, execParams, attribute.rowFactory))
+        return attribute.handleResult(currentProcessor().retrieve(execPath, execParams, attribute.rowFactory))
     }
 
     suspend inline fun <reified T: Json.Object> query(attrName: String, vararg params: Any?) = query(findAttribute<Sequence<T>>(attrName), *params)
 
     suspend inline fun <reified T: Json.Object> query(attribute: Attribute<Sequence<T>>, vararg params: Any?): Sequence<T> {
         val (execPath, execParams) = prepare(attribute, *params)
-        return attribute.handleResult(processor.query(execPath, execParams, attribute.rowFactory))
+        return attribute.handleResult(currentProcessor().query(execPath, execParams, attribute.rowFactory))
     }
 
     suspend fun perform(attrName: String, vararg params: Any?) = perform(findAttribute<Long>(attrName), *params)
 
     suspend fun perform(attribute: Attribute<Long>, vararg params: Any?): Long {
         val (execPath, execParams) = prepare(attribute, *params)
-        return attribute.handleResult(processor.perform(execPath, execParams))
+        return attribute.handleResult(currentProcessor().perform(execPath, execParams))
     }
 
     // WIP
