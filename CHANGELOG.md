@@ -13,7 +13,7 @@ All notable changes to Skorm are documented in this file.
 - Two concurrent transactions on the same schema could be handed the same physical connection (the pool's busy flag was only set around individual JDBC calls), interleaving their commits/rollbacks. The transaction connection is now held exclusively from `begin` to terminal `commit`/`rollback`.
 
 ### Changed
-- Bumped kddl 0.21 → 0.22.
+- Bumped kddl 0.21 → 0.23.
 - `skorm-common` now depends on `kotlinx-coroutines-core`.
 
 ## [0.15] - 2026-05-21
