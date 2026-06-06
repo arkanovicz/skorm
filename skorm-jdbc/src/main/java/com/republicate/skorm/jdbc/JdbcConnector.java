@@ -33,6 +33,9 @@ public class JdbcConnector implements Connector, Closeable
             try
             {
                 txConnection = txConnectionPool.getConnection(schema);
+                // hold the connection exclusively until terminal commit/rollback,
+                // so the pool cannot hand it to a concurrent transaction
+                txConnection.enterBusyState();
             }
             catch (SQLException sqle)
             {
@@ -129,7 +132,12 @@ public class JdbcConnector implements Connector, Closeable
             try
             {
                 Savepoint sp = savepoints.poll();
-                if (sp == null) txConnection.commit(); else txConnection.releaseSavepoint(sp);
+                if (sp == null)
+                {
+                    txConnection.commit();
+                    txConnection.leaveBusyState();
+                }
+                else txConnection.releaseSavepoint(sp);
             }
             catch (SQLException sqle)
             {
@@ -144,11 +152,16 @@ public class JdbcConnector implements Connector, Closeable
             try
             {
                 Savepoint sp = savepoints.poll();
-                if (sp == null) txConnection.rollback(); else txConnection.rollback(sp);
+                if (sp == null)
+                {
+                    txConnection.rollback();
+                    txConnection.leaveBusyState();
+                }
+                else txConnection.rollback(sp);
             }
             catch (SQLException sqle)
             {
-                throw new SkormException("could not commit transaction", sqle);
+                throw new SkormException("could not rollback transaction", sqle);
             }
         }
 
