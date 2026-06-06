@@ -13,7 +13,7 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     override val config = Configuration()
     override val restMode = false
 
-    private val queries = mutableMapOf<String, AttributeDefinition>() // CB TODO - or concurrent?
+    internal var queries = mutableMapOf<String, AttributeDefinition>() // CB TODO - or concurrent?
     // TODO
 //    private val readFilters = mutableMapOf<String, Mapper<*>>()
 //    private val writeFilters = mutableMapOf<String, Mapper<Any?>>()
@@ -195,7 +195,7 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     }
 
     override suspend fun begin(schema: String): Transaction {
-        return CoreProcessorTransaction(connector, schema)
+        return CoreProcessorTransaction(connector.begin(schema), this)
     }
 
     private inline fun getSingleQuery(path: String, params: Collection<String>) = queries.getOrElse(path) {
@@ -300,7 +300,16 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     }
 }
 
-class CoreProcessorTransaction(parentConnector: Connector, schema: String) : CoreProcessor(parentConnector.begin(schema)), Transaction {
+class CoreProcessorTransaction(txConnector: TransactionConnector, parent: CoreProcessor) : CoreProcessor(txConnector), Transaction {
+    init {
+        // share the parent's registry, mappers and filters: only the connector differs
+        queries = parent.queries
+        readMapper = parent.readMapper
+        writeMapper = parent.writeMapper
+        readFilters = parent.readFilters
+        writeFilters = parent.writeFilters
+    }
+
     private val txConnector: TransactionConnector get() = connector as TransactionConnector
 
     override suspend fun rollback() {
