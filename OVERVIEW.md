@@ -54,6 +54,19 @@ book.update()
 ```
 ...works identically whether using direct DB access (JVM/CoreProcessor) or REST API (JS/ApiClient)!
 
+## Transactions
+
+Transactions are ambient: `database.transaction { ... }` carries the transaction in the coroutine context, and every skorm operation against that database inside the block joins it — no `Transaction` object to thread through application code.
+
+```kotlin
+appDatabase.transaction {                 // or transaction("schema") { ... }
+    delegation.update()                   // joins the transaction
+    Delegation().apply { ...; insert() }  // same transaction
+}                                         // commit; rollback on any throw
+```
+
+Nested blocks on the same database join the enclosing transaction (one commit). Caveats: the transaction connection is not safe for parallel fan-out inside the block; iterate lazy `Sequence` results before the block exits; unsupported in REST mode.
+
 ## Bookshelf Example
 
 - Server (Server.kt): ExampleDatabase(CoreProcessor(JdbcConnector())) - direct DB

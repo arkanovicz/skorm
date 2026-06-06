@@ -153,6 +153,19 @@ taskEntity.browse().forEach { println(it["title"]) }
 
 This is useful for generic tools, migrations, or when the schema is only known at runtime.
 
+### Transactions
+
+Transactions are ambient: wrap any suspend code in `database.transaction { ... }` and every skorm operation against that database inside the block — entity ops, attributes, raw `eval`/`perform` — joins the same transaction, without passing any handle around.
+
+```kotlin
+database.transaction {        // or transaction("schema") { ... } for multi-schema databases
+    task.update()
+    Task().apply { title = "follow-up"; insert() }
+}                             // commit on exit; rollback (and rethrow) on any throw
+```
+
+Nested blocks on the same database join the enclosing transaction (single commit). The transaction holds one connection: don't fan out parallel coroutines inside the block, and iterate lazy `Sequence` results before the block exits. Not available in REST mode.
+
 ## Reference
 
 ### Configuration

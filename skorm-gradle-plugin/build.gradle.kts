@@ -24,7 +24,7 @@ gradlePlugin {
       id = "com.republicate.skorm"
       displayName = "Skorm Gradle Plugin"
       implementationClass = "com.republicate.skorm.SkormGradlePlugin"
-      version = "0.15"
+      version = "0.16"
     }
   }
 }

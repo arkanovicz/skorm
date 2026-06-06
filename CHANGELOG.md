@@ -2,6 +2,20 @@
 
 All notable changes to Skorm are documented in this file.
 
+## [0.16] - 2026-06-06
+
+### Added
+- Ambient (coroutine-scoped) transactions: `database.transaction(schema) { ... }` (plus a no-arg overload for single-schema databases) runs the block with the transaction carried in the coroutine context; all skorm operations against that database — entity `insert`/`update`/`delete`/`fetch`/`browse`, schema/entity attributes, raw `eval`/`perform` — join it transparently. Commit on normal exit, rollback (and rethrow) on exception. Nested blocks on the same database join the enclosing transaction; transactions on distinct databases nest independently. Caveats: the single transaction connection is not safe for parallel fan-out inside the block; lazy `Sequence` results must be iterated inside the block; not supported on REST-mode databases (`ApiClient.begin` is still unimplemented).
+- Kotlin integration tests in skorm-jdbc (H2) covering the transaction semantics.
+
+### Fixed
+- `CoreProcessorTransaction` was a blank `CoreProcessor` around the transaction connector — empty query registry, identity mappers, default filters — so any registered attribute dispatched through a transaction failed with "attribute not found". It now shares the parent processor's state.
+- Two concurrent transactions on the same schema could be handed the same physical connection (the pool's busy flag was only set around individual JDBC calls), interleaving their commits/rollbacks. The transaction connection is now held exclusively from `begin` to terminal `commit`/`rollback`.
+
+### Changed
+- Bumped kddl 0.21 → 0.22.
+- `skorm-common` now depends on `kotlinx-coroutines-core`.
+
 ## [0.15] - 2026-05-21
 
 ### Changed
