@@ -2,6 +2,18 @@
 
 All notable changes to Skorm are documented in this file.
 
+## [0.17] - 2026-06-09
+
+### Fixed
+- `char(n)` columns failed Kotlin code generation with "unsupported type: char". kddl parses `char(n)` fine; `KotlinTool` now maps it to `String` like `varchar`.
+
+### Changed
+- Bumped Kotlin 2.3.0 → 2.4.0 (atomicfu plugin 0.29 → 0.33).
+- Bumped dependencies: essential-kson 2.12 → 2.14, ktor 3.4.0 → 3.5.0, kotlinx-coroutines 1.10.2 → 1.11.0, kotlinx-serialization 1.9.0 → 1.11.0, kotlin-logging 7 → 8, evo-inflector 1.3 → 2.0, commons-lang3 3.18 → 3.20, h2 2.3.232 → 2.4.240, antlr-kotlin 1.0.5 → 1.0.10, mockito 5.18 → 5.23, JUnit Jupiter/Platform 5.13/1.13 → 6.1, versions plugin 0.52 → 0.54.
+
+### Notes
+- `numeric`/`decimal`/`money` still map to `Double`; exact `BigDecimal` mapping (via essential-kson's multiplatform bignum) is deferred to a future release pending an essential-kson `toBigDecimal` precision fix.
+
 ## [0.16] - 2026-06-06
 
 ### Added
