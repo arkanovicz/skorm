@@ -116,7 +116,7 @@ class KotlinTool {
         }
         return "SELECT * FROM ${fk.from.schema.name}.${fk.from.name} WHERE ${
             fk.fields.zip(targetPk).joinToString(" AND ") {
-                "${fk.from.name}.${it.second.name} = {${it.first.name}}"
+                "${fk.from.name}.${it.first.name} = {${it.second.name}}"
             }
         };"
     }

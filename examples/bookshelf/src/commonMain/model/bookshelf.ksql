@@ -18,6 +18,13 @@ database example {
       UPDATE borrowing SET restitution_date = NOW()
         WHERE book_id = {book_id} AND restitution_date IS NULL;
 
+    attr Author.catalog: (title: String, borrowings: Int)* =
+      SELECT book.title, COUNT(borrowing.book_id) borrowings
+        FROM bookshelf.book
+        LEFT JOIN bookshelf.borrowing USING (book_id)
+        WHERE book.author_id = {author_id}
+        GROUP BY book.book_id, book.title;
+
     attr Book.stats: (title_length: Int, borrowed: Int) =
       SELECT
              CHARACTER_LENGTH(title) title_length,

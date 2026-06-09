@@ -225,6 +225,33 @@ class KotlinToolTest {
         assertTrue(query.contains("author.author_id = {author_id}"))
     }
 
+    /**
+     * Reverse query must filter the FK column by the target PK value.
+     * A named FK column (donor != dude_id) is the discriminating case:
+     * with conventional naming (column == target PK) the bug is invisible.
+     */
+    @Test
+    fun `foreignKeyReverseQuery filters the FK column by the target PK`() {
+        val db = ASTDatabase("test_db")
+        val schema = ASTSchema(db, "test_schema")
+        db.schemas[schema.name] = schema
+
+        val targetTable = ASTTable(schema, "dude")
+        targetTable.fields["dude_id"] = ASTField(targetTable, "dude_id", "serial", true, true, true)
+        schema.tables[targetTable.name] = targetTable
+
+        val sourceTable = ASTTable(schema, "book")
+        sourceTable.fields["book_id"] = ASTField(sourceTable, "book_id", "serial", true, true, true)
+        sourceTable.fields["donor"] = ASTField(sourceTable, "donor", "integer", false, false, false)
+        schema.tables[sourceTable.name] = sourceTable
+
+        val fk = ASTForeignKey(sourceTable, setOf(sourceTable.fields["donor"]!!), targetTable, false, false, false)
+
+        val query = tool.foreignKeyReverseQuery(fk)
+        assertTrue(query.contains("SELECT * FROM test_schema.book"))
+        assertTrue(query.contains("book.donor = {dude_id}"), "expected 'book.donor = {dude_id}', got: $query")
+    }
+
     // ==================== Enum Tests ====================
 
     private fun inlineEnumField(table: ASTTable, name: String, values: List<String>, alias: String? = null): ASTField =

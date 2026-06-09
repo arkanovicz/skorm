@@ -12,6 +12,7 @@ database example {
 
     table book {
       title varchar(100)
+      donor --> dude?
     }
 
     table borrowing {
