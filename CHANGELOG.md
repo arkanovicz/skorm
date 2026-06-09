@@ -2,6 +2,18 @@
 
 All notable changes to Skorm are documented in this file.
 
+## [0.18] - 2026-06-09
+
+### Fixed
+- Code generation for several to-one / composite shapes that bookshelf never exercised:
+  - A nullable to-one FK emitted `nullableRowAttribute` in the core and client join code without importing it (the join templates imported only `rowAttribute`/`rowSetAttribute`). Both now use a wildcard import.
+  - An entity-composite attribute (`attr X.foo: (Entity, field)…`) registered the parent class unqualified (`<Registration>`, `::Registration`) in the core runtime model; now fully qualified (`Db.Schema.Registration`, `…::new`) like the plain-entity case.
+  - A multiple composite-without-parent attribute (`attr X.foo: (a, b)*`) was registered as `rowAttribute` instead of `rowSetAttribute` (a `multible` typo dropped the multiple qualifier), failing at runtime with "attribute cannot have a null result".
+  - Reverse FK query filtered the wrong column for a named FK: it paired the target-PK name as the column and the FK-column name as the parameter (`book.dude_id = {donor}`), which only happens to read correctly when the FK column is named like the target PK (`<table>_id`). Now `book.donor = {dude_id}`.
+
+### Changed
+- Bookshelf example enriched (nullable `donor` FK on `book`, multiple composite `Author.catalog` attribute) so the build actually exercises the above paths; added a `foreignKeyReverseQuery` unit test for a named FK column.
+
 ## [0.17] - 2026-06-09
 
 ### Fixed
