@@ -307,6 +307,7 @@ class KotlinToolTest {
 
         assertEquals("Int", tool.type(ASTField(table, "count", "integer", false, true, false)))
         assertEquals("String", tool.type(ASTField(table, "name", "varchar(50)", false, true, false)))
+        assertEquals("String", tool.type(ASTField(table, "code", "char(2)", false, true, false)))
         assertEquals("Boolean", tool.type(ASTField(table, "active", "boolean", false, true, false)))
         assertEquals("Long", tool.type(ASTField(table, "big", "long", false, true, false)))
         assertEquals("Double", tool.type(ASTField(table, "amount", "double", false, true, false)))

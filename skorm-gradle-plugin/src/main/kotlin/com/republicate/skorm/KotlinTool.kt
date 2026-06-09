@@ -25,7 +25,7 @@ class KotlinTool {
 
     private fun kotlinType(base: String): String = when (base.lowercase(Locale.ROOT)) {
         "boolean" -> "Boolean"
-        "text", "varchar", "clob" -> "String" // TODO streams for "text" and "clob"
+        "char", "text", "varchar", "clob" -> "String" // TODO streams for "text" and "clob"
         "date" -> "LocalDate"
         "timestamp" -> "LocalDateTime"
         "timestamptz" -> "LocalDateTime" // for now TODO
