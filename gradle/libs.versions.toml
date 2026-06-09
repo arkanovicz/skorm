@@ -2,11 +2,11 @@
 kotlin = "2.3.0"
 dokka = "1.9.20"
 nexus-publish = "2.0.0"
-antlr-kotlin = "1.0.5"
+antlr-kotlin = "1.0.10"
 commons-collections4 = "4.5.0"
-commons-lang3 = "3.18.0"
-essential-kson = "2.12"
-h2 = "2.3.232"
+commons-lang3 = "3.20.0"
+essential-kson = "2.14"
+h2 = "2.4.240"
 evo-inflector = "1.3"
 kddl = "0.23"
 kotlin-logging = "7.0.13"
@@ -22,10 +22,10 @@ velocity-tools = "3.1"
 junit = "4.13.2"
 junit-jupiter = "5.13.3"
 junit-platform = "1.13.3"
-mockito-junit-jupiter = "5.18.0"
+mockito-junit-jupiter = "5.23.0"
 # TODO migrate to ksoup
 jsoup = "1.20.1"
-versionsPlugin = "0.52.0"
+versionsPlugin = "0.54.0"
 
 [libraries]
 antlr-kotlin = { module = "com.strumenta:antlr-kotlin-runtime", version.ref = "antlr-kotlin" }
