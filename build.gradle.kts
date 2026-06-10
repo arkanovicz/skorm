@@ -17,7 +17,7 @@ plugins {
 allprojects {
 
     group = "com.republicate.skorm"
-    version = "0.18"
+    version = "0.19"
 }
 
 subprojects {

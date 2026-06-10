@@ -2,6 +2,21 @@
 
 All notable changes to Skorm are documented in this file.
 
+## [0.19] - 2026-06-10
+
+### Fixed
+- Entity-composite attributes (`attr X.foo: (Entity, field)…`) registered the base entity core-side while the accessor casts to the generated subclass (`query<Roster>`), throwing `ClassCastException`. Now registers the subclass.
+- `Instance.putRawFields` silently dropped every non-entity column — the elvis branch was a discarded lambda (`?: { putRawValue(...) }`), never invoked — so a composite's extra field (e.g. `borrowing_date` in `(Dude, borrowing_date)`) never populated. Fixed at source; the generated per-composite `putRawFields` override (a broken workaround) is gone.
+- Entity-level mutations with more than one argument bound named params positionally, so when the SQL param order (SET before WHERE) differed from the signature order, params crossed (e.g. `{kind}` received another argument's value). Such accessors now pass arguments by name (`mapOf(...)`); 0/1-argument accessors stay positional.
+
+### Changed
+- The SQL `dialect` is now mandatory and validated — `postgresql` or `hypersql` (kddl's `Format` names); an unset or unknown dialect fails with a clear message instead of silently defaulting to HyperSQL.
+- Bumped kddl 0.23 → 0.24 (HyperSQL enums render as CHECKed varchar domains; the `postgres` dialect alias is dropped).
+- Bookshelf example: explicit `dialect`, `currentBorrower`'s composite field aligned to `LocalDate`, a multi-argument `returnFrom` mut, and a runtime test covering entity-composite population and multi-param mut binding.
+
+### Notes
+- Binding a `String` to a PostgreSQL native enum column (`operator does not exist: enum_kind = …`) is a separate, dialect-specific concern (a `::enum_kind` cast / `Types.OTHER`) not addressed here; deferred.
+
 ## [0.18] - 2026-06-09
 
 ### Fixed
