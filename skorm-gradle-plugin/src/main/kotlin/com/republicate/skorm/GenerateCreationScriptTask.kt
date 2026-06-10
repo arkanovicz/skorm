@@ -26,9 +26,13 @@ abstract class GenerateCreationScriptTask : BaseStructureGenerationTask() {
         destFile.get().asFile.parentFile.mkdirs()
         val writer = FileWriter(destFile.get().asFile)
 
-        val formatter: Formatter = when (dialect.orNull?.lowercase()) {
-            "postgresql", "postgres" -> PostgreSQLFormatter(quoted = false, uppercase = false)
-            else -> HyperSQLFormatter(quoted = false, uppercase = false)
+        val formatter: Formatter = when (val d = dialect.orNull?.lowercase()) {
+            "postgresql" -> PostgreSQLFormatter(quoted = false, uppercase = false)
+            "hypersql" -> HyperSQLFormatter(quoted = false, uppercase = false)
+            null -> throw org.gradle.api.GradleException(
+                "skorm: no SQL dialect configured. Set `skorm { dialect = \"...\" }` to one of: postgresql, hypersql")
+            else -> throw org.gradle.api.GradleException(
+                "skorm: unknown SQL dialect '$d'. Valid dialects: postgresql, hypersql")
         }
         writer.write(formatter.format(database))
 
