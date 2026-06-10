@@ -21,24 +21,15 @@ fun ${package}.${databaseClass}.initRuntimeModel() {
       #if($item.action)
         #set($attribute = 'mutationAttribute')
       #elseif($item.type.isComposite())
-        #if($item.type.parent)
-          #set($itemClass = "#pascal($item.name)")
-          #set($factory = "::$itemClass")
-          #if($item.multiple)
-            #set($attribute = "rowSetAttribute<$itemClass>")
-          #elseif($item.nullable)
-            #set($attribute = "nullableRowAttribute<$itemClass>")
-          #else
-            #set($attribute = "rowAttribute<$itemClass>")
-          #end
+        ## register the generated composite subclass (parent or not), matching the query<#pascal($item.name)> accessor
+        #set($itemClass = "#pascal($item.name)")
+        #set($factory = "::$itemClass")
+        #if($item.multiple)
+          #set($attribute = "rowSetAttribute<$itemClass>")
+        #elseif($item.nullable)
+          #set($attribute = "nullableRowAttribute<$itemClass>")
         #else
-          #if($item.multible)
-            #set($attribute = 'rowSetAttribute<Json.MutableObject>')
-          #elseif($item.nullable)
-            #set($attribute = 'nullableRowAttribute<Json.MutableObject>')
-          #else
-            #set($attribute = 'rowAttribute<Json.MutableObject>')
-          #end
+          #set($attribute = "rowAttribute<$itemClass>")
         #end
       #elseif ($item.type.isEntity())
         #set($itemClass = "#pascal($database.name)Database.#pascal($schema.name)Schema.#pascal($item.type.name)")

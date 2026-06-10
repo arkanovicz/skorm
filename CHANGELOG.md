@@ -8,6 +8,7 @@ All notable changes to Skorm are documented in this file.
 - Entity-composite attributes (`attr X.foo: (Entity, field)…`) registered the base entity core-side while the accessor casts to the generated subclass (`query<Roster>`), throwing `ClassCastException`. Now registers the subclass.
 - `Instance.putRawFields` silently dropped every non-entity column — the elvis branch was a discarded lambda (`?: { putRawValue(...) }`), never invoked — so a composite's extra field (e.g. `borrowing_date` in `(Dude, borrowing_date)`) never populated. Fixed at source; the generated per-composite `putRawFields` override (a broken workaround) is gone.
 - Entity-level mutations with more than one argument bound named params positionally, so when the SQL param order (SET before WHERE) differed from the signature order, params crossed (e.g. `{kind}` received another argument's value). Such accessors now pass arguments by name (`mapOf(...)`); 0/1-argument accessors stay positional.
+- Client (REST) model registration diverged from core for composites: a `multible` typo dropped the multiple qualifier, and no-parent composites registered the base `Json.MutableObject` (no factory) while the accessor casts to the generated subclass — a client-side `ClassCastException`. Both composite branches now register the subclass + factory, matching core.
 
 ### Changed
 - The SQL `dialect` is now mandatory and validated — `postgresql` or `hypersql` (kddl's `Format` names); an unset or unknown dialect fails with a clear message instead of silently defaulting to HyperSQL.
