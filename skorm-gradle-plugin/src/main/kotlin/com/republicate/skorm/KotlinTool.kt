@@ -162,6 +162,11 @@ class KotlinTool {
 
     fun values(fields: Set<Pair<String, String?>>) = fields.joinToString(",") { it.first }
 
+    // pass args by name so binding is order-independent. Key is the mapped (camel) param
+    // name to match query params after identifier mapping; value is the raw arg.
+    fun namedValues(fields: Set<Pair<String, String?>>) =
+        fields.joinToString(", ", prefix = "mapOf(", postfix = ")") { "\"${camel(it.first)}\" to ${it.first}" }
+
     fun capitalize(str: String) = str.replaceFirstChar { it.uppercase() }
 
     fun decapitalize(str: String) = str.replaceFirstChar { it.lowercase() }

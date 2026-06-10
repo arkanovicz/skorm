@@ -4,7 +4,7 @@ database example {
     attr booksCount: Int =
       SELECT count(*) FROM book;
 
-    attr Book.currentBorrower: (Dude, borrowing_date: LocalDateTime)? =
+    attr Book.currentBorrower: (Dude, borrowing_date: LocalDate)? =
       SELECT dude.*, borrowing_date FROM bookshelf.borrowing
         JOIN dude USING (dude_id)
         WHERE book_id = {book_id}
@@ -17,6 +17,12 @@ database example {
     mut Book.restitute =
       UPDATE borrowing SET restitution_date = NOW()
         WHERE book_id = {book_id} AND restitution_date IS NULL;
+
+    // multi-param mut: SQL param order (SET before WHERE) differs from the signature,
+    // so {dude_id}/{returned_on} must be bound by name, not by position
+    mut Book.returnFrom(dude_id: Long, returned_on: LocalDate) =
+      UPDATE bookshelf.borrowing SET restitution_date = {returned_on}
+        WHERE book_id = {book_id} AND dude_id = {dude_id} AND restitution_date IS NULL;
 
     attr Author.catalog: (title: String, borrowings: Int)* =
       SELECT book.title, COUNT(borrowing.book_id) borrowings

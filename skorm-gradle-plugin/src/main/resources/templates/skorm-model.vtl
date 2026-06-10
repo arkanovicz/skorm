@@ -21,16 +21,6 @@ open class $itemClass(): ${parent}() {
     val #camel($field.name): ${field.type}#if($field.nullable)?#end
         get() = get${field.type}("#camel($field.name)")#if(!$field.nullable)!!#end
       #end
-      #if($item.type.parent)
-    override fun putRawFields(from: Map<out String, Any?>) {
-        super.putRawFields(from)
-        #foreach ($field in $item.type.fields)
-        if (from.containsKey("$field.name")) {
-            putRawValue("$field.name", from["$field.name"])
-        }
-        #end
-    }
-      #end
 }
     #end
 
@@ -69,7 +59,7 @@ open class $itemClass(): ${parent}() {
       #end
     #end
 // attribute ${item.receiver|$schema.name}.$item.name
-suspend fun ${receiver}.`${item.name}`(#typedArguments($item.arguments)) = ${verb}${generics}("$item.name"#if($item.arguments), #values($item.arguments)#end)$cast
+suspend fun ${receiver}.`${item.name}`(#typedArguments($item.arguments)) = ${verb}${generics}("$item.name"#if($item.arguments), #if($item.arguments.size() > 1)#namedValues($item.arguments)#else#values($item.arguments)#end#end)$cast
 
   #end
 #end

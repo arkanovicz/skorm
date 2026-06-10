@@ -228,9 +228,7 @@ open class Instance(val entity: Entity) : Json.MutableObject() {
             val fieldName = processor.downstreamMapping(it.key)
             entity.fields[fieldName]?.also { field ->
                 putRawField(field, it.value)
-            } ?: {
-                putRawValue(fieldName, it.value)
-            }
+            } ?: putRawValue(fieldName, it.value)   // non-entity columns (e.g. composite extra fields) kept under their mapped name
         }
     }
 
