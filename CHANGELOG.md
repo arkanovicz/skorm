@@ -9,14 +9,12 @@ All notable changes to Skorm are documented in this file.
 - `Instance.putRawFields` silently dropped every non-entity column — the elvis branch was a discarded lambda (`?: { putRawValue(...) }`), never invoked — so a composite's extra field (e.g. `borrowing_date` in `(Dude, borrowing_date)`) never populated. Fixed at source; the generated per-composite `putRawFields` override (a broken workaround) is gone.
 - Entity-level mutations with more than one argument bound named params positionally, so when the SQL param order (SET before WHERE) differed from the signature order, params crossed (e.g. `{kind}` received another argument's value). Such accessors now pass arguments by name (`mapOf(...)`); 0/1-argument accessors stay positional.
 - Client (REST) model registration diverged from core for composites: a `multible` typo dropped the multiple qualifier, and no-parent composites registered the base `Json.MutableObject` (no factory) while the accessor casts to the generated subclass — a client-side `ClassCastException`. Both composite branches now register the subclass + factory, matching core.
+- Binding a `String` to a PostgreSQL native enum column failed in operator contexts (`WHERE enum = ?` → `operator does not exist: enum = character varying`): PG won't apply the implicit `varchar→enum` cast for operators, only for assignment. The JDBC connector now binds string parameters untyped (`setObject(…, Types.OTHER)`) for engines flagged `pedanticCasts` (PostgreSQL), letting the server infer the type in both contexts. Verified against real Postgres via Testcontainers (skipped when Docker is absent or `SKORM_SKIP_PG_TESTS` is set).
 
 ### Changed
 - The SQL `dialect` is now mandatory and validated — `postgresql` or `hypersql` (kddl's `Format` names); an unset or unknown dialect fails with a clear message instead of silently defaulting to HyperSQL.
 - Bumped kddl 0.23 → 0.24 (HyperSQL enums render as CHECKed varchar domains; the `postgres` dialect alias is dropped).
 - Bookshelf example: explicit `dialect`, `currentBorrower`'s composite field aligned to `LocalDate`, a multi-argument `returnFrom` mut, and a runtime test covering entity-composite population and multi-param mut binding.
-
-### Notes
-- Binding a `String` to a PostgreSQL native enum column (`operator does not exist: enum_kind = …`) is a separate, dialect-specific concern (a `::enum_kind` cast / `Types.OTHER`) not addressed here; deferred.
 
 ## [0.18] - 2026-06-09
 

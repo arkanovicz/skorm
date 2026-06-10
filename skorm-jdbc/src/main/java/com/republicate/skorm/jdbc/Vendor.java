@@ -149,6 +149,9 @@ public class Vendor implements MetaInfos
     /** whether driver supports ::varchar etc... */
     private boolean columnMarkers = false;
 
+    /** whether the engine is pedantic about implicit casts (PostgreSQL native enums in operator contexts): bind strings untyped */
+    private boolean pedanticCasts = false;
+
     /** sql query to get enum values */
     private String describeEnumQuery = null;
     private String describeEnumPattern = null;
@@ -307,6 +310,16 @@ public class Vendor implements MetaInfos
     public void setColumnMarkers(boolean columnMarkers)
     {
         this.columnMarkers = columnMarkers;
+    }
+
+    public boolean hasPedanticCasts()
+    {
+        return pedanticCasts;
+    }
+
+    public void setPedanticCasts(boolean pedanticCasts)
+    {
+        this.pedanticCasts = pedanticCasts;
     }
 
     public String getTableName(String entityName)

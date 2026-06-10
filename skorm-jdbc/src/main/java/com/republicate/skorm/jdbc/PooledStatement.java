@@ -28,6 +28,7 @@ import java.io.Closeable;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -180,11 +181,22 @@ public class PooledStatement implements Closeable // TODO implements RowValues
         {
             logger.trace("params-{}", Arrays.asList(paramValues));
         }
+        boolean pedanticCasts = connection != null && connection.getVendor().hasPedanticCasts();
         for (int i = 0; i < paramValues.length; ++i)
         {
             Object value = paramValues[i];
             if (value instanceof GeneratedKeyMarker) break;
-            preparedStatement.setObject(i + 1, ClassMapper.write(value));
+            Object written = ClassMapper.write(value);
+            // Pedantic vendors (PostgreSQL) won't apply an implicit varchar->enum cast in operator
+            // contexts (WHERE enum = ?); binding strings untyped lets the server infer the type.
+            if (pedanticCasts && written instanceof String)
+            {
+                preparedStatement.setObject(i + 1, written, Types.OTHER);
+            }
+            else
+            {
+                preparedStatement.setObject(i + 1, written);
+            }
         }
     }
 
