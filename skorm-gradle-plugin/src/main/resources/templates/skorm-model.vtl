@@ -2,6 +2,12 @@ package $package
 
 import kotlinx.datetime.*
 import com.republicate.kson.Json
+## bring nested generated enum classes into scope so they can type attribute arguments
+#foreach($schema in $database.schemas.values())
+#foreach($enumDecl in $kotlin.enumDecls($schema))
+import ${package}.#pascal($database.name)Database.#pascal($schema.name)Schema.$enumDecl.name
+#end
+#end
 
 #set ($databaseClass = "#pascal($database.name)Database")
 

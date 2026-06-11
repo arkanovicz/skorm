@@ -67,6 +67,7 @@ public class ClassMapper {
     public static Object write(Object obj)
     {
         if (obj == null) return null;
-        else return Optional.ofNullable(writeMap.get(obj.getClass())).map(converter -> converter.convert(obj)).orElse(obj);
+        if (obj instanceof Enum) return obj.toString(); // bind enums (e.g. generated Kotlin enum params) as their constant name
+        return Optional.ofNullable(writeMap.get(obj.getClass())).map(converter -> converter.convert(obj)).orElse(obj);
     }
 }

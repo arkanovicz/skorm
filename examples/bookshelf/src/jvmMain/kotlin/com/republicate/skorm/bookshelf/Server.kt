@@ -96,6 +96,7 @@ fun Application.configureDatabase() {
         val book = Book().apply {
             title = "Le Language des Pierres"
             authorId = author.authorId
+            genre = Genre.essay
             insert()
         }
         for (name in listOf("Alice", "Bob")) {
@@ -107,6 +108,7 @@ fun Application.configureDatabase() {
 typealias Author = ExampleDatabase.BookshelfSchema.Author
 typealias Book = ExampleDatabase.BookshelfSchema.Book
 typealias Dude = ExampleDatabase.BookshelfSchema.Dude
+typealias Genre = ExampleDatabase.BookshelfSchema.Genre
 
 fun Application.configureRouting() {
     routing {
@@ -139,6 +141,7 @@ fun Application.configureRouting() {
                                 val stats = book.stats()
                                 li {
                                     +book.title
+                                    +" (${book.genre})"
                                     i { +" by " }
                                     +authorName
                                     br()

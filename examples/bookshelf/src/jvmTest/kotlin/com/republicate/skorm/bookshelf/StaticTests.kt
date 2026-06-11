@@ -51,6 +51,12 @@ class StaticTests {
                 val changed = theBook.returnFrom(alice.dudeId.toLong(), LocalDate(2026, 6, 10))
                 assertEquals(1L, changed)
                 assertNull(theBook.currentBorrower())
+
+                // enum field round-trips, and an enum-typed query param filters correctly
+                val author = Author.browse().first()
+                assertEquals(Genre.essay, theBook.genre)
+                assertEquals(1, author.countInGenre(Genre.essay))
+                assertEquals(0, author.countInGenre(Genre.poetry))
             }
         }
     }

@@ -12,6 +12,7 @@ database example {
 
     table book {
       title varchar(100)
+      genre enum('fiction', 'novel', 'essay', 'poetry')
       donor --> dude?
     }
 

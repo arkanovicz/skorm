@@ -24,6 +24,10 @@ database example {
       UPDATE bookshelf.borrowing SET restitution_date = {returned_on}
         WHERE book_id = {book_id} AND dude_id = {dude_id} AND restitution_date IS NULL;
 
+    attr Author.countInGenre(genre: Genre): Int =
+      SELECT count(*) FROM bookshelf.book
+        WHERE author_id = {author_id} AND genre = {genre};
+
     attr Author.catalog: (title: String, borrowings: Int)* =
       SELECT book.title, COUNT(borrowing.book_id) borrowings
         FROM bookshelf.book
