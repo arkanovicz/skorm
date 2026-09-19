@@ -21,9 +21,14 @@ database example {
       restitution_date date?
     }
 
+    table tag {
+      label varchar(30)
+    }
+
     book --> author
     borrowing -> book
     borrowing -> dude
+    book *-* tag
 
   }
 

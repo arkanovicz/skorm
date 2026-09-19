@@ -102,6 +102,10 @@ fun Application.configureDatabase() {
         for (name in listOf("Alice", "Bob")) {
             Dude().also { it.name = name }.insert()
         }
+        for (label in listOf("go", "stones")) {
+            val tag = Tag().apply { this.label = label; insert() }
+            BookTag().apply { bookId = book.bookId; tagId = tag.tagId; insert() }
+        }
     }
 }
 

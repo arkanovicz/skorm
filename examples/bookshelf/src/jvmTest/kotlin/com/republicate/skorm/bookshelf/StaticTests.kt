@@ -57,6 +57,16 @@ class StaticTests {
                 assertEquals(Genre.essay, theBook.genre)
                 assertEquals(1, author.countInGenre(Genre.essay))
                 assertEquals(0, author.countInGenre(Genre.poetry))
+
+                // a nullable forward FK yields null rather than failing the cast
+                assertNull(theBook.donor())
+                assertNotNull(theBook.author())
+
+                // many-to-many, both ways: the accessor name, the query direction and the
+                // row type have to agree between the accessor and its registration
+                assertEquals(listOf("go", "stones"), theBook.tags().map { it.label }.toList().sorted())
+                val go = Tag.browse().first { it.label == "go" }
+                assertEquals(listOf(theBook.title), go.books().map { it.title }.toList())
             }
         }
     }

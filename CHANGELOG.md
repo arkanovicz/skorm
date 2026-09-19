@@ -4,11 +4,18 @@ All notable changes to Skorm are documented in this file.
 
 ## [0.20] - unreleased
 
+### Fixed
+- Many-to-many joins were broken end to end: the core registration mirrored the accessors, naming the attribute after the *other* end (`Book.tags()` looked up `tags`, core registered `books` on `book`), pairing it with the opposite query direction and with the row type of the end it did not return. The three views now derive the attribute name the same way, from the far-side FK column.
+- Many-to-many joins were not declared client-side at all — the join-table branch of the client template was empty, so every `*-*` accessor failed over REST.
+- Client-side FK parameter sets were each other's: the forward attribute declared the target's PK columns and the reverse one the FK's own columns, while a parameter is looked up *by name inside the receiving instance*. Invisible whenever the FK column is named like the target PK (`author_id`), fatal otherwise (`donor --> dude?` asked a book for `dude_id`). This is the client-side half of the reverse-query fix shipped for core in 0.18.
+- A nullable forward FK generated a non-nullable accessor (`Book.donor(): Dude` for `donor --> dude?`) while both registrations used `nullableRowAttribute`, so a row without the FK failed the cast instead of returning null.
+- The core join template derived a multi-column forward FK's attribute name without the unique-destination test the accessor and client templates apply, so the three names diverged for composite FKs.
+
 ### Added
 - Top-level aliases for the generated entity and enum classes (`typealias Book = ExampleDatabase.BookshelfSchema.Book`), emitted next to them in `skormObjects.kt`. Consumers were writing these by hand — the bookshelf example twice, once per platform. A simple name shared by several schemas, or clashing with the database class, gets no alias.
 
 ### Changed
-- Bookshelf example: its hand-written typealiases are gone — being in the generated package, they would now clash with the generated ones.
+- Bookshelf example: a `tag` table joined `book *-* tag`, so the many-to-many path finally has a model to run on, plus runtime coverage of both join directions and of the nullable `donor` accessor. Its hand-written typealiases are gone — being in the generated package, they would now clash with the generated ones.
 
 ## [0.19] - 2026-06-10
 

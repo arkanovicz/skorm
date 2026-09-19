@@ -40,7 +40,7 @@ suspend fun ${rightInstance}.#plural($rightToLeftAttrBase)(): Sequence<$leftInst
           #set($attrName = "#attributeName($fk.fields.iterator().next().name)#pascal($fk.towards.name)")
         #end
 // forward foreign key
-suspend fun ${schemaClass}.#pascal($fk.from.name).${attrName}(): ${schemaClass}.#pascal($fk.towards.name) = entity.retrieve("$attrName", this)
+suspend fun ${schemaClass}.#pascal($fk.from.name).${attrName}(): ${schemaClass}.#pascal($fk.towards.name)#if(!$fk.nonNull)?#end = entity.retrieve("$attrName", this)
         #if($kotlin.isUniqueFkDest($fk))
           #set($attrName = "#camel($fk.from.name)")
         #else
