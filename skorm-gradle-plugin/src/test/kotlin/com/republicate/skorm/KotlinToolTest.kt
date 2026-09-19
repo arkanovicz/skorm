@@ -413,4 +413,46 @@ class KotlinToolTest {
 
         assertTrue(tool.enumDecls(schema).isEmpty())
     }
+
+    @Test
+    fun `aliases target the nested entity and enum classes`() {
+        val db = ASTDatabase("book_shop")
+        val schema = ASTSchema(db, "main")
+        db.schemas[schema.name] = schema
+
+        val table = ASTTable(schema, "book_item")
+        table.fields["id"] = ASTField(table, "id", "serial", true, true, true)
+        table.fields["genre"] = ASTField(table, "genre", FieldType.InlineEnum(listOf("essay")), false, true, false)
+        schema.tables[table.name] = table
+
+        assertEquals(
+            listOf(
+                KotlinTool.Alias("BookItem", "BookShopDatabase.MainSchema.BookItem"),
+                KotlinTool.Alias("Genre", "BookShopDatabase.MainSchema.Genre")
+            ),
+            tool.aliases(db)
+        )
+    }
+
+    @Test
+    fun `aliases skips a simple name shared by two schemas`() {
+        val db = ASTDatabase("test_db")
+        val shared = mutableListOf<ASTSchema>()
+        for (name in listOf("first", "second")) {
+            val schema = ASTSchema(db, name)
+            db.schemas[schema.name] = schema
+            shared.add(schema)
+            val ambiguous = ASTTable(schema, "item")
+            ambiguous.fields["id"] = ASTField(ambiguous, "id", "serial", true, true, true)
+            schema.tables[ambiguous.name] = ambiguous
+        }
+        val only = ASTTable(shared[0], "invoice")
+        only.fields["id"] = ASTField(only, "id", "serial", true, true, true)
+        shared[0].tables[only.name] = only
+
+        assertEquals(
+            listOf(KotlinTool.Alias("Invoice", "TestDbDatabase.FirstSchema.Invoice")),
+            tool.aliases(db)
+        )
+    }
 }

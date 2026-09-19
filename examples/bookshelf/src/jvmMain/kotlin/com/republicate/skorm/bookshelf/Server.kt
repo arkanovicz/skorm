@@ -105,11 +105,6 @@ fun Application.configureDatabase() {
     }
 }
 
-typealias Author = ExampleDatabase.BookshelfSchema.Author
-typealias Book = ExampleDatabase.BookshelfSchema.Book
-typealias Dude = ExampleDatabase.BookshelfSchema.Dude
-typealias Genre = ExampleDatabase.BookshelfSchema.Genre
-
 fun Application.configureRouting() {
     routing {
         // TODO - web package

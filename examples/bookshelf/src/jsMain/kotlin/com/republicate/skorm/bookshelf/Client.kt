@@ -15,8 +15,6 @@ private val logger = KotlinLogging.logger("bookshelf")
 val exampleDatabase = ExampleDatabase(ApiClient("${window.location.origin}/api"))
 val bookshelf = ExampleDatabase.bookshelf
 
-typealias Author = ExampleDatabase.BookshelfSchema.Author
-typealias Book = ExampleDatabase.BookshelfSchema.Book
 
 fun main() {
     window.onload = {

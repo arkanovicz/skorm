@@ -2,6 +2,14 @@
 
 All notable changes to Skorm are documented in this file.
 
+## [0.20] - unreleased
+
+### Added
+- Top-level aliases for the generated entity and enum classes (`typealias Book = ExampleDatabase.BookshelfSchema.Book`), emitted next to them in `skormObjects.kt`. Consumers were writing these by hand — the bookshelf example twice, once per platform. A simple name shared by several schemas, or clashing with the database class, gets no alias.
+
+### Changed
+- Bookshelf example: its hand-written typealiases are gone — being in the generated package, they would now clash with the generated ones.
+
 ## [0.19] - 2026-06-10
 
 ### Fixed
