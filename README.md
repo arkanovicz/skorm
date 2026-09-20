@@ -95,11 +95,34 @@ dependencies {
 }
 ```
 
-Nothing else to declare: the plugin registers the generated sources on your Kotlin source sets,
-so Gradle sequences generation before compilation on its own. What it emits follows the platforms
-you build for — server-side registrations plus the creation script for a JVM target, REST client
-registrations for JS, wasm or native. Set `core` or `client` explicitly to force either on or off,
-for instance to emit client code in a project that has no JS target of its own.
+Nothing else to declare: the single `generateSkormCode` task registers its output on your Kotlin
+source sets, so Gradle sequences generation before compilation on its own — no `srcDir`, no
+`dependsOn`. What it emits follows the platforms you build for, and `core` / `client` force either
+one on or off, for instance to emit client code in a project that has no JS target of its own.
+
+Options:
+
+- `structure` — the kddl model; or `datasource`, a JDBC URL to reverse-engineer it from. Exactly one.
+- `runtimeModel` — the ksql attributes. Without it, only the structure is generated.
+- `destPackage` — package of the generated code.
+- `dialect` — `postgresql` or `hypersql`, required to emit the creation script.
+- `core` / `client` — unset, they follow the project's targets; set, they force.
+- `outputDirectory` — defaults to `build/generated-src`.
+
+Generated code is laid out by *role*, not by source set, because one directory often feeds several
+of them — `client` serves `jsMain`, `wasmJsMain` and `linuxX64Main` alike:
+
+```
+build/generated-src/
+├── common/kotlin       entity classes, field interfaces, aliases, join and attribute accessors
+├── core/kotlin         server-side attribute registrations
+├── core/resources      database creation script
+└── client/kotlin       REST client attribute registrations
+```
+
+`common` is registered on `commonMain`, `core` on the JVM target's source set, `client` on every
+JS, wasm and native one. In a plain `kotlin("jvm")` project there is a single source set, and
+`common` and `core` are both registered on `main`.
 
 ### 4. Use the generated code
 
