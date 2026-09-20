@@ -18,6 +18,6 @@ class ExamplesTest {
             .build()
         val outcome = result.task(":bookshelf:jvmTest")?.outcome
         Assertions.assertNotNull(outcome)
-        Assertions.assertTrue(setOf(TaskOutcome.SUCCESS, TaskOutcome.UP_TO_DATE).contains(outcome))
+        Assertions.assertTrue(setOf(TaskOutcome.SUCCESS, TaskOutcome.UP_TO_DATE, TaskOutcome.FROM_CACHE).contains(outcome))
     }
 }
