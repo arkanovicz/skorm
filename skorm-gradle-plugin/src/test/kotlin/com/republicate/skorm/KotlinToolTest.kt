@@ -428,6 +428,7 @@ class KotlinToolTest {
         assertEquals(
             listOf(
                 KotlinTool.Alias("BookItem", "BookShopDatabase.MainSchema.BookItem"),
+                KotlinTool.Alias("BookItemFields", "BookShopDatabase.MainSchema.BookItemFields"),
                 KotlinTool.Alias("Genre", "BookShopDatabase.MainSchema.Genre")
             ),
             tool.aliases(db)
@@ -451,7 +452,10 @@ class KotlinToolTest {
         shared[0].tables[only.name] = only
 
         assertEquals(
-            listOf(KotlinTool.Alias("Invoice", "TestDbDatabase.FirstSchema.Invoice")),
+            listOf(
+                KotlinTool.Alias("Invoice", "TestDbDatabase.FirstSchema.Invoice"),
+                KotlinTool.Alias("InvoiceFields", "TestDbDatabase.FirstSchema.InvoiceFields")
+            ),
             tool.aliases(db)
         )
     }

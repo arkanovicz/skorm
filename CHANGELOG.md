@@ -12,7 +12,8 @@ All notable changes to Skorm are documented in this file.
 - The core join template derived a multi-column forward FK's attribute name without the unique-destination test the accessor and client templates apply, so the three names diverged for composite FKs.
 
 ### Added
-- Top-level aliases for the generated entity and enum classes (`typealias Book = ExampleDatabase.BookshelfSchema.Book`), emitted next to them in `skormObjects.kt`. Consumers were writing these by hand — the bookshelf example twice, once per platform. A simple name shared by several schemas, or clashing with the database class, gets no alias.
+- A generated field interface per entity (`BookFields`), implemented by the entity class. It gives a non-suspend view of a row the whole field contract for one `by row` clause, with real getters on the delegate — what a reflection-driven template engine needs — and it is a cleaner contract for consumers to program against than a nested class. Blocking accessors will hang off it once the resolved model lands.
+- Top-level aliases for the generated entity, field-interface and enum classes (`typealias Book = ExampleDatabase.BookshelfSchema.Book`), emitted next to them in `skormObjects.kt`. Consumers were writing these by hand — the bookshelf example twice, once per platform. A simple name shared by several schemas, or clashing with the database class, gets no alias.
 
 ### Changed
 - Bookshelf example: a `tag` table joined `book *-* tag`, so the many-to-many path finally has a model to run on, plus runtime coverage of both join directions and of the nullable `donor` accessor. Its hand-written typealiases are gone — being in the generated package, they would now clash with the generated ones.

@@ -93,7 +93,9 @@ class KotlinTool {
         for (schema in database.schemas.values) {
             val schemaClass = "$databaseClass.${pascal(schema.name)}Schema"
             for (table in schema.tables.values) {
-                candidates.add(Alias(pascal(table.name), "$schemaClass.${pascal(table.name)}"))
+                val entity = pascal(table.name)
+                candidates.add(Alias(entity, "$schemaClass.$entity"))
+                candidates.add(Alias("${entity}Fields", "$schemaClass.${entity}Fields"))
             }
             for (decl in enumDecls(schema)) {
                 candidates.add(Alias(decl.name, "$schemaClass.${decl.name}"))

@@ -54,7 +54,13 @@ class $databaseClass(processor: Processor): Database("$database.name", processor
   #foreach ($table in $schema.tables.values())
     #set ($instanceClass = "#pascal($table.name)")
     #set ($instanceObject = "#camel($table.name)")
-        open class $instanceClass: Instance(Companion) {
+## the field contract, so a non-suspend view of a row can delegate it
+        interface ${instanceClass}Fields {
+    #foreach ($field in $table.fields.values())
+            val #camel($field.name): #type($field)#if(!$field.nonNull)?#end
+    #end
+        }
+        open class $instanceClass: Instance(Companion), ${instanceClass}Fields {
             companion object: Entity("$instanceObject", $schemaObject) {
                 override fun new(): $instanceClass = $instanceClass()
     #if ($table.primaryKey.size() > 0)
@@ -81,7 +87,7 @@ class $databaseClass(processor: Processor): Database("$database.name", processor
       #else
         #set($def = 'var')
       #end
-            $def #camel($field.name): #type($field)#if(!$field.nonNull)?#end
+            override $def #camel($field.name): #type($field)#if(!$field.nonNull)?#end
       #if($kotlin.isEnum($field.type))
                 get() = getString("#camel($field.name)")#if($field.nonNull)!!#else?#end.let { ${kotlin.enumName($field)}.valueOf(it) }
         #if(!$pk)

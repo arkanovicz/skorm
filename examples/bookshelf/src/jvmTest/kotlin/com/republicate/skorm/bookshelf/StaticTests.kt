@@ -14,6 +14,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
+/** A non-suspend view of a row delegates the whole field contract. */
+private class BookView(row: Book) : BookFields by row
+
 class StaticTests {
     @Test
     fun testIndex() {
@@ -67,6 +70,18 @@ class StaticTests {
                 assertEquals(listOf("go", "stones"), theBook.tags().map { it.label }.toList().sorted())
                 val go = Tag.browse().first { it.label == "go" }
                 assertEquals(listOf(theBook.title), go.books().map { it.title }.toList())
+
+                // the generated field interface is delegable, and the delegate's getters
+                // are real methods — what a reflection-driven template engine needs
+                val view = BookView(theBook)
+                assertEquals(theBook.title, view.title)
+                assertEquals(Genre.essay, view.genre)
+                assertNull(view.donor)
+                assertEquals(
+                    listOf("getDonor", "getGenre", "getTitle"),
+                    BookView::class.java.methods.map { it.name }
+                        .filter { it in setOf("getTitle", "getGenre", "getDonor") }.sorted()
+                )
             }
         }
     }
