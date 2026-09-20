@@ -66,7 +66,6 @@ kotlin {
 
     sourceSets {
         commonMain {
-            kotlin.srcDir(file("build/generated-src/commonMain/kotlin"))
             dependencies {
                 implementation("com.republicate.skorm:skorm-common")
                 implementation(libs.kotlinx.coroutines)
@@ -80,7 +79,6 @@ kotlin {
             }
         }
         jvmMain {
-            kotlin.srcDir(file("build/generated-src/jvmMain/kotlin"))
             dependencies {
                 implementation("com.republicate.skorm:skorm-api-server")
                 implementation("com.republicate.skorm:skorm-core")
@@ -104,7 +102,6 @@ kotlin {
             }
         }
         jsMain {
-            kotlin.srcDir(file("build/generated-src/jsMain/kotlin"))
             dependencies {
                 implementation("com.republicate.skorm:skorm-api-client")
                 implementation(libs.kotlinx.coroutines)
@@ -143,36 +140,6 @@ tasks.register<JavaExec>("run") {
     environment("SKORM_JDBC_URL", "jdbc:h2:mem:example")
     environment("SKORM_JDBC_USER", "sa")
     environment("SKORM_JDBC_PASS", "")
-}
-
-tasks.named<ProcessResources>("jvmProcessResources") {
-    dependsOn("generateDatabaseCreationScript")
-    from (
-        fileTree(baseDir="build/generated-src/jvmMain/resources") { include("*.sql") }
-    )
-}
-
-/*
-tasks.named<Jar>("jvmJar") {
-    dependsOn("generateDatabaseCreationScript")
-    from (
-        fileTree(baseDir="build/generated-src/jvmMain/resources") { include("*.sql") }
-    )
-}
- */
-
-tasks.withType<KotlinCompilationTask<*>>().forEach {
-    it.dependsOn("generateSkormObjectsCode")
-    it.dependsOn("generateSkormJoinsCode")
-    it.dependsOn("generateSkormModelCode")
-}
-
-tasks.all {
-    if (this.name == "compileCommonMainKotlinMetadata") {
-        this.mustRunAfter("generateSkormObjectsCode")
-        this.mustRunAfter("generateSkormJoinsCode")
-        this.mustRunAfter("generateSkormModelCode")
-    }
 }
 
 tasks.withType<Test> {

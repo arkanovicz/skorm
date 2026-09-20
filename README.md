@@ -79,9 +79,10 @@ plugins {
 }
 
 skorm {
-    structure.set(File("src/commonMain/model/todo.kddl"))
-    runtimeModel.set(File("src/commonMain/model/todo.ksql"))  // optional
+    structure.set(file("src/commonMain/model/todo.kddl"))
+    runtimeModel.set(file("src/commonMain/model/todo.ksql"))  // optional
     destPackage.set("com.example.todo")
+    dialect.set("postgresql")                                 // or "hypersql"
 }
 
 dependencies {
@@ -93,6 +94,12 @@ dependencies {
     implementation("com.republicate.skorm:skorm-api-client")
 }
 ```
+
+Nothing else to declare: the plugin registers the generated sources on your Kotlin source sets,
+so Gradle sequences generation before compilation on its own. What it emits follows the platforms
+you build for — server-side registrations plus the creation script for a JVM target, REST client
+registrations for JS, wasm or native. Set `core` or `client` explicitly to force either on or off,
+for instance to emit client code in a project that has no JS target of its own.
 
 ### 4. Use the generated code
 

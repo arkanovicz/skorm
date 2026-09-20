@@ -4,70 +4,32 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 
 const val EXTENSION_NAME = "skorm"
-const val GEN_OBJECTS_TASK_NAME = "generateSkormObjectsCode"
-const val GEN_JOINS_ATTRIBUTES_NAME = "generateSkormJoinsCode"
-const val GEN_RUNTIME_MODEL_NAME = "generateSkormModelCode"
-const val GEN_DATABASE_CREATION_SCRIPT_TASK_NAME = "generateDatabaseCreationScript"
+const val GEN_TASK_NAME = "generateSkormCode"
+
+const val KOTLIN_MULTIPLATFORM_PLUGIN = "org.jetbrains.kotlin.multiplatform"
+const val KOTLIN_JVM_PLUGIN = "org.jetbrains.kotlin.jvm"
 
 abstract class SkormGradlePlugin : Plugin<Project> {
 
     override fun apply(project: Project) {
 
-        // Add the 'template' extension object
         val extension = project.extensions.create(EXTENSION_NAME, SkormParams::class.java, project)
 
-        // Generate database objects
-        project.tasks.register(GEN_OBJECTS_TASK_NAME, GenerateObjectsCodeTask::class.java) {
-            it.structure.set(extension.structure)
-            it.datasource.set(extension.datasource)
-            it.destPackage.set(extension.destPackage)
-            it.destFile.set(extension.destStructureFile)
-        }
-
-        // Generate tables joins attributes
-        project.tasks.register(GEN_JOINS_ATTRIBUTES_NAME, GenerateJoinAttributesCodeTask::class.java) {
-            it.structure.set(extension.structure)
-            it.datasource.set(extension.datasource)
-            it.destPackage.set(extension.destPackage)
-            it.destFile.set(extension.destJoinsFile)
-            it.destCoreFile.set(extension.destCoreJoinsFile)
-            it.destClientFile.set(extension.destClientJoinsFile)
-        }
-
-        // Generate runtime model objects and attributes
-        project.tasks.register(GEN_RUNTIME_MODEL_NAME, GenerateRuntimeModelTask::class.java) {
+        val generate = project.tasks.register(GEN_TASK_NAME, GenerateSkormCodeTask::class.java) {
             it.structure.set(extension.structure)
             it.datasource.set(extension.datasource)
             it.runtimeModel.set(extension.runtimeModel)
             it.destPackage.set(extension.destPackage)
-            it.destFile.set(extension.destModelFile)
-            it.destCoreFile.set(extension.destCoreModelFile)
-            it.destClientFile.set(extension.destClientModelFile)
-        }
-
-
-//        // Populate queries in core processor
-//        project.tasks.register(POPULATE_CORE_PROCESSOR_TASK_NAME, GenerateProcessorTask::class.java) {
-//            it.model.set(extension.definition)
-//            it.datasource.set(extension.datasource)
-//            it.destPackage.set(extension.destPackage)
-//            it.destFile.set(extension.destPopulateFile)
-//        }
-//
-//        // Generate database properties
-//        project.tasks.register(GEN_PROPERTIES_TASK_NAME, GeneratePropertiesCodeTask::class.java) {
-//            it.model.set(extension.definition)
-//            it.datasource.set(extension.datasource)
-//            it.propertiesFile.set(extension.properties)
-//            it.destPackage.set(extension.destPackage)
-//            it.destFile.set(extension.destPropertiesFile)
-//        }
-//
-        // Generate database creation script
-        project.tasks.register(GEN_DATABASE_CREATION_SCRIPT_TASK_NAME, GenerateCreationScriptTask::class.java) {
-            it.structure.set(extension.structure)
-            it.destFile.set(extension.destCreationScriptFile)
             it.dialect.set(extension.dialect)
+            it.core.set(extension.core)
+            it.client.set(extension.client)
+            it.outputDirectory.set(extension.outputDirectory)
         }
+
+        // Registering the generated dirs on the Kotlin source sets is what lets Gradle sequence
+        // generation before compilation by itself. Reached by plugin id, and the Kotlin types stay
+        // inside KotlinSourceWiring, so a project without a Kotlin plugin can still apply this one.
+        project.plugins.withId(KOTLIN_MULTIPLATFORM_PLUGIN) { KotlinSourceWiring.wireMultiplatform(project, generate) }
+        project.plugins.withId(KOTLIN_JVM_PLUGIN) { KotlinSourceWiring.wireSingleTarget(project, generate) }
     }
 }

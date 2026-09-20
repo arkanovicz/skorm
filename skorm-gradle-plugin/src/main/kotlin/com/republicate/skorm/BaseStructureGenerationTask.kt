@@ -33,8 +33,6 @@ abstract class BaseStructureGenerationTask: BaseGenerationTask() {
     protected val database: ASTDatabase by lazy {
         val foundStructure = structure.orNull
         val foundDatasource = datasource.orNull
-        logger.lifecycle("$tag @@@ found datasource: $foundDatasource")
-        logger.lifecycle("$tag @@@ found structure: $foundStructure")
         if ((foundStructure == null) == (foundDatasource == null)) {
             throw RuntimeException("$tag expecting exactly one of skorm.structure or skorm.datasource parameter")
         }
@@ -63,12 +61,6 @@ abstract class BaseStructureGenerationTask: BaseGenerationTask() {
         context.put("useUuidType", "uuid" in usedPrimitiveBases)
         context.put("useJsonType", "json" in usedPrimitiveBases || "jsonb" in usedPrimitiveBases)
         context.put("logger", LogTool())
-    }
-
-    override fun generateCode(templatePath: String, destFile: RegularFileProperty) {
-        logger.lifecycle("$tag modelStructure is: ${structure.orNull}")
-        logger.lifecycle("$tag datasource is: ${datasource.orNull}")
-        super.generateCode(templatePath, destFile)
     }
 
 }

@@ -57,6 +57,8 @@ dependencies {
     implementation(libs.velocity.engine.core)
     implementation(libs.velocity.tools.generic)
     implementation(libs.evo.inflector)
+    // to register generated sources on the consumer's Kotlin source sets; the consumer supplies it
+    compileOnly(libs.kotlin.gradle.plugin.api)
     api(libs.kddl)
     testImplementation(gradleTestKit())
     testImplementation(libs.junit)

@@ -1,77 +1,39 @@
 package com.republicate.skorm
 
 import org.gradle.api.Project
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import javax.inject.Inject
 
-const val DEFAULT_COMMON_OUTPUT_PATH = "generated-src/commonMain/kotlin"
-const val DEFAULT_JVM_OUTPUT_PATH = "generated-src/jvmMain/kotlin"
-const val DEFAULT_JS_OUTPUT_PATH = "generated-src/jsMain/kotlin"
-const val DEFAULT_JVM_RESOURCES_PATH = "generated-src/jvmMain/resources"
-const val DEFAULT_OUTPUT_STRUCTURE_FILE = "skormObjects.kt"
-const val DEFAULT_OUTPUT_JOINS_FILE = "skormJoins.kt"
-const val DEFAULT_OUTPUT_JOINS_CORE_FILE = "skormJoinsCore.kt"
-const val DEFAULT_OUTPUT_JOINS_CLIENT_FILE = "skormJoinsClient.kt"
-const val DEFAULT_OUTPUT_MODEL_FILE = "skormModel.kt"
-const val DEFAULT_OUTPUT_MODEL_CORE_FILE = "skormModelCore.kt"
-const val DEFAULT_OUTPUT_MODEL_CLIENT_FILE = "skormModelClient.kt"
-const val DEFAULT_OUTPUT_CREATION_SCRIPT_FILE = "create-script.sql"
+const val DEFAULT_OUTPUT_DIRECTORY = "generated-src"
 
 @Suppress("UnnecessaryAbstractClass")
 abstract class SkormParams @Inject constructor(project: Project) {
 
     private val objects = project.objects
 
+    /** Model structure; exactly one of [structure] or [datasource] is expected. */
     val structure: RegularFileProperty = objects.fileProperty()
 
+    /** JDBC URL to reverse-engineer the structure from, instead of [structure]. */
     val datasource: Property<String> = objects.property(String::class.java)
 
-    val properties: RegularFileProperty = objects.fileProperty()
+    /** Runtime model (ksql); without it, no attribute code is generated. */
+    val runtimeModel: RegularFileProperty = objects.fileProperty()
 
     val destPackage: Property<String> = objects.property(String::class.java)
 
-    val destStructureFile: RegularFileProperty = objects.fileProperty().convention(
-        project.layout.buildDirectory.file("$DEFAULT_COMMON_OUTPUT_PATH/$DEFAULT_OUTPUT_STRUCTURE_FILE")
-    )
-
-    val destJoinsFile: RegularFileProperty = objects.fileProperty().convention(
-        project.layout.buildDirectory.file("$DEFAULT_COMMON_OUTPUT_PATH/$DEFAULT_OUTPUT_JOINS_FILE")
-    )
-
-    val destCoreJoinsFile: RegularFileProperty = objects.fileProperty().convention(
-        project.layout.buildDirectory.file("$DEFAULT_JVM_OUTPUT_PATH/$DEFAULT_OUTPUT_JOINS_CORE_FILE")
-    )
-
-    val destClientJoinsFile: RegularFileProperty = objects.fileProperty().convention(
-        project.layout.buildDirectory.file("$DEFAULT_JS_OUTPUT_PATH/$DEFAULT_OUTPUT_JOINS_CLIENT_FILE")
-    )
-
-    val runtimeModel: RegularFileProperty = objects.fileProperty()
-
-    val destModelFile: RegularFileProperty = objects.fileProperty().convention(
-        project.layout.buildDirectory.file("$DEFAULT_COMMON_OUTPUT_PATH/$DEFAULT_OUTPUT_MODEL_FILE")
-    )
-
-    val destCoreModelFile: RegularFileProperty = objects.fileProperty().convention(
-        project.layout.buildDirectory.file("$DEFAULT_JVM_OUTPUT_PATH/$DEFAULT_OUTPUT_MODEL_CORE_FILE")
-    )
-
-    val destClientModelFile: RegularFileProperty = objects.fileProperty().convention(
-        project.layout.buildDirectory.file("$DEFAULT_JS_OUTPUT_PATH/$DEFAULT_OUTPUT_MODEL_CLIENT_FILE")
-    )
-
-//    val destPopulateFile: RegularFileProperty = objects.fileProperty().convention(
-//        project.layout.buildDirectory.file("$DEFAULT_JVM_OUTPUT_PATH/$DEFAULT_OUTPUT_POPULATE_FILE")
-//    )
-//
-//    val destPropertiesFile: RegularFileProperty = objects.fileProperty().convention(
-//        project.layout.buildDirectory.file("$DEFAULT_COMMON_OUTPUT_PATH/$DEFAULT_OUTPUT_PROPERTIES_FILE")
-//    )
-
-    val destCreationScriptFile: RegularFileProperty = objects.fileProperty().convention(
-        project.layout.buildDirectory.file("$DEFAULT_JVM_RESOURCES_PATH/$DEFAULT_OUTPUT_CREATION_SCRIPT_FILE")
-    )
-
+    /** kddl `Format` name — `postgresql` or `hypersql`. Required to emit the creation script. */
     val dialect: Property<String> = objects.property(String::class.java)
+
+    /** Server-side registrations and the creation script. Unset: on when the project has a JVM target. */
+    val core: Property<Boolean> = objects.property(Boolean::class.java)
+
+    /** REST client registrations. Unset: on when the project has a JS, wasm or native target. */
+    val client: Property<Boolean> = objects.property(Boolean::class.java)
+
+    val outputDirectory: DirectoryProperty = objects.directoryProperty().convention(
+        project.layout.buildDirectory.dir(DEFAULT_OUTPUT_DIRECTORY)
+    )
 }

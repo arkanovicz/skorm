@@ -1,36 +1,23 @@
 package com.republicate.skorm
 
-import com.republicate.kddl.ASTDatabase
-import com.republicate.kddl.Utils
-import com.republicate.kddl.Utils.getFile
-import com.republicate.kddl.parse
-import com.republicate.kddl.reverse
 import org.apache.velocity.VelocityContext
 import org.apache.velocity.app.VelocityEngine
 import org.gradle.api.DefaultTask
-import org.gradle.api.Task
-import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.tasks.*
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.options.Option
+import java.io.File
 import java.io.FileWriter
 import java.util.*
 
 abstract class BaseGenerationTask : DefaultTask() {
 
-    override fun dependsOn(vararg paths: Any?): Task {
-        return super.dependsOn(*paths)
-    }
-
     @get:Input
     @get:Option(option = "destPackage", description = "Destination package")
     @get:Optional
     abstract val destPackage: Property<String>
-
-    @get:Option(option = "destFile", description = "Destination file")
-    @get:OutputFile
-    abstract val destFile: RegularFileProperty
 
     @Internal
     open val tag = "[skorm]"
@@ -54,14 +41,10 @@ abstract class BaseGenerationTask : DefaultTask() {
 
     protected open fun populateContext(context: VelocityContext) {}
 
-    protected open fun generateCode(templatePath: String, destFile: RegularFileProperty) {
-        logger.lifecycle("$tag templatePath is $templatePath")
-        logger.lifecycle("$tag destPackage is: ${destPackage.orNull}")
-        logger.lifecycle("$tag destFile is: ${destFile.orNull}")
-
-        destFile.get().asFile.parentFile.mkdirs()
-        val writer = FileWriter(destFile.get().asFile)
-
+    protected open fun generateCode(templatePath: String, destFile: File) {
+        logger.info("$tag $templatePath -> $destFile")
+        destFile.parentFile.mkdirs()
+        val writer = FileWriter(destFile)
         val template = getVelocityEngine().getTemplate(templatePath) ?: throw RuntimeException("template not found")
         template.merge(getVelocityContext(), writer)
         writer.close()
