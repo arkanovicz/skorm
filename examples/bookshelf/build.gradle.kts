@@ -20,9 +20,9 @@ buildscript {
 }
 
 skorm {
-    structure.set(File("src/commonMain/model/bookshelf.kddl"))
+    model.set(file("src/commonMain/model/bookshelf.kddl"))
+    attributes.set(file("src/commonMain/model/bookshelf.ksql"))
     destPackage.set("com.republicate.skorm.bookshelf")
-    runtimeModel.set(File("src/commonMain/model/bookshelf.ksql"))
     dialect.set("hypersql")  // H2 accepts HyperSQL-formatted DDL
 }
 

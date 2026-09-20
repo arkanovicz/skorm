@@ -13,14 +13,14 @@ abstract class SkormParams @Inject constructor(project: Project) {
 
     private val objects = project.objects
 
-    /** Model structure; exactly one of [structure] or [datasource] is expected. */
-    val structure: RegularFileProperty = objects.fileProperty()
+    /** The kddl model; exactly one of [model] or [datasource] is expected. */
+    val model: RegularFileProperty = objects.fileProperty()
 
-    /** JDBC URL to reverse-engineer the structure from, instead of [structure]. */
+    /** JDBC URL to reverse-engineer the model from, instead of [model]. */
     val datasource: Property<String> = objects.property(String::class.java)
 
-    /** Runtime model (ksql); without it, no attribute code is generated. */
-    val runtimeModel: RegularFileProperty = objects.fileProperty()
+    /** The ksql attributes declared over the model; without it, no attribute code is generated. */
+    val attributes: RegularFileProperty = objects.fileProperty()
 
     val destPackage: Property<String> = objects.property(String::class.java)
 

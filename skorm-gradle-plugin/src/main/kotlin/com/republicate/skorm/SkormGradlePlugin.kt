@@ -16,9 +16,9 @@ abstract class SkormGradlePlugin : Plugin<Project> {
         val extension = project.extensions.create(EXTENSION_NAME, SkormParams::class.java, project)
 
         val generate = project.tasks.register(GEN_TASK_NAME, GenerateSkormCodeTask::class.java) {
-            it.structure.set(extension.structure)
+            it.model.set(extension.model)
             it.datasource.set(extension.datasource)
-            it.runtimeModel.set(extension.runtimeModel)
+            it.attributes.set(extension.attributes)
             it.destPackage.set(extension.destPackage)
             it.dialect.set(extension.dialect)
             it.core.set(extension.core)

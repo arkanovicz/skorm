@@ -17,12 +17,12 @@ import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.options.Option
 
-abstract class BaseStructureGenerationTask: BaseGenerationTask() {
+abstract class BaseModelGenerationTask: BaseGenerationTask() {
 
     @get:InputFile
-    @get:Option(option = "modelStructure", description = "Source kddl model structure")
+    @get:Option(option = "model", description = "Source kddl model")
     @get:Optional
-    abstract val structure: RegularFileProperty
+    abstract val model: RegularFileProperty
 
     @get:Input
     @get:Option(option = "datasource", description = "Datasource JDBC URL with credentials")
@@ -31,14 +31,14 @@ abstract class BaseStructureGenerationTask: BaseGenerationTask() {
 
     @get:Internal
     protected val database: ASTDatabase by lazy {
-        val foundStructure = structure.orNull
+        val foundModel = model.orNull
         val foundDatasource = datasource.orNull
-        if ((foundStructure == null) == (foundDatasource == null)) {
-            throw RuntimeException("$tag expecting exactly one of skorm.structure or skorm.datasource parameter")
+        if ((foundModel == null) == (foundDatasource == null)) {
+            throw RuntimeException("$tag expecting exactly one of skorm.model or skorm.datasource parameter")
         }
         val db = when {
-            foundStructure != null -> {
-                val file = project.file(foundStructure) ?: throw RuntimeException("model structure file not found")
+            foundModel != null -> {
+                val file = project.file(foundModel) ?: throw RuntimeException("kddl model file not found")
                 val ddl = Utils.getFile(file.absolutePath)
                 parse(ddl)
             }

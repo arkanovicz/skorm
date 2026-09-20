@@ -11,7 +11,7 @@ import ${package}.#pascal($database.name)Database.#pascal($schema.name)Schema.$e
 
 #set ($databaseClass = "#pascal($database.name)Database")
 
-#foreach($schema in $model.schemas)
+#foreach($schema in $attributes.schemas)
   #set($schemaClass = "${databaseClass}.#pascal($schema.name)Schema")
   #set($schemaInstance = "${databaseClass}.#camel($schema.name)")
   #foreach($item in $schema.items)

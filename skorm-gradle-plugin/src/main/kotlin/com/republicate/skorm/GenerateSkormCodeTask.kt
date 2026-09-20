@@ -25,7 +25,7 @@ import java.io.File
  *   <out>/core/resources   database creation script
  *   <out>/client/kotlin    REST client attribute registrations
  */
-abstract class GenerateSkormCodeTask : BaseStructureGenerationTask() {
+abstract class GenerateSkormCodeTask : BaseModelGenerationTask() {
 
     init {
         description = "Skorm code generation"
@@ -34,7 +34,7 @@ abstract class GenerateSkormCodeTask : BaseStructureGenerationTask() {
 
     @get:InputFile
     @get:Optional
-    abstract val runtimeModel: RegularFileProperty
+    abstract val attributes: RegularFileProperty
 
     @get:Input
     @get:Optional
@@ -56,13 +56,13 @@ abstract class GenerateSkormCodeTask : BaseStructureGenerationTask() {
     abstract val outputDirectory: DirectoryProperty
 
     @get:Internal
-    protected val model: RMDatabase? by lazy {
-        runtimeModel.orNull?.let { parseRuntimeModel(Utils.getFile(project.file(it).absolutePath)) }
+    protected val attributeModel: RMDatabase? by lazy {
+        attributes.orNull?.let { parseRuntimeModel(Utils.getFile(project.file(it).absolutePath)) }
     }
 
     override fun populateContext(context: VelocityContext) {
         super.populateContext(context)
-        context.put("model", model)
+        context.put("attributes", attributeModel)
     }
 
     private fun generateCore() = core.orNull ?: platforms.get().any { it in JVM_PLATFORMS }
@@ -81,7 +81,7 @@ abstract class GenerateSkormCodeTask : BaseStructureGenerationTask() {
         if (withCore) generateCode("templates/skorm-joins-core.vtl", File(out, "core/kotlin/skormJoinsCore.kt"))
         if (withClient) generateCode("templates/skorm-joins-client.vtl", File(out, "client/kotlin/skormJoinsClient.kt"))
 
-        if (model != null) {
+        if (attributeModel != null) {
             checkAttributeParameters()
             generateCode("templates/skorm-model.vtl", File(out, "common/kotlin/skormModel.kt"))
             if (withCore) generateCode("templates/skorm-model-core.vtl", File(out, "core/kotlin/skormModelCore.kt"))
@@ -93,7 +93,7 @@ abstract class GenerateSkormCodeTask : BaseStructureGenerationTask() {
 
     /** An attribute's declared arguments must match the parameters its SQL actually needs. */
     private fun checkAttributeParameters() {
-        for (schema in model!!.schemas) {
+        for (schema in attributeModel!!.schemas) {
             val dbSchema = database.schemas[schema.name] ?: throw SkormException("schema not found: ${schema.name}")
             for (item in schema.items) {
                 val def = AttributeDefinition.parse(item.sql!!)

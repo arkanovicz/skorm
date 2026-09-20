@@ -79,8 +79,8 @@ plugins {
 }
 
 skorm {
-    structure.set(file("src/commonMain/model/todo.kddl"))
-    runtimeModel.set(file("src/commonMain/model/todo.ksql"))  // optional
+    model.set(file("src/commonMain/model/todo.kddl"))
+    attributes.set(file("src/commonMain/model/todo.ksql"))    // optional
     destPackage.set("com.example.todo")
     dialect.set("postgresql")                                 // or "hypersql"
 }
@@ -102,8 +102,8 @@ one on or off, for instance to emit client code in a project that has no JS targ
 
 Options:
 
-- `structure` — the kddl model; or `datasource`, a JDBC URL to reverse-engineer it from. Exactly one.
-- `runtimeModel` — the ksql attributes. Without it, only the structure is generated.
+- `model` — the kddl model; or `datasource`, a JDBC URL to reverse-engineer it from. Exactly one.
+- `attributes` — the ksql attributes declared over it. Without them, only the model is generated.
 - `destPackage` — package of the generated code.
 - `dialect` — `postgresql` or `hypersql`, required to emit the creation script.
 - `core` / `client` — unset, they follow the project's targets; set, they force.
