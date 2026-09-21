@@ -415,6 +415,26 @@ class KotlinToolTest {
     }
 
     @Test
+    fun `every integer spelling kddl accepts maps to a Kotlin type and getter`() {
+        val db = ASTDatabase("test_db")
+        val schema = ASTSchema(db, "test_schema")
+        db.schemas[schema.name] = schema
+        val table = ASTTable(schema, "t")
+        schema.tables[table.name] = table
+        val expected = mapOf(
+            "tinyint" to "Byte", "byte" to "Byte",
+            "smallint" to "Short", "smallinteger" to "Short", "short" to "Short",
+            "int" to "Int", "integer" to "Int",
+            "bigint" to "Long", "biginteger" to "Long", "long" to "Long"
+        )
+        for ((spelling, kotlin) in expected) {
+            val field = ASTField(table, "f", spelling, false, true, false)
+            assertEquals(kotlin, tool.type(field), spelling)
+            assertEquals("get$kotlin", tool.getter(field), spelling)
+        }
+    }
+
+    @Test
     fun `aliases target the nested entity and enum classes`() {
         val db = ASTDatabase("book_shop")
         val schema = ASTSchema(db, "main")

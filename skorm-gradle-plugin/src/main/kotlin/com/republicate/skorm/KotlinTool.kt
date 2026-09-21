@@ -32,10 +32,11 @@ class KotlinTool {
         "timestamptz" -> "LocalDateTime" // for now TODO
         "time" -> "LocalTime"
         "timetz" -> "LocalTime" // for now TODO
-        "byte" -> "Byte"
-        "short" -> "Short"
+        // every spelling kddl's lexer accepts: the base keeps the one the model used
+        "tinyint", "byte" -> "Byte"
+        "smallint", "smallinteger", "short" -> "Short"
         "int", "integer", "serial" -> "Int"
-        "long", "bigint", "bigserial" -> "Long"
+        "long", "bigint", "biginteger", "bigserial" -> "Long"
         "float" -> "Float"
         "double" -> "Double"
         "money", "numeric", "decimal" -> "Double" // TODO

@@ -9,6 +9,7 @@ All notable changes to Skorm are documented in this file.
 - Many-to-many joins were not declared client-side at all — the join-table branch of the client template was empty, so every `*-*` accessor failed over REST.
 - Client-side FK parameter sets were each other's: the forward attribute declared the target's PK columns and the reverse one the FK's own columns, while a parameter is looked up *by name inside the receiving instance*. Invisible whenever the FK column is named like the target PK (`author_id`), fatal otherwise (`donor --> dude?` asked a book for `dude_id`). This is the client-side half of the reverse-query fix shipped for core in 0.18.
 - A nullable forward FK generated a non-nullable accessor (`Book.donor(): Dude` for `donor --> dude?`) while both registrations used `nullableRowAttribute`, so a row without the FK failed the cast instead of returning null.
+- Code generation failed with `unsupported type` on `tinyint`, `smallint`, `smallinteger` and `biginteger`: kddl keeps the spelling a model used, and the type mapper only knew `byte`, `short` and `bigint`. Since kddl 0.26 documents `tinyint`/`smallint` as the real names and `byte`/`short` as aliases, a model written against current kddl would hit it. Every spelling kddl's lexer accepts is now mapped.
 - The core join template derived a multi-column forward FK's attribute name without the unique-destination test the accessor and client templates apply, so the three names diverged for composite FKs.
 
 ### Added
