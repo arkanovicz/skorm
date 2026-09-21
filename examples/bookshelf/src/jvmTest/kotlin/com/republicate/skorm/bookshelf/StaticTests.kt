@@ -1,5 +1,6 @@
 package com.republicate.skorm.bookshelf
 
+import com.republicate.skorm.SkormException
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.*
@@ -10,6 +11,7 @@ import kotlinx.datetime.LocalDate
 import org.jsoup.Jsoup
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -64,6 +66,18 @@ class StaticTests {
                 // a nullable forward FK yields null rather than failing the cast
                 assertNull(theBook.donor())
                 assertNotNull(theBook.author())
+
+                // traversal intent: `book *-- author` exposes the collection, the chevron in
+                // `donor --> dude?` withholds it — neither the accessor nor its registration exists
+                assertEquals(listOf(theBook.title), author.books().map { it.title }.toList())
+                assertEquals(
+                    listOf("Author", "Tag"),
+                    Class.forName("com.republicate.skorm.bookshelf.SkormJoinsKt").methods
+                        .filter { it.name == "books" }.map { it.parameterTypes[0].simpleName }.sorted()
+                )
+                assertThrows<SkormException> {
+                    ExampleDatabase.bookshelf.entity("dude").instanceAttributes.findAttribute<Any>("books")
+                }
 
                 // many-to-many, both ways: the accessor name, the query direction and the
                 // row type have to agree between the accessor and its registration

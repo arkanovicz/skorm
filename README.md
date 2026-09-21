@@ -326,20 +326,30 @@ table book {
 
 #### Relationships
 
-- `->` - many-to-one (foreign key)
-- `*-*` - many-to-many (creates join table)
-- `-->` - one-to-many (reverse navigation)
+A link's `*` marks the many side, which holds the foreign key; a chevron (`>`) pointing at the
+*one* side restricts traversal to the reference. With no chevron, both navigations are generated.
 
-Examples:
 ```
-author *-* book           // many-to-many: creates author_book join table
-borrowing -> book, user   // borrowing has book_id and user_id foreign keys
+book *-- author      // book holds author_id — Book.author() and Author.books()
+borrowing -> book    // borrowing holds book_id — Borrowing.book() only
+book *-* tag         // join table book_tag — Book.tags() and Tag.books()
+
+table book {
+  donor -- dude?     // field link, both ways — Book.donor() and Dude.donorBooks()
+  editor -> dude?    // field link, reference only — Book.editor()
+}
 ```
+
+When two links reach the same table, as `donor` and `editor` do here, the collection is named
+after the field (`donorBooks`) rather than the table (`books`).
+
+A many-to-many is always navigable both ways. `a -- b` between two tables is rejected, nothing
+saying which side holds the key (kddl ≥ 0.27).
 
 The kddl compiler generates:
 1. SQL DDL scripts for database creation
 2. Kotlin entity classes with typed properties
-3. Navigation methods for relationships (e.g., `book.author()`, `author.books()`)
+3. Navigation methods for the relationships above
 
 For complete kddl documentation, see the [kddl project](https://github.com/arkanovicz/kddl).
 

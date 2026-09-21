@@ -25,7 +25,9 @@ database example {
       label varchar(30)
     }
 
-    book --> author
+    // no chevron: both navigations (Book.author, Author.books)
+    book *-- author
+    // a chevron at the one side: the reference only, no collection on the other side
     borrowing -> book
     borrowing -> dude
     book *-* tag

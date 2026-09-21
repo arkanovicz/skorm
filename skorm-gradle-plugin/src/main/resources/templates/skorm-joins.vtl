@@ -41,6 +41,8 @@ suspend fun ${rightInstance}.#plural($rightToLeftAttrBase)(): Sequence<$leftInst
         #end
 // forward foreign key
 suspend fun ${schemaClass}.#pascal($fk.from.name).${attrName}(): ${schemaClass}.#pascal($fk.towards.name)#if(!$fk.nonNull)?#end = entity.retrieve("$attrName", this)
+## a chevron at the one side (kddl 0.27) withholds the collection
+        #if($fk.bidirectional)
         #if($kotlin.isUniqueFkDest($fk))
           #set($attrName = "#camel($fk.from.name)")
         #else
@@ -48,6 +50,7 @@ suspend fun ${schemaClass}.#pascal($fk.from.name).${attrName}(): ${schemaClass}.
         #end
 // reverse foreign key
 suspend fun ${schemaClass}.#pascal($fk.towards.name).#plural($attrName)(): Sequence<${schemaClass}.#pascal($fk.from.name)> = entity.query("#plural($attrName)", this)
+        #end
       #end
     #end
   #end

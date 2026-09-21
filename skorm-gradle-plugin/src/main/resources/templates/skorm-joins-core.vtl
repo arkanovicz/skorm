@@ -47,6 +47,8 @@ fun ${databaseClass}.initJoins() {
           #end
    // forward foreign key attribute
    ${schemaInstance}.entity("#camel($fk.from.name)").instanceAttributes.#if($fk.nonNull)rowAttribute#{else}nullableRowAttribute#end<$instanceClass>("$attrName", "$kotlin.foreignKeyForwardQuery($fk)", $instanceClass)
+## a chevron at the one side (kddl 0.27) withholds the collection
+          #if($fk.bidirectional)
           #set($instanceClass = "${schemaClass}.#pascal($fk.from.name)")
           #if($kotlin.isUniqueFkDest($fk))
             #set($attrName = "#camel($fk.from.name)")
@@ -55,6 +57,7 @@ fun ${databaseClass}.initJoins() {
           #end
    // reverse foreign key attribute
    ${schemaInstance}.entity("#camel($fk.towards.name)").instanceAttributes.rowSetAttribute<$instanceClass>("#plural($attrName)", "$kotlin.foreignKeyReverseQuery($fk)", $instanceClass)
+          #end
         #end
       #end
     #end
