@@ -2,7 +2,7 @@
 
 All notable changes to Skorm are documented in this file.
 
-## [0.20] - unreleased
+## [0.20] - 2026-09-21
 
 ### Fixed
 - Many-to-many joins were broken end to end: the core registration mirrored the accessors, naming the attribute after the *other* end (`Book.tags()` looked up `tags`, core registered `books` on `book`), pairing it with the opposite query direction and with the row type of the end it did not return. The three views now derive the attribute name the same way, from the far-side FK column.
