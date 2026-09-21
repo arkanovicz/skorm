@@ -27,8 +27,7 @@ abstract class SkormGradlePlugin : Plugin<Project> {
         }
 
         // Registering the generated dirs on the Kotlin source sets is what lets Gradle sequence
-        // generation before compilation by itself. Reached by plugin id, and the Kotlin types stay
-        // inside KotlinSourceWiring, so a project without a Kotlin plugin can still apply this one.
+        // generation before compilation by itself.
         project.plugins.withId(KOTLIN_MULTIPLATFORM_PLUGIN) { KotlinSourceWiring.wireMultiplatform(project, generate) }
         project.plugins.withId(KOTLIN_JVM_PLUGIN) { KotlinSourceWiring.wireSingleTarget(project, generate) }
     }
