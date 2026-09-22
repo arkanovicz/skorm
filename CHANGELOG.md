@@ -2,6 +2,11 @@
 
 All notable changes to Skorm are documented in this file.
 
+## [0.21] - unreleased
+
+### Fixed
+- The generated database's singleton guard said "instance already crated".
+
 ## [0.20] - 2026-09-21
 
 ### Fixed

@@ -28,7 +28,7 @@ class $databaseClass(processor: Processor): Database("$database.name", processor
 #end
     }
     init {
-        if (isInstantiated()) throw RuntimeException("$databaseClass instance already crated")
+        if (isInstantiated()) throw RuntimeException("$databaseClass instance already created")
         instance = this
     }
     override fun initialize() {
