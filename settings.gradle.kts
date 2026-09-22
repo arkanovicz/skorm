@@ -23,5 +23,3 @@ dependencyResolutionManagement {
         mavenLocal() // After mavenCentral to ensure external libs use GMM from remote
     }
 }
-
-enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
