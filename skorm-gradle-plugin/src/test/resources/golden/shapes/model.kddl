@@ -1,0 +1,55 @@
+// Frozen input for the golden-output tests: shapes the bookshelf example does not reach.
+database shapes {
+
+  schema main {
+
+    enum level(low, high)
+
+    table person {
+      name varchar(50)
+      rank level                           // named enum
+      nature enum('a', 'b') as PersonNature // inline enum with an alias
+      small smallint
+      tiny tinyint?
+      big biginteger?
+      uid uuid?                            // each of these pulls in its own import
+      meta json?
+      born date?
+      seen timestamp?
+    }
+
+    table country {
+      *code char(2)                        // non-serial primary key
+      label varchar(50)
+    }
+
+    table friendship {
+      *a_id -- person                      // composite primary key, two links to the same table
+      *b_id -- person
+      since date
+    }
+
+    table gift {
+      label varchar(20)
+    }
+
+    table address {
+      city varchar(50)
+      owner -- person                      // field link, both ways
+      backup -> person?                    // field link, reference only
+    }
+
+    table vip : person                     // inheritance — today an empty entity, not a Person subclass
+
+    address *-- country                    // today named after the FK column: Address.code(): Country
+    gift *-- friendship                    // multi-column foreign key
+    person *-* address
+  }
+
+  schema other {
+    table badge {
+      label varchar(20)
+    }
+    badge *-- main.person                  // cross-schema link — today uncompilable (OtherSchema.Person)
+  }
+}

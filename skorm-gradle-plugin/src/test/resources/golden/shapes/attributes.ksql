@@ -1,0 +1,28 @@
+// Frozen input for the golden-output tests: attribute shapes the bookshelf example does not reach.
+database shapes {
+  schema main {
+
+    attr personCount: Int =
+      SELECT count(*) FROM person;
+
+    attr oldestBirth: LocalDate? =
+      SELECT min(born) FROM person;
+
+    attr summary: Json.Object =
+      SELECT count(*) AS persons FROM person;
+
+    attr everybody: Person* =
+      SELECT * FROM person;
+
+    attr Person.mainAddress: Address? =
+      SELECT * FROM address WHERE owner = {person_id} LIMIT 1;
+
+    attr Person.counts: (addresses: Int, friends: Int) =
+      SELECT (SELECT count(*) FROM address WHERE owner = {person_id}) addresses,
+             (SELECT count(*) FROM friendship WHERE a_id = {person_id}) friends;
+
+    // known to generate uncompilable code (a scalar rowset, see the TODOs)
+    attr Person.cities: String* =
+      SELECT city FROM address WHERE owner = {person_id};
+  }
+}
