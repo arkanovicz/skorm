@@ -15,7 +15,12 @@ class GeneratedKeyMarker(
     override fun toString() = "out:generated_key($colName)"
 }
 
-typealias RowFactory = () -> Json.MutableObject
+/** Builds the object a row is read into. */
+fun interface RowFactory {
+    fun new(): Json.MutableObject
+    /** [kind] is the row's discriminator when the rows carry one: a hierarchy root builds the subclass it names. */
+    fun new(kind: String?): Json.MutableObject = new()
+}
 
 interface Transaction : Processor {
     suspend fun rollback(): Unit

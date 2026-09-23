@@ -244,6 +244,8 @@ abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = 
     abstract val processor: Processor
     open val schema: Schema? = null
     open val database: Database? get() = parent?.database
+    /** consulted after this holder's own attributes and before its parent's: an entity's parent entity */
+    open val inherited: AttributeHolder? get() = null
     private val _attributes = mutableMapOf<String, Attribute<*>>()
     val attributes: Map<String, Attribute<*>> get() = _attributes
     val path: String by lazy { (parent?.path ?: "") + "/$name" }
@@ -262,7 +264,7 @@ abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = 
         while (true) {
             val attr = holder.getAttribute<Attribute<T>>(attrName)
             if (attr != null) return attr
-            holder = holder.parent ?: throw SkormException("attribute not found: $path.$attrName")
+            holder = holder.inherited ?: holder.parent ?: throw SkormException("attribute not found: $path.$attrName")
         }
     }
 
@@ -347,26 +349,23 @@ inline fun <reified T> AttributeHolder.scalarAttribute(name: String, params: Set
     }
 }
 
-fun <T: Json.MutableObject> AttributeHolder.rowAttribute(name: String, params: Set<String>, resultEntity: Entity? = null): RowAttribute<T> =
-    rowAttribute(name, params, resultEntity?.let { it ::new } ?: Json::MutableObject)
 
-fun <T: Json.MutableObject> AttributeHolder.rowAttribute(name: String, params: Set<String>, factory: RowFactory): RowAttribute<T> =
+/** Rows are read into what the factory builds: the entity they belong to, or by default a plain object. */
+val plainRows = RowFactory { Json.MutableObject() }
+
+fun <T: Json.MutableObject> AttributeHolder.rowAttribute(name: String, params: Set<String>, factory: RowFactory = plainRows): RowAttribute<T> =
     RowAttribute<T>(name, params, factory).also {
         addAttribute(it)
     }
 
-fun <T: Json.MutableObject> AttributeHolder.nullableRowAttribute(name: String, params: Set<String>, resultEntity: Entity? = null): NullableRowAttribute<T> =
-    nullableRowAttribute(name, params, resultEntity?.let { it ::new } ?: Json::MutableObject)
 
-fun <T: Json.MutableObject> AttributeHolder.nullableRowAttribute(name: String, params: Set<String>, factory: RowFactory): NullableRowAttribute<T> =
+fun <T: Json.MutableObject> AttributeHolder.nullableRowAttribute(name: String, params: Set<String>, factory: RowFactory = plainRows): NullableRowAttribute<T> =
     NullableRowAttribute<T>(name, params, factory).also {
         addAttribute(it)
     }
 
-fun <T: Json.MutableObject>AttributeHolder.rowSetAttribute(name: String, params: Set<String>, resultEntity: Entity? = null) =
-    rowSetAttribute<T>(name, params, resultEntity?.let { it ::new } ?: Json::MutableObject)
 
-fun <T: Json.MutableObject> AttributeHolder.rowSetAttribute(name: String, params: Set<String>, factory: RowFactory): RowSetAttribute<T> =
+fun <T: Json.MutableObject> AttributeHolder.rowSetAttribute(name: String, params: Set<String>, factory: RowFactory = plainRows): RowSetAttribute<T> =
     RowSetAttribute<T>(name, params, factory).also {
         addAttribute(it)
     }

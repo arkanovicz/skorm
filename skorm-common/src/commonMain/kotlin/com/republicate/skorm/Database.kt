@@ -51,7 +51,14 @@ open class Schema protected constructor(name: String, parent: Database) : Attrib
     }
 }
 
-open class Entity protected constructor(val name: String, val schema: Schema) {
+open class Entity protected constructor(val name: String, val schema: Schema, val parent: Entity? = null) : RowFactory {
+
+    /**
+     * What the entity's own SELECTs read from, when not its table: a hierarchy root reads its table
+     * LEFT JOINed with its descendants' base tables, so that every row comes back complete and as its kind.
+     */
+    open val source: String? = null
+
     init {
         @Suppress("LeakingThis")
         schema.addEntity(this)
@@ -60,6 +67,8 @@ open class Entity protected constructor(val name: String, val schema: Schema) {
     inner class InstanceAttributes: AttributeHolder(name, schema) {
         override val processor get() = schema.processor
         override val schema get() = parent as Schema
+        // a subtype answers to its parent entity's attributes: navigations, ksql attributes, all of it
+        override val inherited: AttributeHolder? get() = this@Entity.parent?.instanceAttributes
 
         override fun prepare(attr: Attribute<*>, vararg params: Any?): Pair<String, Map<String, Any?>> {
             val doRestPK = processor.restMode && params.isNotEmpty() && params[0] is Instance && (params[0] as Instance).isPersisted
@@ -101,13 +110,13 @@ open class Entity protected constructor(val name: String, val schema: Schema) {
     val primaryKey: List<Field> by lazy { _fields.values.filter { it.isPrimary } }
 
     private val fetchAttribute: NullableRowAttribute<Instance> by lazy {
-        NullableRowAttribute<Instance>("fetch", primaryKey.map { it.name }.toSet(), this::new).apply {
+        NullableRowAttribute<Instance>("fetch", primaryKey.map { it.name }.toSet(), this).apply {
             check(schema.database.populated)
         }
     }
 
     private val browseAttribute: RowSetAttribute<Instance> by lazy {
-        RowSetAttribute<Instance>("browse", emptySet(), this::new).apply {
+        RowSetAttribute<Instance>("browse", emptySet(), this).apply {
             check(schema.database.populated)
         }
     }
@@ -130,7 +139,10 @@ open class Entity protected constructor(val name: String, val schema: Schema) {
         }
     }
 
-    open fun new() = Instance(this)
+    override fun new() = Instance(this)
+
+    /** A hierarchy root overrides this to build the subclass [kind] names; rows of other entities carry no kind. */
+    override fun new(kind: String?): Instance = new()
 
     open suspend fun fetch(vararg key: Any): Instance? = instanceAttributes.retrieve(fetchAttribute, *key)
     open suspend fun browse() = instanceAttributes.query<Instance>(browseAttribute)

@@ -7,6 +7,8 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 private val logger = KotlinLogging.logger("core")
 
 @Suppress("NOTHING_TO_INLINE")
+const val KIND_COLUMN = "kind"
+
 open class CoreProcessor(protected open val connector: Connector): Processor {
 
     override val configTag = "core"
@@ -133,7 +135,7 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
             null -> Json.MutableObject().apply {
                 putAll(names, rawValues, types)
             }
-            else -> factory().also { result ->
+            else -> factory.new(kindOf(names, rawValues)).also { result ->
                 when (result) {
                     is Instance -> {
                         result.putNamesValues(names, rawValues, types)
@@ -158,7 +160,7 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
                 null -> Json.MutableObject().apply {
                     putAll(names, it, types)
                 }
-                else -> factory().also { result ->
+                else -> factory.new(kindOf(names, it)).also { result ->
                     when (result) {
                         is Instance -> {
                             result.putNamesValues(names, it, types)
@@ -233,18 +235,22 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     override fun downstreamFilter(type: String, value: Any?) =
         readFilters[type]?.let { filter -> filter(value) } ?: value
 
+    // the row's discriminator, when the rows carry one
+    private fun kindOf(names: Array<String>, values: Array<Any?>): String? =
+        names.indexOf(KIND_COLUMN).takeIf { it >= 0 }?.let { values[it] as? String }
+
     // sql utils
+    /** an entity's own columns from its table; everything from a wider [Entity.source], its joins included */
+    private fun Entity.selection() = source?.let { "* FROM $it" }
+        ?: "${fields.values.joinToString(", ") { writeMapper(it.name) }} FROM ${schema.name}.${writeMapper(name)}"
+
     private fun Entity.generateBrowseStatement(): QueryDefinition {
-        val stmt = "SELECT ${
-            fields.values.joinToString(", ") { writeMapper(it.name) }
-        } FROM ${schema.name}.${writeMapper(name)};"
+        val stmt = "SELECT ${selection()};"
         return QueryDefinition(stmt, emptyList())
     }
 
     private fun Entity.generateFetchStatement(): QueryDefinition {
-        val stmt = "SELECT ${
-            fields.values.joinToString(", ") { writeMapper(it.name) }
-        } FROM ${schema.name}.$name WHERE ${
+        val stmt = "SELECT ${selection()} WHERE ${
             primaryKey.joinToString(" AND ") { "${writeMapper(it.name)} = ${it.parameter()}" }
         };"
         return QueryDefinition(stmt, primaryKey.map { it.name })

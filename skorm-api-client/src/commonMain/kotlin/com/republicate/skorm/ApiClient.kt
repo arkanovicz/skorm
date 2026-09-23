@@ -123,7 +123,7 @@ class ApiClient(val baseUrl: String) : Processor {
         logger.info { "@@@ actual path = ${restPath}" }
         val response = get(restPath, restParams)
         val json = response.body<Json.Object>()
-        return factory?.invoke()?.also {
+        return factory?.new(json.getString("kind"))?.also {
             if (it is Instance) {
                 it.putRawFields(json)
                 it.setClean()
@@ -157,7 +157,7 @@ class ApiClient(val baseUrl: String) : Processor {
         val sequence = all.asSequence() as Sequence<Json.Object>
 
         return factory?.let { sequence.map { obj ->
-            factory().also {
+            factory.new(obj.getString("kind")).also {
                 if (it is Instance) {
                     it.putRawFields(obj)
                     it.setClean()
