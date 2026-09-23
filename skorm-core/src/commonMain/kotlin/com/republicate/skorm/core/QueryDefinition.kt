@@ -13,7 +13,7 @@ sealed interface AttributeDefinition {
 
     companion object {
         // CB TODO - this is driver specific, but we try to have a kinda generic handling
-        private val lexer = Regex("\\{|\\}|\\bbegin\\b|\\bend\\b|'|\\\"|\\[|\\]|;", RegexOption.IGNORE_CASE)
+        private val lexer = Regex("\\{|\\}|\\bbegin\\b|\\bend\\b|'|\\\"|\\[|\\]|\\(|\\)|;", RegexOption.IGNORE_CASE)
         enum class ParserState(val start: String, val end: String = start, val allowParams: Boolean = false) {
             INITIAL(start="", allowParams=true),
             PARAMETER(start="{", end="}", allowParams=false),
@@ -21,6 +21,8 @@ sealed interface AttributeDefinition {
             QUOTED(start="'", allowParams=false),
             DOUBLE_QUOTED(start="\"", allowParams=false),
             BRACKETED(start="[", end="]", allowParams=false),
+            // a `;` between parentheses ends no statement: PostgreSQL rules take `DO INSTEAD ( stmt; stmt; )`
+            PAREN(start="(", end=")", allowParams=true),
             ERROR(start="?", allowParams=false),
             END(start=";")
         }
@@ -60,13 +62,13 @@ sealed interface AttributeDefinition {
                     } else {
                         val token = match.value
                         queryPart.append(token)
-                        if (state() == INITIAL && token.lowercase() != BLOCK.end) {
+                        if ((state() == INITIAL || state() == PAREN) && token.lowercase() != BLOCK.end) {
                             val nextState = stateMap[token.lowercase()] ?: throw SkormException("unhandled case")
                             when (nextState) {
-                                BLOCK, QUOTED, DOUBLE_QUOTED, BRACKETED -> push(nextState)
+                                BLOCK, QUOTED, DOUBLE_QUOTED, BRACKETED, PAREN -> push(nextState)
                                 INITIAL, PARAMETER -> throw SkormException("unexpected case")
                                 ERROR -> throw SkormException("provided queries should not have '?' markers")
-                                END -> {
+                                END -> if (state() == INITIAL) {
                                     queries.add(QueryDefinition(queryPart.toString(), params.toList()))
                                     queryPart.clear()
                                     params.clear()
