@@ -22,17 +22,24 @@ import kotlin.test.assertTrue
  *  - binding the same value untyped (`setObject(i, v, Types.OTHER)`) works in BOTH contexts —
  *    PG infers the type from context. That is the portable fix (no per-column type knowledge).
  *
- * Skipped when Docker is unavailable or SKORM_SKIP_PG_TESTS is set (container start is slow).
+ * Skipped when there is no Docker on the host or SKORM_SKIP_PG_TESTS is set (container start is slow);
+ * a Docker that is present but unreachable fails the test.
  */
 class PostgreSQLEnumBindingTest {
 
-    private fun shouldRun() =
-        System.getenv("SKORM_SKIP_PG_TESTS") == null &&
-            runCatching { DockerClientFactory.instance().isDockerAvailable }.getOrDefault(false)
+    /**
+     * Skips only where there is no Docker to speak of: a Docker that is present but unreachable must fail
+     * with Testcontainers' own diagnosis, not disappear as a skip nobody reads.
+     */
+    private fun requireDocker() {
+        assumeTrue(System.getenv("SKORM_SKIP_PG_TESTS") == null, "SKORM_SKIP_PG_TESTS set")
+        assumeTrue(System.getenv("DOCKER_HOST") != null || java.io.File("/var/run/docker.sock").exists(), "no Docker on this host")
+        DockerClientFactory.instance().client()
+    }
 
     @Test
     fun untypedBindingIsRequiredForEnumComparisons() {
-        assumeTrue(shouldRun(), "Docker unavailable or SKORM_SKIP_PG_TESTS set")
+        requireDocker()
         PostgreSQLContainer("postgres:16-alpine").use { pg ->
             pg.start()
             DriverManager.getConnection(pg.jdbcUrl, pg.username, pg.password).use { conn ->
