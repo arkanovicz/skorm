@@ -24,7 +24,7 @@ fun ShapesDatabase.initJoins() {
     // forward foreign key attribute
     main.entity("address").instanceAttributes.nullableRowAttribute<ShapesDatabase.MainSchema.Person>("backup", setOf("backup"), ShapesDatabase.MainSchema.Person)
     // forward foreign key attribute
-    main.entity("address").instanceAttributes.rowAttribute<ShapesDatabase.MainSchema.Country>("code", setOf("code"), ShapesDatabase.MainSchema.Country)
+    main.entity("address").instanceAttributes.rowAttribute<ShapesDatabase.MainSchema.Country>("country", setOf("code"), ShapesDatabase.MainSchema.Country)
     // reverse foreign key attribute
     main.entity("country").instanceAttributes.rowSetAttribute<ShapesDatabase.MainSchema.Address>("addresses", setOf("code"), ShapesDatabase.MainSchema.Address)
     // left to right n-n join attribute

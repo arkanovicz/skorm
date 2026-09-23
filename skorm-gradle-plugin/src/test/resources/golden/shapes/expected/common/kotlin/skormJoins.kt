@@ -20,7 +20,7 @@ suspend fun ShapesDatabase.MainSchema.Person.ownerAddresses(): Sequence<ShapesDa
 // forward foreign key
 suspend fun ShapesDatabase.MainSchema.Address.backup(): ShapesDatabase.MainSchema.Person? = entity.retrieve("backup", this)
 // forward foreign key
-suspend fun ShapesDatabase.MainSchema.Address.code(): ShapesDatabase.MainSchema.Country = entity.retrieve("code", this)
+suspend fun ShapesDatabase.MainSchema.Address.country(): ShapesDatabase.MainSchema.Country = entity.retrieve("country", this)
 // reverse foreign key
 suspend fun ShapesDatabase.MainSchema.Country.addresses(): Sequence<ShapesDatabase.MainSchema.Address> = entity.query("addresses", this)
 // left to right n-n join

@@ -121,6 +121,26 @@ class ResolverTest {
     }
 
     @Test
+    fun `a link whose column is the referenced key is named after the table, otherwise after the column`() {
+        val model = resolve("""
+            database d { schema s {
+              table country { *code char(2) }
+              table author { name varchar(10) }
+              table book {
+                title varchar(10)
+                donor -> author?      // named column: keeps its name
+              }
+              book *-- author         // implicit author_id: the table
+              book --> country        // implicit code, the country's key: the table, not `code`
+                                      // (one-way, or Country.books would collide with the n-n below)
+              book *-* country        // junction over a code-keyed table: `countries`, not `codes`
+            } }
+        """.trimIndent())
+        val names = model.joins.filter { it.receiverClass.endsWith(".Book") }.map { it.name }.toSet()
+        assertEquals(setOf("donor", "author", "country", "countries"), names)
+    }
+
+    @Test
     fun `fields carry their Kotlin type, getter and enum class`() {
         val entity = resolve("""
             database d { schema s {

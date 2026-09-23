@@ -24,7 +24,7 @@ fun ShapesDatabase.initJoins() {
    // forward foreign key attribute
    ShapesDatabase.main.entity("address").instanceAttributes.nullableRowAttribute<ShapesDatabase.MainSchema.Person>("backup", "SELECT * FROM main.person WHERE person.person_id = {backup};", ShapesDatabase.MainSchema.Person)
    // forward foreign key attribute
-   ShapesDatabase.main.entity("address").instanceAttributes.rowAttribute<ShapesDatabase.MainSchema.Country>("code", "SELECT * FROM main.country WHERE country.code = {code};", ShapesDatabase.MainSchema.Country)
+   ShapesDatabase.main.entity("address").instanceAttributes.rowAttribute<ShapesDatabase.MainSchema.Country>("country", "SELECT * FROM main.country WHERE country.code = {code};", ShapesDatabase.MainSchema.Country)
    // reverse foreign key attribute
    ShapesDatabase.main.entity("country").instanceAttributes.rowSetAttribute<ShapesDatabase.MainSchema.Address>("addresses", "SELECT * FROM main.address WHERE address.code = {code};", ShapesDatabase.MainSchema.Address)
    // left to right n-n join attribute

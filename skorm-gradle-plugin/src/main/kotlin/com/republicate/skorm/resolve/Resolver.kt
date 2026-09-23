@@ -78,6 +78,16 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
             else table.foreignKeys.flatMap { fk -> foreignKey(fk, databaseClass) }
         }
 
+    /**
+     * What a single-column link is called from the referencing side: the referenced table when the column
+     * is named after that table's key (as kddl names an implicit column — `author_id`, or `code` for a
+     * table keyed by `code`), the column itself otherwise (`donor`, `parent`).
+     */
+    private fun navigationName(column: String, towards: ASTTable): String {
+        val key = towards.getPrimaryKey().singleOrNull()?.name
+        return if (key != null && column == key) kotlin.camel(towards.name) else kotlin.attributeName(column)
+    }
+
     private fun classOf(table: ASTTable, databaseClass: String) =
         "$databaseClass.${kotlin.pascal(table.schema.name)}Schema.${kotlin.pascal(table.name)}"
 
@@ -86,7 +96,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
         val towardsClass = classOf(fk.towards, databaseClass)
         val column = fk.fields.first().name
         val forwardName = when {
-            fk.fields.size == 1 -> kotlin.attributeName(column)
+            fk.fields.size == 1 -> navigationName(column, fk.towards)
             kotlin.isUniqueFkDest(fk) -> kotlin.camel(fk.towards.name)
             else -> kotlin.attributeName(column) + kotlin.pascal(fk.towards.name)
         }
@@ -120,8 +130,8 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
         val right = rightFk.towards
         fun classOf(table: ASTTable) = classOf(table, databaseClass)
         // the collection on each side is named after the far side's column, or its table for a multi-column key
-        val rightToLeftBase = if (leftFk.fields.size == 1) kotlin.attributeName(leftFk.fields.first().name) else kotlin.camel(left.name)
-        val leftToRightBase = if (rightFk.fields.size == 1) kotlin.attributeName(rightFk.fields.first().name) else kotlin.camel(right.name)
+        val rightToLeftBase = if (leftFk.fields.size == 1) navigationName(leftFk.fields.first().name, left) else kotlin.camel(left.name)
+        val leftToRightBase = if (rightFk.fields.size == 1) navigationName(rightFk.fields.first().name, right) else kotlin.camel(right.name)
         return listOf(
             JoinAttribute(
                 label = "left to right n-n join",

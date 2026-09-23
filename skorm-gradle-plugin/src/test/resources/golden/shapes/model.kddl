@@ -41,7 +41,7 @@ database shapes {
 
     table vip : person                     // inheritance — today an empty entity, not a Person subclass
 
-    address *-- country                    // today named after the FK column: Address.code(): Country
+    address *-- country                    // implicit column `code`, the country's key: Address.country()
     gift *-- friendship                    // multi-column foreign key
     person *-* address
   }
