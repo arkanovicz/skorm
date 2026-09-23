@@ -6,6 +6,8 @@ CREATE SCHEMA main;
 SET search_path TO main,public;
 CREATE TYPE enum_level AS ENUM ('low','high');
 CREATE CAST (varchar AS enum_level) WITH INOUT AS IMPLICIT;
+CREATE TYPE enum_person_kind AS ENUM ('person','vip');
+CREATE CAST (varchar AS enum_person_kind) WITH INOUT AS IMPLICIT;
 CREATE TYPE enum_nature AS ENUM ('a','b');
 CREATE CAST (varchar AS enum_nature) WITH INOUT AS IMPLICIT;
 CREATE TABLE person (
@@ -20,7 +22,7 @@ CREATE TABLE person (
   meta json,
   born date,
   seen timestamp,
-  class varchar(30),
+  kind enum_person_kind NOT NULL DEFAULT 'person',
   PRIMARY KEY (person_id)
 );
 
@@ -64,11 +66,11 @@ CREATE TABLE base_vip (
 
 CREATE VIEW vip AS
   SELECT
-    person.person_id,name,rank,nature,small,tiny,big,uid,meta,born,seen,class
+    person.person_id,name,rank,nature,small,tiny,big,uid,meta,born,seen,kind
   FROM base_vip JOIN person ON person.person_id = base_vip.person_id;
 
 CREATE RULE insert_vip AS ON INSERT TO vip DO INSTEAD (
-  INSERT INTO person (person_id, name,rank,nature,small,tiny,big,uid,meta,born,seen,class)
+  INSERT INTO person (person_id,name,rank,nature,small,tiny,big,uid,meta,born,seen,kind)
     VALUES (     COALESCE(NEW.person_id,NEXTVAL('person_person_id_seq')),NEW.name,NEW.rank,NEW.nature,NEW.small,NEW.tiny,NEW.big,NEW.uid,NEW.meta,NEW.born,NEW.seen,'vip')
   RETURNING person.*;
 

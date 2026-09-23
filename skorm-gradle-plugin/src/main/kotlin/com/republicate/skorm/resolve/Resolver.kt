@@ -64,6 +64,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
                 primaryKey = field.primaryKey,
                 // FAITHFUL: `bigserial` is not recognised as generated
                 generated = rawType == "serial",
+                writable = !field.primaryKey && field !== table.kind,
                 getter = kotlin.getter(field),
                 enumClass = if (kotlin.isEnum(field.type)) kotlin.enumName(field) else null
             )

@@ -37,6 +37,10 @@ OtherSchema.Badge.initialize()
             low,
             high
         }
+        enum class PersonKind {
+            person,
+            vip
+        }
         enum class PersonNature {
             a,
             b
@@ -53,6 +57,7 @@ OtherSchema.Badge.initialize()
             val born: LocalDate?
             val seen: LocalDateTime?
             val personId: Int
+            val kind: PersonKind
         }
         open class Person: Instance(Companion), PersonFields {
             companion object: Entity("person", main) {
@@ -75,6 +80,7 @@ OtherSchema.Badge.initialize()
                     addField(Field("born", "date", false, false))
                     addField(Field("seen", "timestamp", false, false))
                     addField(Field("personId", "serial", true, true))
+                    addField(Field("kind", "person_kind", false, false))
                 }
             }
             override var name: String
@@ -109,6 +115,8 @@ OtherSchema.Badge.initialize()
                 set(v) { put("seen", v) }
             override val personId: Int
                 get() = getInt("personId")!!
+            override val kind: PersonKind
+                get() = getString("kind")!!.let { PersonKind.valueOf(it) }
         }
         interface CountryFields {
             val code: String

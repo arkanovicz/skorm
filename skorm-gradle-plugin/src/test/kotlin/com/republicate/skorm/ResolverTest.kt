@@ -141,6 +141,20 @@ class ResolverTest {
     }
 
     @Test
+    fun `a hierarchy's kind is an enum the database maintains, so it is read-only`() {
+        val person = resolve("""
+            database d { schema s {
+              table person { name varchar(10) }
+              table vip : person
+            } }
+        """.trimIndent()).schemas.single().entities.single { it.className == "Person" }
+        val kind = person.fields.single { it.name == "kind" }
+        assertEquals("PersonKind", kind.kotlinType)
+        assertFalse(kind.writable)
+        assertTrue(person.fields.single { it.name == "name" }.writable)
+    }
+
+    @Test
     fun `fields carry their Kotlin type, getter and enum class`() {
         val entity = resolve("""
             database d { schema s {

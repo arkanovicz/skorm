@@ -48,6 +48,8 @@ class ResolvedField(
     val nullable: Boolean,
     val primaryKey: Boolean,
     val generated: Boolean,
+    /** a `var` in the generated class: neither a key nor a hierarchy's `kind`, which the database maintains */
+    val writable: Boolean,
     /** `getString`, `getInt`, `getBytes`… */
     val getter: String,
     /** the enum class to convert through, when the field is an enum */

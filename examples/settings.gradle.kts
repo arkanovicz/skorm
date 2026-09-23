@@ -6,6 +6,7 @@ pluginManagement {
     repositories {
         gradlePluginPortal()
         mavenCentral()
+        mavenLocal() // the plugin's own dependencies (kddl) resolve here: see below
     }
     includeBuild("..")
 }
@@ -15,5 +16,6 @@ dependencyResolutionManagement {
   repositories {
     mavenCentral()
     gradlePluginPortal()
+    mavenLocal() // after mavenCentral like the root build: a locally published kddl before its Central release
   }
 }

@@ -74,15 +74,15 @@ ${schema.className}.${entity.className}.initialize()
 #foreach ($field in $entity.fields)
 ## TODO output PKs first
 ## TODO use delegates
-            override #if($field.primaryKey)val#{else}var#end ${field.identifier}: ${field.kotlinType}#if($field.nullable)?#end
+            override #if($field.writable)var#{else}val#end ${field.identifier}: ${field.kotlinType}#if($field.nullable)?#end
 #if($field.enumClass)
                 get() = ${field.getter}("$field.name")#if($field.nullable)?#{else}!!#end.let { ${field.enumClass}.valueOf(it) }
-#if(!$field.primaryKey)
+#if($field.writable)
                 set(v) { put("$field.name", v#if($field.nullable)?#end.toString()) }
 #end
 #else
                 get() = ${field.getter}("$field.name")#if(!$field.nullable)!!#end
-#if(!$field.primaryKey)
+#if($field.writable)
                 set(v) { put("$field.name", v) }
 #end
 #end

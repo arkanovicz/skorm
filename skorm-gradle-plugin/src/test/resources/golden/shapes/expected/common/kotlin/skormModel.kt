@@ -3,6 +3,7 @@ package shapes.model
 import kotlinx.datetime.*
 import com.republicate.kson.Json
 import shapes.model.ShapesDatabase.MainSchema.Level
+import shapes.model.ShapesDatabase.MainSchema.PersonKind
 import shapes.model.ShapesDatabase.MainSchema.PersonNature
 
 

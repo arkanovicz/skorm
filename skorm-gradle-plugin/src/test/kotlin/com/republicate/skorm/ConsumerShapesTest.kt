@@ -23,10 +23,10 @@ class ConsumerShapesTest {
         dir.resolve("settings.gradle.kts").writeText("""
             rootProject.name = "root-pinned"
             pluginManagement {
-                repositories { gradlePluginPortal(); mavenCentral() }
+                repositories { gradlePluginPortal(); mavenCentral(); mavenLocal() }
                 includeBuild("$skorm")
             }
-            dependencyResolutionManagement { repositories { mavenCentral() } }
+            dependencyResolutionManagement { repositories { mavenCentral(); mavenLocal() } }
             includeBuild("$skorm")
             include("app")
         """.trimIndent())
