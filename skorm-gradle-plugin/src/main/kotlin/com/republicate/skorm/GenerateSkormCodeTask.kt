@@ -57,7 +57,7 @@ abstract class GenerateSkormCodeTask : BaseModelGenerationTask() {
 
     @get:Internal
     protected val attributeModel: RMDatabase? by lazy {
-        attributes.orNull?.let { parseRuntimeModel(Utils.getFile(project.file(it).absolutePath)) }
+        attributes.orNull?.let { parseRuntimeModel(Utils.getFile(it.asFile.absolutePath)) }
     }
 
     override fun populateContext(context: VelocityContext) {

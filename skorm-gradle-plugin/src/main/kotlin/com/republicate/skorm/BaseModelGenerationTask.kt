@@ -37,11 +37,7 @@ abstract class BaseModelGenerationTask: BaseGenerationTask() {
             throw RuntimeException("$tag expecting exactly one of skorm.model or skorm.datasource parameter")
         }
         val db = when {
-            foundModel != null -> {
-                val file = project.file(foundModel) ?: throw RuntimeException("kddl model file not found")
-                val ddl = Utils.getFile(file.absolutePath)
-                parse(ddl)
-            }
+            foundModel != null -> parse(Utils.getFile(foundModel.asFile.absolutePath))
             foundDatasource != null -> {
                 reverse(foundDatasource)
             }

@@ -12,7 +12,6 @@ class ExamplesTest {
         val projectDir = File("../examples")
         val result = GradleRunner.create()
             .withProjectDir(projectDir)
-            .withDebug(true)
             .withArguments(":bookshelf:jvmTest")
             .forwardOutput()
             .build()

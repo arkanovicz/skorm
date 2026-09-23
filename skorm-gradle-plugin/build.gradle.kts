@@ -102,10 +102,3 @@ tasks.withType<Test>().configureEach {
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 }
-
-tasks.named("test") {
-    doFirst {
-        println("Compiled test classes:")
-        fileTree("build/classes/kotlin/test").forEach { println(it) }
-    }
-}
