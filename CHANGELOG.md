@@ -9,6 +9,9 @@ All notable changes to Skorm are documented in this file.
 - The generation task read its inputs through `project.file()` at execution time, which the configuration cache forbids; it now reads the file properties directly. The build enables the configuration cache (`gradle.properties`), after removing a `doFirst` in the plugin's own build that captured the script object and the TestKit debug mode the example test ran in, which cannot serialize the cache in-process. A consumer with the cache on gets it for generation too. `publishToMavenLocal` still discards the cache entry — Dokka 1.9.20's tasks are marked incompatible — until the Dokka V2 migration.
 - Generated files that stopped being emitted — a dropped table, `client` flipped off — lingered in `build/generated-src` and got compiled; the output directory is now cleared before each generation.
 
+### Changed
+- Top-level typealiases for the generated classes, added in 0.20, are no longer generated: the generator provides the scoped names (`ExampleDatabase.BookshelfSchema.Book`) and an app aliases the ones it uses — which is where a name collision is actually decidable. Migration: add the typealiases you relied on to your own sources.
+
 ## [0.20] - 2026-09-21
 
 ### Fixed

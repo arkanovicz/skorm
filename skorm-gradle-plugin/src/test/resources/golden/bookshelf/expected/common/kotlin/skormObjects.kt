@@ -203,17 +203,3 @@ BookshelfSchema.BookTag.initialize()
     }
 }
 
-// top-level aliases for the classes nested above
-typealias Dude = ExampleDatabase.BookshelfSchema.Dude
-typealias DudeFields = ExampleDatabase.BookshelfSchema.DudeFields
-typealias Author = ExampleDatabase.BookshelfSchema.Author
-typealias AuthorFields = ExampleDatabase.BookshelfSchema.AuthorFields
-typealias Book = ExampleDatabase.BookshelfSchema.Book
-typealias BookFields = ExampleDatabase.BookshelfSchema.BookFields
-typealias Borrowing = ExampleDatabase.BookshelfSchema.Borrowing
-typealias BorrowingFields = ExampleDatabase.BookshelfSchema.BorrowingFields
-typealias Tag = ExampleDatabase.BookshelfSchema.Tag
-typealias TagFields = ExampleDatabase.BookshelfSchema.TagFields
-typealias BookTag = ExampleDatabase.BookshelfSchema.BookTag
-typealias BookTagFields = ExampleDatabase.BookshelfSchema.BookTagFields
-typealias Genre = ExampleDatabase.BookshelfSchema.Genre

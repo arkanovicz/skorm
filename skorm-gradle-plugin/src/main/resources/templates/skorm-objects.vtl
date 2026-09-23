@@ -106,10 +106,3 @@ class $databaseClass(processor: Processor): Database("$database.name", processor
 #end
 }
 
-#set ($aliases = $kotlin.aliases($database))
-#if (!$aliases.isEmpty())
-// top-level aliases for the classes nested above
-#foreach ($alias in $aliases)
-typealias $alias.name = $alias.target
-#end
-#end

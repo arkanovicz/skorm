@@ -66,7 +66,7 @@ class ConsumerShapesTest {
         // compiles only if the generated sources reached this source set
         dir.resolve("app/src/main/kotlin/Use.kt").writeText("""
             import tiny.model.*
-            suspend fun titles(author: Author): List<String> = author.books().map { it.title }.toList()
+            suspend fun titles(author: TinyDatabase.TinySchema.Author): List<String> = author.books().map { it.title }.toList()
         """.trimIndent())
 
         val result = GradleRunner.create()

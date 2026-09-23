@@ -1,6 +1,5 @@
 package com.republicate.skorm
 
-import com.republicate.kddl.ASTDatabase
 import com.republicate.kddl.ASTEnum
 import com.republicate.kddl.ASTField
 import com.republicate.kddl.ASTForeignKey
@@ -82,29 +81,6 @@ class KotlinTool {
     fun isEnum(type: FieldType) = type is FieldType.NamedEnum || type is FieldType.InlineEnum
 
     data class EnumDecl(val name: String, val values: List<String>)
-
-    data class Alias(val name: String, val target: String)
-
-    /** Top-level aliases for the generated entity and enum classes, which are otherwise
-     *  reachable only as `<Db>Database.<Schema>Schema.<Name>`. A simple name shared by
-     *  several schemas, or clashing with the database class, gets no alias. */
-    fun aliases(database: ASTDatabase): List<Alias> {
-        val databaseClass = "${pascal(database.name)}Database"
-        val candidates = mutableListOf<Alias>()
-        for (schema in database.schemas.values) {
-            val schemaClass = "$databaseClass.${pascal(schema.name)}Schema"
-            for (table in schema.tables.values) {
-                val entity = pascal(table.name)
-                candidates.add(Alias(entity, "$schemaClass.$entity"))
-                candidates.add(Alias("${entity}Fields", "$schemaClass.${entity}Fields"))
-            }
-            for (decl in enumDecls(schema)) {
-                candidates.add(Alias(decl.name, "$schemaClass.${decl.name}"))
-            }
-        }
-        val ambiguous = candidates.groupBy { it.name }.filterValues { it.size > 1 }.keys
-        return candidates.filter { it.name !in ambiguous && it.name != databaseClass }
-    }
 
     fun camel(identifier: String) = IdentifiersMapping.snakeToCamel(identifier)
 

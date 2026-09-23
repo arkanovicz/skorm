@@ -293,22 +293,3 @@ OtherSchema.Badge.initialize()
     }
 }
 
-// top-level aliases for the classes nested above
-typealias Person = ShapesDatabase.MainSchema.Person
-typealias PersonFields = ShapesDatabase.MainSchema.PersonFields
-typealias Country = ShapesDatabase.MainSchema.Country
-typealias CountryFields = ShapesDatabase.MainSchema.CountryFields
-typealias Friendship = ShapesDatabase.MainSchema.Friendship
-typealias FriendshipFields = ShapesDatabase.MainSchema.FriendshipFields
-typealias Gift = ShapesDatabase.MainSchema.Gift
-typealias GiftFields = ShapesDatabase.MainSchema.GiftFields
-typealias Address = ShapesDatabase.MainSchema.Address
-typealias AddressFields = ShapesDatabase.MainSchema.AddressFields
-typealias Vip = ShapesDatabase.MainSchema.Vip
-typealias VipFields = ShapesDatabase.MainSchema.VipFields
-typealias PersonAddress = ShapesDatabase.MainSchema.PersonAddress
-typealias PersonAddressFields = ShapesDatabase.MainSchema.PersonAddressFields
-typealias Level = ShapesDatabase.MainSchema.Level
-typealias PersonNature = ShapesDatabase.MainSchema.PersonNature
-typealias Badge = ShapesDatabase.OtherSchema.Badge
-typealias BadgeFields = ShapesDatabase.OtherSchema.BadgeFields

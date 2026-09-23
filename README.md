@@ -114,7 +114,7 @@ of them — `client` serves `jsMain`, `wasmJsMain` and `linuxX64Main` alike:
 
 ```
 build/generated-src/
-├── common/kotlin       entity classes, field interfaces, aliases, join and attribute accessors
+├── common/kotlin       entity classes, field interfaces, join and attribute accessors
 ├── core/kotlin         server-side attribute registrations
 ├── core/resources      database creation script
 └── client/kotlin       REST client attribute registrations
@@ -123,6 +123,9 @@ build/generated-src/
 `common` is registered on `commonMain`, `core` on the JVM target's source set, `client` on every
 JS, wasm and native one. In a plain `kotlin("jvm")` project there is a single source set, and
 `common` and `core` are both registered on `main`.
+
+The generated classes are nested (`ExampleDatabase.BookshelfSchema.Book`); alias in your own code
+the ones you use, e.g. `typealias Book = ExampleDatabase.BookshelfSchema.Book`.
 
 ### 4. Use the generated code
 
