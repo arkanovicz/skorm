@@ -110,7 +110,12 @@ kotlin {
                 implementation(libs.kotlin.reflect)
             }
         }
-        val jvmTest by getting
+        val jvmTest by getting {
+            dependencies {
+                // the runtime logs through slf4j: a binding, or NoClassDefFoundError under test
+                implementation(libs.slf4j.simple)
+            }
+        }
         val webMain by getting
         val jsMain by getting
         val jsTest by getting

@@ -20,6 +20,10 @@ expect fun Any.callGenericGetter(key: String): Any?
 
 sealed class Attribute<out T>(val name: String, private val parameters: Set<String> = emptySet(), val rowFactory: RowFactory? = null, private val useDirtyFields: Boolean = false) {
 
+    /** the holder this attribute was registered on — where it executes, whichever holder it was found from */
+    var holder: AttributeHolder? = null
+        internal set
+
     /**
      * Match attribute named parameters with values found in provided context parameters
      */
@@ -271,9 +275,13 @@ abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = 
     fun addAttribute(attr: Attribute<*>) {
         val previous = _attributes.put(attr.name, attr)
         if (previous != null) throw SkormException("attribute $path.${attr.name} cannot be overwritten")
+        attr.holder = this
     }
 
-    open fun prepare(attr: Attribute<*>, vararg params: Any?) = Pair("$path/${attr.name}", attr.matchParamValues(*params))
+    /** an inherited attribute executes at its owner's path: that is where the processor knows it */
+    fun ownerPath(attr: Attribute<*>) = (attr.holder ?: this).path
+
+    open fun prepare(attr: Attribute<*>, vararg params: Any?) = Pair("${ownerPath(attr)}/${attr.name}", attr.matchParamValues(*params))
 
     suspend inline fun <reified T> eval(attrName: String, vararg params: Any?) = eval(findAttribute<T>(attrName), *params)
 

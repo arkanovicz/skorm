@@ -40,6 +40,17 @@ class InheritedAttributesTest {
     }
 
     @Test
+    fun anInheritedAttributeExecutesAtItsOwnersPath() {
+        val db = TestDatabase(noProcessor)
+        val schema = TestSchema(db)
+        val person = TestEntity("person", schema)
+        val vip = TestEntity("vip", schema, person)
+        person.instanceAttributes.scalarAttribute<Int>("age", emptySet())
+        val found = vip.instanceAttributes.findAttribute<Int>("age")
+        assertEquals("/d/s/person/age", vip.instanceAttributes.prepare(found).first)
+    }
+
+    @Test
     fun pathsIgnoreTheParentEntity() {
         val db = TestDatabase(noProcessor)
         val schema = TestSchema(db)

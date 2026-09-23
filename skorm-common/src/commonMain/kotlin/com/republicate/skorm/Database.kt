@@ -75,7 +75,7 @@ open class Entity protected constructor(val name: String, val schema: Schema, va
             return if (doRestPK) {
                 val instance = params[0] as Instance
                 val pkFields = instance.entity.primaryKey.map { it.name }
-                val execPath = "$path/${
+                val execPath = "${ownerPath(attr)}/${
                     pkFields.joinToString("/") {
                         instance[it].toString()
                     }
