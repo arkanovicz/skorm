@@ -34,8 +34,8 @@ BookshelfSchema.BookTag.initialize()
             poetry
         }
         interface DudeFields {
-            val name: String
             val dudeId: Int
+            val name: String
         }
         open class Dude(entity: Entity = Companion): Instance(entity), DudeFields {
             companion object: Entity("dude", bookshelf) {
@@ -47,19 +47,19 @@ BookshelfSchema.BookTag.initialize()
                 @Suppress("UNCHECKED_CAST")
                 override suspend operator fun iterator() = super.iterator() as Iterator<Dude>
                 fun initialize() {
-                    addField(Field("name", "varchar(100)", false, false))
                     addField(Field("dudeId", "serial", true, true))
+                    addField(Field("name", "varchar(100)", false, false))
                 }
             }
+            override val dudeId: Int
+                get() = getInt("dudeId")!!
             override var name: String
                 get() = getString("name")!!
                 set(v) { put("name", v) }
-            override val dudeId: Int
-                get() = getInt("dudeId")!!
         }
         interface AuthorFields {
-            val name: String
             val authorId: Int
+            val name: String
         }
         open class Author(entity: Entity = Companion): Instance(entity), AuthorFields {
             companion object: Entity("author", bookshelf) {
@@ -71,22 +71,22 @@ BookshelfSchema.BookTag.initialize()
                 @Suppress("UNCHECKED_CAST")
                 override suspend operator fun iterator() = super.iterator() as Iterator<Author>
                 fun initialize() {
-                    addField(Field("name", "varchar(100)", false, false))
                     addField(Field("authorId", "serial", true, true))
+                    addField(Field("name", "varchar(100)", false, false))
                 }
             }
+            override val authorId: Int
+                get() = getInt("authorId")!!
             override var name: String
                 get() = getString("name")!!
                 set(v) { put("name", v) }
-            override val authorId: Int
-                get() = getInt("authorId")!!
         }
         interface BookFields {
+            val bookId: Int
             val title: String
             val genre: Genre
             val donor: Int?
             val authorId: Int
-            val bookId: Int
         }
         open class Book(entity: Entity = Companion): Instance(entity), BookFields {
             companion object: Entity("book", bookshelf) {
@@ -98,13 +98,15 @@ BookshelfSchema.BookTag.initialize()
                 @Suppress("UNCHECKED_CAST")
                 override suspend operator fun iterator() = super.iterator() as Iterator<Book>
                 fun initialize() {
+                    addField(Field("bookId", "serial", true, true))
                     addField(Field("title", "varchar(100)", false, false))
                     addField(Field("genre", "enum('fiction','novel','essay','poetry')", false, false))
                     addField(Field("donor", "int", false, false))
                     addField(Field("authorId", "int", false, false))
-                    addField(Field("bookId", "serial", true, true))
                 }
             }
+            override val bookId: Int
+                get() = getInt("bookId")!!
             override var title: String
                 get() = getString("title")!!
                 set(v) { put("title", v) }
@@ -117,8 +119,6 @@ BookshelfSchema.BookTag.initialize()
             override var authorId: Int
                 get() = getInt("authorId")!!
                 set(v) { put("authorId", v) }
-            override val bookId: Int
-                get() = getInt("bookId")!!
         }
         interface BorrowingFields {
             val borrowingDate: LocalDate
@@ -154,8 +154,8 @@ BookshelfSchema.BookTag.initialize()
                 set(v) { put("dudeId", v) }
         }
         interface TagFields {
-            val label: String
             val tagId: Int
+            val label: String
         }
         open class Tag(entity: Entity = Companion): Instance(entity), TagFields {
             companion object: Entity("tag", bookshelf) {
@@ -167,15 +167,15 @@ BookshelfSchema.BookTag.initialize()
                 @Suppress("UNCHECKED_CAST")
                 override suspend operator fun iterator() = super.iterator() as Iterator<Tag>
                 fun initialize() {
-                    addField(Field("label", "varchar(30)", false, false))
                     addField(Field("tagId", "serial", true, true))
+                    addField(Field("label", "varchar(30)", false, false))
                 }
             }
+            override val tagId: Int
+                get() = getInt("tagId")!!
             override var label: String
                 get() = getString("label")!!
                 set(v) { put("label", v) }
-            override val tagId: Int
-                get() = getInt("tagId")!!
         }
         interface BookTagFields {
             val bookId: Int

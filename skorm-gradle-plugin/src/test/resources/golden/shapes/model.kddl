@@ -6,6 +6,7 @@ database shapes {
     enum level(low, high)
 
     table person {
+      *person_id serial
       name varchar(50)
       rank level                           // named enum
       nature enum('a', 'b') as PersonNature // inline enum with an alias
@@ -34,6 +35,7 @@ database shapes {
     }
 
     table address {
+      *address_id serial
       city varchar(50)
       owner -- person                      // field link, both ways
       backup -> person?                    // field link, reference only

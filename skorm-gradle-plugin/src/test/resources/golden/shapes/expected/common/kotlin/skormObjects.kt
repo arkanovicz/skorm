@@ -46,6 +46,7 @@ OtherSchema.Badge.initialize()
             b
         }
         interface PersonFields {
+            val personId: Int
             val name: String
             val rank: Level
             val nature: PersonNature
@@ -56,7 +57,6 @@ OtherSchema.Badge.initialize()
             val meta: Json?
             val born: LocalDate?
             val seen: LocalDateTime?
-            val personId: Int
             val kind: PersonKind
         }
         open class Person(entity: Entity = Companion): Instance(entity), PersonFields {
@@ -76,6 +76,7 @@ OtherSchema.Badge.initialize()
                 @Suppress("UNCHECKED_CAST")
                 override suspend operator fun iterator() = super.iterator() as Iterator<Person>
                 fun initialize() {
+                    addField(Field("personId", "serial", true, true))
                     addField(Field("name", "varchar(50)", false, false))
                     addField(Field("rank", "level", false, false))
                     addField(Field("nature", "enum('a','b')", false, false))
@@ -86,12 +87,13 @@ OtherSchema.Badge.initialize()
                     addField(Field("meta", "json", false, false))
                     addField(Field("born", "date", false, false))
                     addField(Field("seen", "timestamp", false, false))
-                    addField(Field("personId", "serial", true, true))
                     addField(Field("kind", "person_kind", false, false))
                 }
             }
             // a new row knows its kind before the database applies it; a subtype's init runs last and wins
             init { put("kind", "person") }
+            override val personId: Int
+                get() = getInt("personId")!!
             override var name: String
                 get() = getString("name")!!
                 set(v) { put("name", v) }
@@ -122,8 +124,6 @@ OtherSchema.Badge.initialize()
             override var seen: LocalDateTime?
                 get() = getLocalDateTime("seen")
                 set(v) { put("seen", v) }
-            override val personId: Int
-                get() = getInt("personId")!!
             override val kind: PersonKind
                 get() = getString("kind")!!.let { PersonKind.valueOf(it) }
         }
@@ -208,11 +208,11 @@ OtherSchema.Badge.initialize()
                 set(v) { put("bId", v) }
         }
         interface AddressFields {
+            val addressId: Int
             val city: String
             val owner: Int
             val backup: Int?
             val code: String
-            val addressId: Int
         }
         open class Address(entity: Entity = Companion): Instance(entity), AddressFields {
             companion object: Entity("address", main) {
@@ -224,13 +224,15 @@ OtherSchema.Badge.initialize()
                 @Suppress("UNCHECKED_CAST")
                 override suspend operator fun iterator() = super.iterator() as Iterator<Address>
                 fun initialize() {
+                    addField(Field("addressId", "serial", true, true))
                     addField(Field("city", "varchar(50)", false, false))
                     addField(Field("owner", "int", false, false))
                     addField(Field("backup", "int", false, false))
                     addField(Field("code", "char(2)", false, false))
-                    addField(Field("addressId", "serial", true, true))
                 }
             }
+            override val addressId: Int
+                get() = getInt("addressId")!!
             override var city: String
                 get() = getString("city")!!
                 set(v) { put("city", v) }
@@ -243,8 +245,6 @@ OtherSchema.Badge.initialize()
             override var code: String
                 get() = getString("code")!!
                 set(v) { put("code", v) }
-            override val addressId: Int
-                get() = getInt("addressId")!!
         }
         interface VipFields : ShapesDatabase.MainSchema.PersonFields {
         }
@@ -258,6 +258,7 @@ OtherSchema.Badge.initialize()
                 @Suppress("UNCHECKED_CAST")
                 override suspend operator fun iterator() = super.iterator() as Iterator<Vip>
                 fun initialize() {
+                    addField(Field("personId", "serial", true, true))
                     addField(Field("name", "varchar(50)", false, false))
                     addField(Field("rank", "level", false, false))
                     addField(Field("nature", "enum('a','b')", false, false))
@@ -268,7 +269,6 @@ OtherSchema.Badge.initialize()
                     addField(Field("meta", "json", false, false))
                     addField(Field("born", "date", false, false))
                     addField(Field("seen", "timestamp", false, false))
-                    addField(Field("personId", "serial", true, true))
                     addField(Field("kind", "person_kind", false, false))
                 }
             }
