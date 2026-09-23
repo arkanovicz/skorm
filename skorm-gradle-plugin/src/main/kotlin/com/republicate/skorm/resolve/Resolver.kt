@@ -201,7 +201,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
         val client = when {
             item.action -> "mutationAttribute"
             composite != null -> rows(itemClass!!)
-            // FAITHFUL: a multiple entity attribute is registered as a single instance on the client
+            isEntity && item.multiple -> "rowSetAttribute<$itemClass>"
             isEntity -> if (item.nullable) "nullableInstanceAttribute<$itemClass>" else "instanceAttribute<$itemClass>"
             item.multiple -> "scalarAttribute<${type!!.name}>"
             isJsonObject -> "scalarAttribute<Json.Object$q>"

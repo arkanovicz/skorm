@@ -18,7 +18,7 @@ fun shapes.model.ShapesDatabase.initRuntimeModel() {
     ShapesDatabase.main.scalarAttribute<Json.Object>("summary", setOf())
 
     // attribute main.everybody
-    ShapesDatabase.main.instanceAttribute<ShapesDatabase.MainSchema.Person>("everybody", setOf(), ShapesDatabase.MainSchema.Person::new)
+    ShapesDatabase.main.rowSetAttribute<ShapesDatabase.MainSchema.Person>("everybody", setOf(), ShapesDatabase.MainSchema.Person::new)
 
     // attribute Person.mainAddress
     ShapesDatabase.main.entity("person").instanceAttributes.nullableInstanceAttribute<ShapesDatabase.MainSchema.Address>("mainAddress", setOf("person_id"), ShapesDatabase.MainSchema.Address::new)

@@ -237,6 +237,16 @@ class ResolverTest {
     }
 
     @Test
+    fun `a multiple entity attribute is a row set on the client as on the core`() {
+        val everybody = resolve(shelf, """
+            database shelf { schema main { attr everybody: Dude* = SELECT * FROM dude; } }
+        """.trimIndent()).attributes.single()
+        assertEquals("query", everybody.verb)
+        assertEquals("rowSetAttribute<ShelfDatabase.MainSchema.Dude>", everybody.coreRegistration)
+        assertEquals(everybody.coreRegistration, everybody.clientRegistration)
+    }
+
+    @Test
     fun `a mutation performs and registers as such, a multiple composite queries a row set`() {
         val model = resolve(shelf, shelfSql)
         val lend = model.attributes.single { it.name == "lend" }
