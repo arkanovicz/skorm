@@ -37,7 +37,7 @@ BookshelfSchema.BookTag.initialize()
             val name: String
             val dudeId: Int
         }
-        open class Dude: Instance(Companion), DudeFields {
+        open class Dude(entity: Entity = Companion): Instance(entity), DudeFields {
             companion object: Entity("dude", bookshelf) {
                 override fun new(): Dude = Dude()
                 @Suppress("UNCHECKED_CAST")
@@ -61,7 +61,7 @@ BookshelfSchema.BookTag.initialize()
             val name: String
             val authorId: Int
         }
-        open class Author: Instance(Companion), AuthorFields {
+        open class Author(entity: Entity = Companion): Instance(entity), AuthorFields {
             companion object: Entity("author", bookshelf) {
                 override fun new(): Author = Author()
                 @Suppress("UNCHECKED_CAST")
@@ -88,7 +88,7 @@ BookshelfSchema.BookTag.initialize()
             val authorId: Int
             val bookId: Int
         }
-        open class Book: Instance(Companion), BookFields {
+        open class Book(entity: Entity = Companion): Instance(entity), BookFields {
             companion object: Entity("book", bookshelf) {
                 override fun new(): Book = Book()
                 @Suppress("UNCHECKED_CAST")
@@ -126,7 +126,7 @@ BookshelfSchema.BookTag.initialize()
             val bookId: Int
             val dudeId: Int
         }
-        open class Borrowing: Instance(Companion), BorrowingFields {
+        open class Borrowing(entity: Entity = Companion): Instance(entity), BorrowingFields {
             companion object: Entity("borrowing", bookshelf) {
                 override fun new(): Borrowing = Borrowing()
                 @Suppress("UNCHECKED_CAST")
@@ -157,7 +157,7 @@ BookshelfSchema.BookTag.initialize()
             val label: String
             val tagId: Int
         }
-        open class Tag: Instance(Companion), TagFields {
+        open class Tag(entity: Entity = Companion): Instance(entity), TagFields {
             companion object: Entity("tag", bookshelf) {
                 override fun new(): Tag = Tag()
                 @Suppress("UNCHECKED_CAST")
@@ -181,7 +181,7 @@ BookshelfSchema.BookTag.initialize()
             val bookId: Int
             val tagId: Int
         }
-        open class BookTag: Instance(Companion), BookTagFields {
+        open class BookTag(entity: Entity = Companion): Instance(entity), BookTagFields {
             companion object: Entity("bookTag", bookshelf) {
                 override fun new(): BookTag = BookTag()
                 @Suppress("UNCHECKED_CAST")

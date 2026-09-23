@@ -39,7 +39,7 @@ database shapes {
       backup -> person?                    // field link, reference only
     }
 
-    table vip : person                     // inheritance — today an empty entity, not a Person subclass
+    table vip : person                     // inheritance: Vip : Person, read polymorphically
 
     address *-- country                    // implicit column `code`, the country's key: Address.country()
     gift *-- friendship                    // multi-column foreign key

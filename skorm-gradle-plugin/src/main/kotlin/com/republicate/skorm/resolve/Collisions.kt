@@ -48,6 +48,25 @@ object Collisions {
             "$receiver: $what '$name' would override a member every row inherits from Instance; rename it")
     }
 
+    /**
+     * A hierarchy is read with `SELECT *` over its tables joined: a column declared twice below one root
+     * would silently come back once. The key is shared by design (`USING`).
+     */
+    fun checkHierarchy(root: com.republicate.kddl.ASTTable) {
+        if (root.parent != null || root.children.isEmpty()) return
+        val seen = mutableMapOf<String, String>()
+        fun walk(table: com.republicate.kddl.ASTTable) {
+            for (field in table.fields.values) {
+                if (field.primaryKey) continue
+                val previous = seen.put(field.name, table.name)
+                if (previous != null && previous != table.name) throw SkormException(
+                    "table ${table.name}: column '${field.name}' is already declared by $previous in the same hierarchy; one name per hierarchy")
+            }
+            table.children.forEach { walk(it) }
+        }
+        walk(root)
+    }
+
     /** Two accessors cannot share a receiver and a name, whatever produced them. */
     fun checkUnique(joins: List<JoinAttribute>, attributes: List<QueryAttribute>) {
         val seen = mutableMapOf<Pair<String, String>, String>()

@@ -49,14 +49,25 @@ ${schema.className}.${entity.className}.initialize()
 #end
 #foreach ($entity in $schema.entities)
 ## the field contract, so a non-suspend view of a row can delegate it
-        interface ${entity.className}Fields {
-#foreach ($field in $entity.fields)
+        interface ${entity.className}Fields#if($entity.parentClass) : ${entity.parentClass}Fields#end {
+#foreach ($field in $entity.ownFields)
             val ${field.identifier}: ${field.kotlinType}#if($field.nullable)?#end
 #end
         }
-        open class ${entity.className}: Instance(Companion), ${entity.className}Fields {
-            companion object: Entity("$entity.objectName", $schema.objectName) {
+        open class ${entity.className}(entity: Entity = Companion): #if($entity.parentClass)${entity.parentClass}(entity)#{else}Instance(entity)#end, ${entity.className}Fields {
+            companion object: Entity("$entity.objectName", $schema.objectName#if($entity.parentClass), ${entity.parentClass}#end) {
                 override fun new(): ${entity.className} = ${entity.className}()
+#if (!$entity.kinds.isEmpty())
+                // rows are read joined with the subtypes' tables: each comes back as the class its kind names
+                override val source = "$entity.source"
+                override fun new(kind: String?): ${entity.className} = when (kind) {
+                    "$entity.tableName" -> new()
+#foreach ($kind in $entity.kinds)
+                    "$kind.first" -> ${kind.second}.new()
+#end
+                    else -> throw SkormException("$entity.tableName rows carry no kind: a hierarchy is read with its subtypes joined")
+                }
+#end
 #if ($entity.hasPrimaryKey)
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as ${entity.className}?
@@ -71,7 +82,7 @@ ${schema.className}.${entity.className}.initialize()
 #end
                 }
             }
-#foreach ($field in $entity.fields)
+#foreach ($field in $entity.ownFields)
 ## TODO output PKs first
 ## TODO use delegates
             override #if($field.writable)var#{else}val#end ${field.identifier}: ${field.kotlinType}#if($field.nullable)?#end

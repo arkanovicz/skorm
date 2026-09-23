@@ -154,6 +154,65 @@ class ResolverTest {
         assertTrue(person.fields.single { it.name == "name" }.writable)
     }
 
+    private val hierarchy = """
+        database d { schema s {
+          table person { name varchar(10) }
+          table vip : person { since date }
+          table star : vip { fans int }
+          table address { city varchar(10)  owner -- person }
+        } }
+    """.trimIndent()
+
+    @Test
+    fun `a subtype declares its own columns, carries them all, and keeps its parent's key`() {
+        val model = resolve(hierarchy)
+        val entities = model.schemas.single().entities.associateBy { it.className }
+        val person = entities.getValue("Person")
+        val vip = entities.getValue("Vip")
+        val star = entities.getValue("Star")
+        assertNull(person.parentClass)
+        assertEquals("DDatabase.SSchema.Person", vip.parentClass)
+        assertEquals(listOf("since"), vip.ownFields.map { it.name })
+        assertEquals(listOf("name", "personId", "kind", "since"), vip.fields.map { it.name })
+        assertTrue(vip.hasPrimaryKey)
+        assertTrue(vip.fields.single { it.name == "personId" }.primaryKey)
+        assertFalse(star.fields.single { it.name == "kind" }.writable)
+    }
+
+    @Test
+    fun `a table with descendants reads them joined, and knows the class each kind builds`() {
+        val model = resolve(hierarchy)
+        val entities = model.schemas.single().entities.associateBy { it.className }
+        assertEquals("s.person LEFT JOIN s.base_vip USING (person_id) LEFT JOIN s.base_star USING (person_id)",
+            entities.getValue("Person").source)
+        assertEquals("s.vip LEFT JOIN s.base_star USING (person_id)", entities.getValue("Vip").source)
+        assertNull(entities.getValue("Star").source)
+        assertEquals(listOf("vip" to "DDatabase.SSchema.Vip", "star" to "DDatabase.SSchema.Star"), entities.getValue("Person").kinds)
+        assertEquals(emptyList<Pair<String, String>>(), entities.getValue("Address").kinds)
+    }
+
+    @Test
+    fun `a navigation to a hierarchy member reads it from its source`() {
+        val owner = resolve(hierarchy).join("Address", "owner")
+        assertEquals("SELECT * FROM s.person LEFT JOIN s.base_vip USING (person_id) LEFT JOIN s.base_star USING (person_id) WHERE person.person_id = {owner};", owner.sql)
+        val addresses = resolve(hierarchy).join("Person", "addresses")
+        assertEquals("SELECT * FROM s.address WHERE address.owner = {person_id};", addresses.sql)
+    }
+
+    @Test
+    fun `two subtypes declaring the same column are refused`() {
+        val ex = assertThrows(SkormException::class.java) {
+            resolve("""
+                database d { schema s {
+                  table person { name varchar(10) }
+                  table vip : person { badge varchar(10) }
+                  table staff : person { badge varchar(10) }
+                } }
+            """.trimIndent())
+        }
+        assertTrue(ex.message!!.contains("badge") && ex.message!!.contains("vip"), ex.message)
+    }
+
     @Test
     fun `fields carry their Kotlin type, getter and enum class`() {
         val entity = resolve("""

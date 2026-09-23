@@ -35,7 +35,19 @@ class ResolvedEntity(
     /** `book` */
     val objectName: String,
     val hasPrimaryKey: Boolean,
-    val fields: List<ResolvedField>
+    /** every column the entity's rows carry: inherited first, then its own */
+    val fields: List<ResolvedField>,
+    /** the columns declared on this table, which its class declares (inherited ones come from the superclass) */
+    val ownFields: List<ResolvedField>,
+    /** `ExampleDatabase.MainSchema.Person` for `table vip : person`, null for a table without a parent */
+    val parentClass: String?,
+    /**
+     * What a table with descendants reads from, its descendants' base tables LEFT JOINed on the key:
+     * `main.person LEFT JOIN main.base_vip USING (person_id)`. Null for a table without descendants.
+     */
+    val source: String?,
+    /** kind value to subclass, for every descendant: `vip` → `ExampleDatabase.MainSchema.Vip` */
+    val kinds: List<Pair<String, String>>
 )
 
 class ResolvedField(

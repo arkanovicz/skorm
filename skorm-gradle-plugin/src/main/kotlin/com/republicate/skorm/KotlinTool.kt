@@ -98,31 +98,32 @@ class KotlinTool {
 
     fun plural(str: String): String = enInflector.getPlural(str)
 
-    fun foreignKeyForwardQuery(fk: ASTForeignKey): String {
+    /** [source] replaces the target table in FROM when it is read joined with its descendants. */
+    fun foreignKeyForwardQuery(fk: ASTForeignKey, source: String? = null): String {
         val targetPk = fk.towards.getPrimaryKey().also {
             if (it.isEmpty()) throw IllegalStateException("Foreign key target table '${fk.towards.name}' has no primary key")
             if (it.size != fk.fields.size) throw IllegalStateException("Foreign key column count (${fk.fields.size}) doesn't match target primary key size (${it.size}) for FK to '${fk.towards.name}'")
         }
-        return "SELECT * FROM ${fk.towards.schema.name}.${fk.towards.name} WHERE ${
+        return "SELECT * FROM ${source ?: "${fk.towards.schema.name}.${fk.towards.name}"} WHERE ${
             targetPk.zip(fk.fields).joinToString(" AND ") {
                 "${fk.towards.name}.${it.first.name} = {${it.second.name}}"
             }
         };"
     }
 
-    fun foreignKeyReverseQuery(fk: ASTForeignKey): String {
+    fun foreignKeyReverseQuery(fk: ASTForeignKey, source: String? = null): String {
         val targetPk = fk.towards.getPrimaryKey().also {
             if (it.isEmpty()) throw IllegalStateException("Foreign key target table '${fk.towards.name}' has no primary key")
             if (fk.fields.size != it.size) throw IllegalStateException("Foreign key column count (${fk.fields.size}) doesn't match target primary key size (${it.size}) for FK from '${fk.from.name}'")
         }
-        return "SELECT * FROM ${fk.from.schema.name}.${fk.from.name} WHERE ${
+        return "SELECT * FROM ${source ?: "${fk.from.schema.name}.${fk.from.name}"} WHERE ${
             fk.fields.zip(targetPk).joinToString(" AND ") {
                 "${fk.from.name}.${it.first.name} = {${it.second.name}}"
             }
         };"
     }
 
-    fun joinTableQuery(join: ASTTable, reverse: Boolean = false): String {
+    fun joinTableQuery(join: ASTTable, reverse: Boolean = false, towardsSource: String? = null): String {
         join.foreignKeys.also {
             if (it.isEmpty()) throw IllegalStateException("Join table '${join.name}' has no foreign keys")
             if (it.size < 2) throw IllegalStateException("Join table '${join.name}' needs at least 2 foreign keys, found ${it.size}")
@@ -139,7 +140,8 @@ class KotlinTool {
         val fromPk = from.getPrimaryKey().also {
             if (it.isEmpty()) throw IllegalStateException("Join source table '${from.name}' has no primary key")
         }
-        return "SELECT towards_table.* FROM ${joinTable.schema.name}.${joinTable.name} AS join_table JOIN ${towards.schema.name}.${towards.name} AS towards_table ON ${
+        val towardsRows = towardsSource?.let { "(SELECT * FROM $it)" } ?: "${towards.schema.name}.${towards.name}"
+        return "SELECT towards_table.* FROM ${joinTable.schema.name}.${joinTable.name} AS join_table JOIN $towardsRows AS towards_table ON ${
             towardsPk.zip(towardsFk.fields).joinToString(" AND ") {
                 "towards_table.${it.first.name} = join_table.${it.second.name}"
             }

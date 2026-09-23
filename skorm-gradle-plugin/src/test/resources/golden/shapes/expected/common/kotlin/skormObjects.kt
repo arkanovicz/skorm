@@ -59,9 +59,16 @@ OtherSchema.Badge.initialize()
             val personId: Int
             val kind: PersonKind
         }
-        open class Person: Instance(Companion), PersonFields {
+        open class Person(entity: Entity = Companion): Instance(entity), PersonFields {
             companion object: Entity("person", main) {
                 override fun new(): Person = Person()
+                // rows are read joined with the subtypes' tables: each comes back as the class its kind names
+                override val source = "main.person LEFT JOIN main.base_vip USING (person_id)"
+                override fun new(kind: String?): Person = when (kind) {
+                    "person" -> new()
+                    "vip" -> ShapesDatabase.MainSchema.Vip.new()
+                    else -> throw SkormException("person rows carry no kind: a hierarchy is read with its subtypes joined")
+                }
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Person?
                 @Suppress("UNCHECKED_CAST")
@@ -122,7 +129,7 @@ OtherSchema.Badge.initialize()
             val code: String
             val label: String
         }
-        open class Country: Instance(Companion), CountryFields {
+        open class Country(entity: Entity = Companion): Instance(entity), CountryFields {
             companion object: Entity("country", main) {
                 override fun new(): Country = Country()
                 @Suppress("UNCHECKED_CAST")
@@ -147,7 +154,7 @@ OtherSchema.Badge.initialize()
             val bId: Int
             val since: LocalDate
         }
-        open class Friendship: Instance(Companion), FriendshipFields {
+        open class Friendship(entity: Entity = Companion): Instance(entity), FriendshipFields {
             companion object: Entity("friendship", main) {
                 override fun new(): Friendship = Friendship()
                 @Suppress("UNCHECKED_CAST")
@@ -175,7 +182,7 @@ OtherSchema.Badge.initialize()
             val aId: Int
             val bId: Int
         }
-        open class Gift: Instance(Companion), GiftFields {
+        open class Gift(entity: Entity = Companion): Instance(entity), GiftFields {
             companion object: Entity("gift", main) {
                 override fun new(): Gift = Gift()
                 @Suppress("UNCHECKED_CAST")
@@ -205,7 +212,7 @@ OtherSchema.Badge.initialize()
             val code: String
             val addressId: Int
         }
-        open class Address: Instance(Companion), AddressFields {
+        open class Address(entity: Entity = Companion): Instance(entity), AddressFields {
             companion object: Entity("address", main) {
                 override fun new(): Address = Address()
                 @Suppress("UNCHECKED_CAST")
@@ -237,16 +244,30 @@ OtherSchema.Badge.initialize()
             override val addressId: Int
                 get() = getInt("addressId")!!
         }
-        interface VipFields {
+        interface VipFields : ShapesDatabase.MainSchema.PersonFields {
         }
-        open class Vip: Instance(Companion), VipFields {
-            companion object: Entity("vip", main) {
+        open class Vip(entity: Entity = Companion): ShapesDatabase.MainSchema.Person(entity), VipFields {
+            companion object: Entity("vip", main, ShapesDatabase.MainSchema.Person) {
                 override fun new(): Vip = Vip()
+                @Suppress("UNCHECKED_CAST")
+                override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Vip?
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun browse() = super.browse() as Sequence<Vip>
                 @Suppress("UNCHECKED_CAST")
                 override suspend operator fun iterator() = super.iterator() as Iterator<Vip>
                 fun initialize() {
+                    addField(Field("name", "varchar(50)", false, false))
+                    addField(Field("rank", "level", false, false))
+                    addField(Field("nature", "enum('a','b')", false, false))
+                    addField(Field("small", "smallint", false, false))
+                    addField(Field("tiny", "tinyint", false, false))
+                    addField(Field("big", "biginteger", false, false))
+                    addField(Field("uid", "uuid", false, false))
+                    addField(Field("meta", "json", false, false))
+                    addField(Field("born", "date", false, false))
+                    addField(Field("seen", "timestamp", false, false))
+                    addField(Field("personId", "serial", true, true))
+                    addField(Field("kind", "person_kind", false, false))
                 }
             }
         }
@@ -254,7 +275,7 @@ OtherSchema.Badge.initialize()
             val personId: Int
             val addressId: Int
         }
-        open class PersonAddress: Instance(Companion), PersonAddressFields {
+        open class PersonAddress(entity: Entity = Companion): Instance(entity), PersonAddressFields {
             companion object: Entity("personAddress", main) {
                 override fun new(): PersonAddress = PersonAddress()
                 @Suppress("UNCHECKED_CAST")
@@ -279,7 +300,7 @@ OtherSchema.Badge.initialize()
             val label: String
             val personId: Int
         }
-        open class Badge: Instance(Companion), BadgeFields {
+        open class Badge(entity: Entity = Companion): Instance(entity), BadgeFields {
             companion object: Entity("badge", other) {
                 override fun new(): Badge = Badge()
                 @Suppress("UNCHECKED_CAST")

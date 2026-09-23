@@ -36,43 +36,78 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
         return ResolvedModel(
             name = database.name,
             databaseClass = databaseClass,
-            schemas = database.schemas.values.map { schema(it) },
+            schemas = database.schemas.values.map { schema(it, databaseClass) },
             joins = joins,
             attributes = queries
         )
     }
 
-    private fun schema(schema: ASTSchema) = ResolvedSchema(
+    private fun schema(schema: ASTSchema, databaseClass: String) = ResolvedSchema(
         name = schema.name,
         className = "${kotlin.pascal(schema.name)}Schema",
         objectName = kotlin.camel(schema.name),
         enums = kotlin.enumDecls(schema).map { EnumDecl(it.name, it.values) },
-        entities = schema.tables.values.map { entity(it) }
+        entities = schema.tables.values.map { entity(it, databaseClass) }
     )
 
-    private fun entity(table: ASTTable) = ResolvedEntity(
-        tableName = table.name,
-        className = kotlin.pascal(table.name),
-        objectName = kotlin.camel(table.name),
-        hasPrimaryKey = table.getPrimaryKey().isNotEmpty(),
-        fields = table.fields.values.map { field ->
-            val rawType = field.type.toString()
-            val name = kotlin.camel(field.name)
-            Collisions.checkField(table.name, name)
-            ResolvedField(
-                name = name,
-                rawType = rawType,
-                kotlinType = kotlin.type(field),
-                nullable = !field.nonNull,
-                primaryKey = field.primaryKey,
-                // FAITHFUL: `bigserial` is not recognised as generated
-                generated = rawType == "serial",
-                writable = !field.primaryKey && field !== table.kind,
-                getter = kotlin.getter(field),
-                enumClass = if (kotlin.isEnum(field.type)) kotlin.enumName(field) else null
-            )
+    private fun entity(table: ASTTable, databaseClass: String): ResolvedEntity {
+        val own = table.fields.values.map { field -> field(table, field) }
+        val inherited = generateSequence(table.parent) { it.parent }.toList().asReversed()
+            .flatMap { ancestor -> ancestor.fields.values.map { field(ancestor, it) } }
+        Collisions.checkHierarchy(table)
+        return ResolvedEntity(
+            tableName = table.name,
+            className = kotlin.pascal(table.name),
+            objectName = kotlin.camel(table.name),
+            hasPrimaryKey = key(table).isNotEmpty(),
+            fields = inherited + own,
+            ownFields = own,
+            parentClass = table.parent?.let { classOf(it, databaseClass) },
+            source = sourceOf(table),
+            kinds = descendants(table).map { it.name to classOf(it, databaseClass) }
+        )
+    }
+
+    private fun field(table: ASTTable, field: com.republicate.kddl.ASTField): ResolvedField {
+        val rawType = field.type.toString()
+        val name = kotlin.camel(field.name)
+        Collisions.checkField(table.name, name)
+        // the key a subtype inherits stays a key of its rows
+        val root = generateSequence(table) { it.parent }.last()
+        return ResolvedField(
+            name = name,
+            rawType = rawType,
+            kotlinType = kotlin.type(field),
+            nullable = !field.nonNull,
+            primaryKey = field.primaryKey,
+            // FAITHFUL: `bigserial` is not recognised as generated
+            generated = rawType == "serial",
+            writable = !field.primaryKey && field !== root.kind,
+            getter = kotlin.getter(field),
+            enumClass = if (kotlin.isEnum(field.type)) kotlin.enumName(field) else null
+        )
+    }
+
+    /** a table's key, inherited from its parent when it declares none */
+    private fun key(table: ASTTable): Set<com.republicate.kddl.ASTField> =
+        table.getPrimaryKey().ifEmpty { table.parent?.let { key(it) } ?: emptySet() }
+
+    private fun descendants(table: ASTTable): List<ASTTable> =
+        table.children.sortedBy { it.name }.flatMap { listOf(it) + descendants(it) }
+
+    /**
+     * What a table with descendants is read from, so that a row comes back complete and as its kind:
+     * the table (a view, below the root) LEFT JOINed with each descendant's base table on the key.
+     * kddl names a subtype's own table `base_<name>`, its `<name>` being the joined view.
+     */
+    private fun sourceOf(table: ASTTable): String? {
+        val below = descendants(table)
+        if (below.isEmpty()) return null
+        val key = key(table).joinToString(", ") { it.name }
+        return "${table.schema.name}.${table.name}" + below.joinToString("") {
+            " LEFT JOIN ${it.schema.name}.base_${it.name} USING ($key)"
         }
-    )
+    }
 
     // ---- navigations ----------------------------------------------------------------------
 
@@ -109,7 +144,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
             ownerSchema = kotlin.camel(fk.from.schema.name), ownerEntity = kotlin.camel(fk.from.name),
             receiverClass = fromClass, name = forwardName, targetClass = towardsClass,
             nullable = !fk.nonNull, multiple = false,
-            sql = kotlin.foreignKeyForwardQuery(fk),
+            sql = kotlin.foreignKeyForwardQuery(fk, sourceOf(fk.towards)),
             params = fk.fields.map { it.name }
         )
         if (!fk.bidirectional) return listOf(forward)
@@ -121,7 +156,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
             ownerSchema = kotlin.camel(fk.towards.schema.name), ownerEntity = kotlin.camel(fk.towards.name),
             receiverClass = towardsClass, name = kotlin.plural(reverseBase), targetClass = fromClass,
             nullable = false, multiple = true,
-            sql = kotlin.foreignKeyReverseQuery(fk),
+            sql = kotlin.foreignKeyReverseQuery(fk, sourceOf(fk.from)),
             params = fk.towards.getPrimaryKey().map { it.name }
         )
         return listOf(forward, reverse)
@@ -142,7 +177,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
                 ownerSchema = kotlin.camel(left.schema.name), ownerEntity = kotlin.camel(left.name),
                 receiverClass = classOf(left), name = kotlin.plural(leftToRightBase), targetClass = classOf(right),
                 nullable = false, multiple = true,
-                sql = kotlin.joinTableQuery(join, false),
+                sql = kotlin.joinTableQuery(join, false, sourceOf(right)),
                 params = left.getPrimaryKey().map { it.name }
             ),
             JoinAttribute(
@@ -150,7 +185,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
                 ownerSchema = kotlin.camel(right.schema.name), ownerEntity = kotlin.camel(right.name),
                 receiverClass = classOf(right), name = kotlin.plural(rightToLeftBase), targetClass = classOf(left),
                 nullable = false, multiple = true,
-                sql = kotlin.joinTableQuery(join, true),
+                sql = kotlin.joinTableQuery(join, true, sourceOf(left)),
                 params = right.getPrimaryKey().map { it.name }
             )
         )
