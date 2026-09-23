@@ -17,7 +17,7 @@ fun shapes.model.ShapesDatabase.initRuntimeModel() {
     ShapesDatabase.main.scalarAttribute<LocalDate?>("oldestBirth", """
         SELECT min(born) FROM person;""".trimIndent())
 
-                
+
     // attribute main.summary
     ShapesDatabase.main.rowAttribute<Json.MutableObject>("summary", """
         SELECT count(*) AS persons FROM person;""".trimIndent())
@@ -32,7 +32,7 @@ fun shapes.model.ShapesDatabase.initRuntimeModel() {
     ShapesDatabase.main.entity("person").instanceAttributes.nullableRowAttribute<ShapesDatabase.MainSchema.Address>("mainAddress", """
         SELECT * FROM address WHERE owner = {person_id} LIMIT 1;""".trimIndent(), ShapesDatabase.MainSchema.Address::new)
 
-            
+
     // attribute Person.counts
     ShapesDatabase.main.entity("person").instanceAttributes.rowAttribute<Counts>("counts", """
         SELECT (SELECT count(*) FROM address WHERE owner = {person_id}) addresses,

@@ -4,64 +4,14 @@ import kotlinx.datetime.*
 import com.republicate.skorm.core.*
 import com.republicate.kson.Json
 
-#set ($databaseClass = "#pascal($database.name)Database")
 
 // runtime model attributes declaration for core
-fun ${package}.${databaseClass}.initRuntimeModel() {
-#foreach ($schema in $attributes.schemas)
-    #set($schemaClass = "${databaseClass}.#pascal($schema.name)Schema")
-    #set($schemaInstance = "${databaseClass}.#camel($schema.name)")
-    #foreach ($item in $schema.items)
-        #set($itemClass = false)
-        #if($item.receiver)
-            #set($receiver = "${schemaInstance}.entity(""#snake(${item.receiver})"").instanceAttributes")
-        #else
-            #set($receiver = "${schemaInstance}")
-        #end
-        #if($item.action)
-            #set($attribute = 'mutationAttribute')
-        #elseif($item.type.isComposite())
-            ## register the generated composite subclass (parent or not), to match the query<#pascal($item.name)> accessor
-            #set($itemClass = "#pascal($item.name)")
-            #set($factory = "::$itemClass")
-            #if($item.multiple)
-                #set($attribute = "rowSetAttribute<$itemClass>")
-            #elseif($item.nullable)
-                #set($attribute = "nullableRowAttribute<$itemClass>")
-            #else
-                #set($attribute = "rowAttribute<$itemClass>")
-            #end
-        #elseif ($item.type.isEntity())
-            #set($itemClass = "#pascal($database.name)Database.#pascal($schema.name)Schema.#pascal($item.type.name)")
-            #set($factory = "$itemClass::new")
-            #if($item.multiple)
-                #set($attribute = "rowSetAttribute<$itemClass>")
-            #elseif($item.nullable)
-                #set($attribute = "nullableRowAttribute<$itemClass>")
-            #else
-                #set($attribute = "rowAttribute<$itemClass>")
-            #end
-        #else
-            #if($item.multiple)
-                #set($attribute = "rowSetAttribute<Json.MutableObject>")
-            #elseif($item.type.name == "Json.Object")
-                ## Json.Object returns a row, not a scalar
-                #if($item.nullable)
-                    #set($attribute = "nullableRowAttribute<Json.MutableObject>")
-                #else
-                    #set($attribute = "rowAttribute<Json.MutableObject>")
-                #end
-            #elseif($item.nullable)
-                #set($attribute = "scalarAttribute<${item.type.name}?>")
-            #else
-                #set($attribute = "scalarAttribute<${item.type.name}>")
-            #end
-        #end
+fun ${package}.${resolved.databaseClass}.initRuntimeModel() {
+#foreach ($attr in $resolved.attributes)
 
-    // attribute ${item.receiver|$schema.name}.$item.name
-    ${receiver}.${attribute}("$item.name", """
-        $item.sql""".trimIndent()#if($itemClass), $factory#{end})
+    // attribute $attr.qualifiedName
+    ${resolved.databaseClass}.${attr.schema}${attr.registrationPath}.${attr.coreRegistration}("$attr.name", """
+        $attr.sql""".trimIndent()#if($attr.factory), ${attr.factory}#{end})
 
-    #end
 #end
 }

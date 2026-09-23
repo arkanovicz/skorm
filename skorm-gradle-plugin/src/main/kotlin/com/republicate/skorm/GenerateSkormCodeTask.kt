@@ -67,7 +67,6 @@ abstract class GenerateSkormCodeTask : BaseModelGenerationTask() {
 
     override fun populateContext(context: VelocityContext) {
         super.populateContext(context)
-        context.put("attributes", attributeModel)
         context.put("resolved", resolved)
     }
 

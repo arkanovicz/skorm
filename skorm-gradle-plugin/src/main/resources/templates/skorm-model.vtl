@@ -3,69 +3,25 @@ package $package
 import kotlinx.datetime.*
 import com.republicate.kson.Json
 ## bring nested generated enum classes into scope so they can type attribute arguments
-#foreach($schema in $database.schemas.values())
-#foreach($enumDecl in $kotlin.enumDecls($schema))
-import ${package}.#pascal($database.name)Database.#pascal($schema.name)Schema.$enumDecl.name
+#foreach($schema in $resolved.schemas)
+#foreach($enum in $schema.enums)
+import ${package}.${resolved.databaseClass}.${schema.className}.${enum.name}
 #end
 #end
 
-#set ($databaseClass = "#pascal($database.name)Database")
 
-#foreach($schema in $attributes.schemas)
-  #set($schemaClass = "${databaseClass}.#pascal($schema.name)Schema")
-  #set($schemaInstance = "${databaseClass}.#camel($schema.name)")
-  #foreach($item in $schema.items)
-    #if($item.type.isComposite())
-      #set($itemClass = "#pascal($item.name)")
-        #if($item.type.parent)
-          #set($parent = "#pascal($database.name)Database.#pascal($schema.name)Schema.#pascal($item.type.parent)")
-        #else
-          #set($parent = "Json.MutableObject")
-        #end
-open class $itemClass(): ${parent}() {
-      #foreach ($field in $item.type.fields)
-    val #camel($field.name): ${field.type}#if($field.nullable)?#end
-        get() = get${field.type}("#camel($field.name)")#if(!$field.nullable)!!#end
-      #end
+#foreach($attr in $resolved.attributes)
+#if($attr.composite)
+open class ${attr.composite.className}(): ${attr.composite.parentClass}() {
+#foreach($field in $attr.composite.fields)
+    val ${field.name}: ${field.type}#if($field.nullable)?#end
+        get() = get${field.type}("${field.name}")#if(!$field.nullable)!!#end
+#end
 }
-    #end
+#end
 
-    #if($item.receiver)
-      #set($receiver = "${schemaClass}.#capitalize($item.receiver)")
-    #else
-      #set($receiver = $schemaClass)
-    #end
 
-    #set($cast = '')
-    #set($generics = '')
-    #if($item.transaction)
-      #set($verb = 'attempt')
-    #elseif($item.action)
-      #set($verb = 'perform')
-    #else
-      #if($item.type.isComposite())
-        #set($generics = "<#capitalize($item.name)#if($item.nullable)?#end>")
-        #if(!$item.multiple)
-          #set($cast=" as #capitalize($item.name)#if($item.nullable)?#end")
-        #end
-      #elseif($item.type.isEntity())
-        #set($generics = "<${schemaClass}.#capitalize($item.type.name)#if($item.nullable)?#end>")
-        #if(!$item.multiple)
-##          #set($cast=" as #capitalize($item.name)#if($item.nullable)?#end")
-        #end
-      #else
-        #set($generics = "<$item.type.name#if($item.nullable)?#end>")
-      #end
-      #if($item.multiple)
-        #set($verb = 'query')
-      #elseif($item.type.isComposite() && ($item.type.parent || $item.type.fields.size > 1) || $item.type.isEntity() || $item.type.name == "Json.Object")
-        #set($verb = 'retrieve')
-      #else
-        #set($verb = 'eval')
-      #end
-    #end
-// attribute ${item.receiver|$schema.name}.$item.name
-suspend fun ${receiver}.`${item.name}`(#typedArguments($item.arguments)) = ${verb}${generics}("$item.name"#if($item.arguments), #if($item.arguments.size() > 1)#namedValues($item.arguments)#else#values($item.arguments)#end#end)$cast
+// attribute $attr.qualifiedName
+suspend fun ${attr.receiverClass}.`${attr.name}`(#typedArguments($attr.arguments)) = ${attr.verb}${attr.generics}("$attr.name"#if($attr.arguments), #if($attr.arguments.size() > 1)#namedValues($attr.arguments)#else#values($attr.arguments)#end#end)$attr.cast
 
-  #end
 #end

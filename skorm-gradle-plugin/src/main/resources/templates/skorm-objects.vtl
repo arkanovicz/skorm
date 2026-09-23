@@ -18,90 +18,77 @@ import com.republicate.skorm.*
 #if($useUuidType)
 @OptIn(kotlin.uuid.ExperimentalUuidApi::class)
 #end
-#set ($databaseClass = "#pascal($database.name)Database")
-class $databaseClass(processor: Processor): Database("$database.name", processor) {
+class ${resolved.databaseClass}(processor: Processor): Database("$database.name", processor) {
     companion object {
         lateinit var instance: Database
         private fun isInstantiated() = this::instance.isInitialized
-#foreach ($schema in $database.schemas.values())
-        val #camel($schema.name): #pascal($schema.name)Schema by lazy { #pascal($schema.name)Schema(instance) }
+#foreach ($schema in $resolved.schemas)
+        val ${schema.objectName}: ${schema.className} by lazy { ${schema.className}(instance) }
 #end
     }
     init {
-        if (isInstantiated()) throw RuntimeException("$databaseClass instance already created")
+        if (isInstantiated()) throw RuntimeException("${resolved.databaseClass} instance already created")
         instance = this
     }
     override fun initialize() {
-  #foreach ($schema in $database.schemas.values())
-    #foreach ($table in $schema.tables.values())
-        #pascal($schema.name)Schema.#pascal($table.name).initialize()
-    #end
-  #end
+#foreach ($schema in $resolved.schemas)
+#foreach ($entity in $schema.entities)
+${schema.className}.${entity.className}.initialize()
+#end
+#end
         super.initialize()
     }
-#foreach ($schema in $database.schemas.values())
-  #set ($schemaClass = "#pascal($schema.name)Schema")
-  #set ($schemaObject = "#camel($schema.name)")
-    class $schemaClass(db: Database): Schema("$schema.name", db) {
-  #set ($enumDecls = $kotlin.enumDecls($schema))
-  #foreach ($enumDecl in $enumDecls)
-        enum class $enumDecl.name {
-    #foreach ($value in $enumDecl.values)
+#foreach ($schema in $resolved.schemas)
+    class ${schema.className}(db: Database): Schema("$schema.name", db) {
+#foreach ($enum in $schema.enums)
+        enum class $enum.name {
+#foreach ($value in $enum.values)
             $value#if ($foreach.hasNext),#end
-    #end
+#end
         }
-  #end
-  #foreach ($table in $schema.tables.values())
-    #set ($instanceClass = "#pascal($table.name)")
-    #set ($instanceObject = "#camel($table.name)")
+#end
+#foreach ($entity in $schema.entities)
 ## the field contract, so a non-suspend view of a row can delegate it
-        interface ${instanceClass}Fields {
-    #foreach ($field in $table.fields.values())
-            val #camel($field.name): #type($field)#if(!$field.nonNull)?#end
-    #end
+        interface ${entity.className}Fields {
+#foreach ($field in $entity.fields)
+            val ${field.name}: ${field.kotlinType}#if($field.nullable)?#end
+#end
         }
-        open class $instanceClass: Instance(Companion), ${instanceClass}Fields {
-            companion object: Entity("$instanceObject", $schemaObject) {
-                override fun new(): $instanceClass = $instanceClass()
-    #if ($table.primaryKey.size() > 0)
+        open class ${entity.className}: Instance(Companion), ${entity.className}Fields {
+            companion object: Entity("$entity.objectName", $schema.objectName) {
+                override fun new(): ${entity.className} = ${entity.className}()
+#if ($entity.hasPrimaryKey)
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun fetch(vararg key: Any) = super.fetch(*key) as $instanceClass?
-    #end
+                override suspend fun fetch(vararg key: Any) = super.fetch(*key) as ${entity.className}?
+#end
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<$instanceClass>
+                override suspend fun browse() = super.browse() as Sequence<${entity.className}>
                 @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<$instanceClass>
+                override suspend operator fun iterator() = super.iterator() as Iterator<${entity.className}>
                 fun initialize() {
-      #foreach ($field in $table.fields.values())
-        #set($generated = "$field.type" == "serial")
-                    addField(Field("#camel($field.name)", "$field.type", $field.primaryKey, $generated))
-      #end
+#foreach ($field in $entity.fields)
+                    addField(Field("$field.name", "$field.rawType", $field.primaryKey, $field.generated))
+#end
                 }
             }
-    #foreach ($field in $table.fields.values())
+#foreach ($field in $entity.fields)
 ## TODO output PKs first
 ## TODO use delegates
-      #set($pk = $field.primaryKey)
-      #if($pk)
-        #set($def = 'val')
-      #else
-        #set($def = 'var')
-      #end
-            override $def #camel($field.name): #type($field)#if(!$field.nonNull)?#end
-      #if($kotlin.isEnum($field.type))
-                get() = getString("#camel($field.name)")#if($field.nonNull)!!#else?#end.let { ${kotlin.enumName($field)}.valueOf(it) }
-        #if(!$pk)
-                set(v) { put("#camel($field.name)", v#if(!$field.nonNull)?#end.toString()) }
-        #end
-      #else
-                get() = #getter($field)("#camel($field.name)")#if($field.nonNull)!!#end
-        #if(!$pk)
-                set(v) { put("#camel($field.name)", v) }
-        #end
-      #end
-    #end
+            override #if($field.primaryKey)val#{else}var#end ${field.name}: ${field.kotlinType}#if($field.nullable)?#end
+#if($field.enumClass)
+                get() = ${field.getter}("$field.name")#if($field.nullable)?#{else}!!#end.let { ${field.enumClass}.valueOf(it) }
+#if(!$field.primaryKey)
+                set(v) { put("$field.name", v#if($field.nullable)?#end.toString()) }
+#end
+#else
+                get() = ${field.getter}("$field.name")#if(!$field.nullable)!!#end
+#if(!$field.primaryKey)
+                set(v) { put("$field.name", v) }
+#end
+#end
+#end
         }
-  #end
+#end
     }
 #end
 }

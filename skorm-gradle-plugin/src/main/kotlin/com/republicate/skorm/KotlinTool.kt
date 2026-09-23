@@ -157,15 +157,15 @@ class KotlinTool {
     // deprecated
     // fun arguments(fields: Set<String>) = fields.joinToString(",") { "${it}: Any?" }
 
-    fun typedArguments(fields: Set<Pair<String, String?>>) = fields.joinToString(" ,") {
+    fun typedArguments(fields: Collection<Pair<String, String?>>) = fields.joinToString(" ,") {
         "${it.first}: ${it.second ?: "Any?"}"
     }
 
-    fun values(fields: Set<Pair<String, String?>>) = fields.joinToString(",") { it.first }
+    fun values(fields: Collection<Pair<String, String?>>) = fields.joinToString(",") { it.first }
 
     // pass args by name so binding is order-independent. Key is the mapped (camel) param
     // name to match query params after identifier mapping; value is the raw arg.
-    fun namedValues(fields: Set<Pair<String, String?>>) =
+    fun namedValues(fields: Collection<Pair<String, String?>>) =
         fields.joinToString(", ", prefix = "mapOf(", postfix = ")") { "\"${camel(it.first)}\" to ${it.first}" }
 
     fun capitalize(str: String) = str.replaceFirstChar { it.uppercase() }

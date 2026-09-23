@@ -13,7 +13,7 @@ fun shapes.model.ShapesDatabase.initRuntimeModel() {
 
     // attribute main.oldestBirth
     ShapesDatabase.main.scalarAttribute<LocalDate?>("oldestBirth", setOf())
-          
+
     // attribute main.summary
     ShapesDatabase.main.scalarAttribute<Json.Object>("summary", setOf())
 
@@ -22,7 +22,7 @@ fun shapes.model.ShapesDatabase.initRuntimeModel() {
 
     // attribute Person.mainAddress
     ShapesDatabase.main.entity("person").instanceAttributes.nullableInstanceAttribute<ShapesDatabase.MainSchema.Address>("mainAddress", setOf("person_id"), ShapesDatabase.MainSchema.Address::new)
-        
+
     // attribute Person.counts
     ShapesDatabase.main.entity("person").instanceAttributes.rowAttribute<Counts>("counts", setOf("person_id"), ::Counts)
 

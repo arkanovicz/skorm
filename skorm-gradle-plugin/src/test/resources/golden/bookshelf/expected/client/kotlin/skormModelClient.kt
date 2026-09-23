@@ -10,7 +10,7 @@ fun com.republicate.skorm.bookshelf.ExampleDatabase.initRuntimeModel() {
 
     // attribute bookshelf.booksCount
     ExampleDatabase.bookshelf.scalarAttribute<Int>("booksCount", setOf())
-        
+
     // attribute Book.currentBorrower
     ExampleDatabase.bookshelf.entity("book").instanceAttributes.nullableRowAttribute<CurrentBorrower>("currentBorrower", setOf("book_id"), ::CurrentBorrower)
 
@@ -25,10 +25,10 @@ fun com.republicate.skorm.bookshelf.ExampleDatabase.initRuntimeModel() {
 
     // attribute Author.countInGenre
     ExampleDatabase.bookshelf.entity("author").instanceAttributes.scalarAttribute<Int>("countInGenre", setOf("author_id","genre"))
-        
+
     // attribute Author.catalog
     ExampleDatabase.bookshelf.entity("author").instanceAttributes.rowSetAttribute<Catalog>("catalog", setOf("author_id"), ::Catalog)
-        
+
     // attribute Book.stats
     ExampleDatabase.bookshelf.entity("book").instanceAttributes.rowAttribute<Stats>("stats", setOf("book_id"), ::Stats)
 }
