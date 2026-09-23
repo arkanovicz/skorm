@@ -24,6 +24,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
     fun resolve(database: ASTDatabase, attributes: RMDatabase?): ResolvedModel {
         val databaseClass = "${kotlin.pascal(database.name)}Database"
         return ResolvedModel(
+            name = database.name,
             databaseClass = databaseClass,
             schemas = database.schemas.values.map { schema(it) },
             joins = database.schemas.values.flatMap { joins(it, databaseClass) },

@@ -18,7 +18,7 @@ import com.republicate.skorm.*
 #if($useUuidType)
 @OptIn(kotlin.uuid.ExperimentalUuidApi::class)
 #end
-class ${resolved.databaseClass}(processor: Processor): Database("$database.name", processor) {
+class ${resolved.databaseClass}(processor: Processor): Database("$resolved.name", processor) {
     companion object {
         lateinit var instance: Database
         private fun isInstantiated() = this::instance.isInitialized

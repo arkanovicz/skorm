@@ -5,6 +5,8 @@ package com.republicate.skorm.resolve
  * so an accessor and its registrations cannot disagree on a name, a type or a direction.
  */
 class ResolvedModel(
+    /** the database name as declared, `example` */
+    val name: String,
     /** `ExampleDatabase` */
     val databaseClass: String,
     val schemas: List<ResolvedSchema>,
