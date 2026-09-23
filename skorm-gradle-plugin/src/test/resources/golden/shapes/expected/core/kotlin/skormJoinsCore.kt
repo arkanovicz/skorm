@@ -27,10 +27,10 @@ fun ShapesDatabase.initJoins() {
    ShapesDatabase.main.entity("address").instanceAttributes.rowAttribute<ShapesDatabase.MainSchema.Country>("code", "SELECT * FROM main.country WHERE country.code = {code};", ShapesDatabase.MainSchema.Country)
    // reverse foreign key attribute
    ShapesDatabase.main.entity("country").instanceAttributes.rowSetAttribute<ShapesDatabase.MainSchema.Address>("addresses", "SELECT * FROM main.address WHERE address.code = {code};", ShapesDatabase.MainSchema.Address)
-  // left to right n-n join attribute
-  ShapesDatabase.main.entity("person").instanceAttributes.rowSetAttribute<ShapesDatabase.MainSchema.Address>("addresses", "SELECT towards_table.* FROM main.person_address AS join_table JOIN main.address AS towards_table ON towards_table.address_id = join_table.address_id WHERE join_table.person_id = {person_id};", ShapesDatabase.MainSchema.Address)
-  // right to left n-n join attribute
-  ShapesDatabase.main.entity("address").instanceAttributes.rowSetAttribute<ShapesDatabase.MainSchema.Person>("persons", "SELECT towards_table.* FROM main.person_address AS join_table JOIN main.person AS towards_table ON towards_table.person_id = join_table.person_id WHERE join_table.address_id = {address_id};", ShapesDatabase.MainSchema.Person)
+   // left to right n-n join attribute
+   ShapesDatabase.main.entity("person").instanceAttributes.rowSetAttribute<ShapesDatabase.MainSchema.Address>("addresses", "SELECT towards_table.* FROM main.person_address AS join_table JOIN main.address AS towards_table ON towards_table.address_id = join_table.address_id WHERE join_table.person_id = {person_id};", ShapesDatabase.MainSchema.Address)
+   // right to left n-n join attribute
+   ShapesDatabase.main.entity("address").instanceAttributes.rowSetAttribute<ShapesDatabase.MainSchema.Person>("persons", "SELECT towards_table.* FROM main.person_address AS join_table JOIN main.person AS towards_table ON towards_table.person_id = join_table.person_id WHERE join_table.address_id = {address_id};", ShapesDatabase.MainSchema.Person)
    // forward foreign key attribute
    ShapesDatabase.other.entity("badge").instanceAttributes.rowAttribute<ShapesDatabase.OtherSchema.Person>("person", "SELECT * FROM main.person WHERE person.person_id = {person_id};", ShapesDatabase.OtherSchema.Person)
    // reverse foreign key attribute

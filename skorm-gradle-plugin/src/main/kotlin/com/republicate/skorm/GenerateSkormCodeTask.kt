@@ -6,6 +6,8 @@ import com.republicate.kddl.hypersql.HyperSQLFormatter
 import com.republicate.kddl.postgresql.PostgreSQLFormatter
 import com.republicate.skorm.core.AttributeDefinition
 import com.republicate.skorm.model.RMDatabase
+import com.republicate.skorm.resolve.ResolvedModel
+import com.republicate.skorm.resolve.Resolver
 import org.apache.velocity.VelocityContext
 import org.gradle.api.GradleException
 import org.gradle.api.file.DirectoryProperty
@@ -60,9 +62,13 @@ abstract class GenerateSkormCodeTask : BaseModelGenerationTask() {
         attributes.orNull?.let { parseRuntimeModel(Utils.getFile(it.asFile.absolutePath)) }
     }
 
+    @get:Internal
+    protected lateinit var resolved: ResolvedModel
+
     override fun populateContext(context: VelocityContext) {
         super.populateContext(context)
         context.put("attributes", attributeModel)
+        context.put("resolved", resolved)
     }
 
     private fun generateCore() = core.orNull ?: platforms.get().any { it in JVM_PLATFORMS }
@@ -74,6 +80,8 @@ abstract class GenerateSkormCodeTask : BaseModelGenerationTask() {
         val out = outputDirectory.get().asFile
         // a file that stops being emitted (a dropped table, a flag flipped) must not linger and get compiled
         out.deleteRecursively()
+        if (attributeModel != null) checkAttributeParameters()
+        resolved = Resolver(KotlinTool()).resolve(database, attributeModel)
         val withCore = generateCore()
         val withClient = generateClient()
         logger.lifecycle("$tag generating into $out (core: $withCore, client: $withClient)")
@@ -84,7 +92,6 @@ abstract class GenerateSkormCodeTask : BaseModelGenerationTask() {
         if (withClient) generateCode("templates/skorm-joins-client.vtl", File(out, "client/kotlin/skormJoinsClient.kt"))
 
         if (attributeModel != null) {
-            checkAttributeParameters()
             generateCode("templates/skorm-model.vtl", File(out, "common/kotlin/skormModel.kt"))
             if (withCore) generateCode("templates/skorm-model-core.vtl", File(out, "core/kotlin/skormModelCore.kt"))
             if (withClient) generateCode("templates/skorm-model-client.vtl", File(out, "client/kotlin/skormModelClient.kt"))

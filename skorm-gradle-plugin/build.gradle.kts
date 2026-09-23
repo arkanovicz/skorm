@@ -97,6 +97,8 @@ tasks.findByName("sourcesJar")?.dependsOn("generateKotlinGrammarSource")
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
     jvmArgs("--add-opens", "java.base/java.lang=ALL-UNNAMED")
+    // GoldenOutputTest rewrites its expected files under this variable: a run must not be skipped as up-to-date
+    inputs.property("SKORM_UPDATE_GOLDEN", providers.environmentVariable("SKORM_UPDATE_GOLDEN").orElse(""))
 }
 
 tasks.withType<Test>().configureEach {

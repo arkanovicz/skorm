@@ -2,62 +2,11 @@ package $package
 
 import com.republicate.skorm.*
 
-#set ($databaseClass = "#pascal($database.name)Database")
 
 // join attributes declaration for client
-fun ${databaseClass}.initJoins() {
-#foreach ($schema in $database.schemas.values())
-  #set($schemaClass = "${databaseClass}.#pascal($schema.name)Schema")
-  #set($schemaInstance = "#camel($schema.name)")
-  #foreach ($table in $schema.tables.values())
-    #if($kotlin.isJoinTable($table))
-      #set($leftFk = $table.foreignKeys[0])
-      #set($rightFk = $table.foreignKeys[1])
-      #set($left = $leftFk.towards)
-      #set($right = $rightFk.towards)
-      #set($leftInstance = "${databaseClass}.#pascal($left.schema.name)Schema.#pascal($left.name)")
-      #set($rightInstance = "${databaseClass}.#pascal($right.schema.name)Schema.#pascal($right.name)")
-      #set($leftSchemaInstance = "#camel($left.schema.name)")
-      #set($rightSchemaInstance = "#camel($right.schema.name)")
-      #if($leftFk.fields.size() == 1)
-        #set($rightToLeftAttrBase = "#attributeName($leftFk.fields.iterator().next().name)")
-      #else
-        #set($rightToLeftAttrBase = "#camel($left.name)")
-      #end
-      #if($rightFk.fields.size() == 1)
-        #set($leftToRightAttrBase = "#attributeName($rightFk.fields.iterator().next().name)")
-      #else
-        #set($leftToRightAttrBase = "#camel($right.name)")
-      #end
-    // left to right n-n join attribute
-    ${leftSchemaInstance}.entity("#camel($left.name)").instanceAttributes.rowSetAttribute<$rightInstance>("#plural($leftToRightAttrBase)", setOf(#fieldNames($left.primaryKey)), $rightInstance)
-    // right to left n-n join attribute
-    ${rightSchemaInstance}.entity("#camel($right.name)").instanceAttributes.rowSetAttribute<$leftInstance>("#plural($rightToLeftAttrBase)", setOf(#fieldNames($right.primaryKey)), $leftInstance)
-    #else
-      #foreach($fk in $table.foreignKeys)
-        #set($instanceClass = "${schemaClass}.#pascal($fk.towards.name)")
-        #if($fk.fields.size() == 1)
-          #set($attrName = "#attributeName($fk.fields.iterator().next().name)")
-        #elseif($kotlin.isUniqueFkDest($fk))
-          #set($attrName = "#camel($fk.towards.name)")
-        #else
-          #set($attrName = "#attributeName($fk.fields.iterator().next().name)#pascal($fk.towards.name)")
-        #end
-    // forward foreign key attribute
-    ${schemaInstance}.entity("#camel($fk.from.name)").instanceAttributes.#if($fk.nonNull)rowAttribute#{else}nullableRowAttribute#end<$instanceClass>("$attrName", setOf(#fieldNames($fk.fields)), $instanceClass)
-## a chevron at the one side (kddl 0.27) withholds the collection
-        #if($fk.bidirectional)
-        #set($instanceClass = "${schemaClass}.#pascal($fk.from.name)")
-        #if($kotlin.isUniqueFkDest($fk))
-          #set($attrName = "#camel($fk.from.name)")
-        #else
-          #set($attrName = "#attributeName($fk.fields.iterator().next().name)#pascal($fk.from.name)")
-        #end
-    // reverse foreign key attribute
-    ${schemaInstance}.entity("#camel($fk.towards.name)").instanceAttributes.rowSetAttribute<$instanceClass>("#plural($attrName)", setOf(#fieldNames($fk.towards.primaryKey)), $instanceClass)
-        #end
-      #end
-    #end
-  #end
+fun ${resolved.databaseClass}.initJoins() {
+#foreach ($join in $resolved.joins)
+    // $join.label attribute
+    ${join.ownerSchema}.entity("$join.ownerEntity").instanceAttributes.${join.registration}<$join.targetClass>("$join.name", setOf(#names($join.params)), $join.targetClass)
 #end
 }

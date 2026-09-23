@@ -152,7 +152,7 @@ class KotlinTool {
 
     fun fieldNames(fields: Set<ASTField>) = fields.joinToString(",") { "\"${it.name}\"" }
 
-    fun names(fields: Set<String>) = fields.joinToString(",") { "\"$it\"" }
+    fun names(fields: Collection<String>) = fields.joinToString(",") { "\"$it\"" }
 
     // deprecated
     // fun arguments(fields: Set<String>) = fields.joinToString(",") { "${it}: Any?" }
