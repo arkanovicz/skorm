@@ -351,13 +351,13 @@ saying which side holds the key (kddl ≥ 0.27).
 The kddl compiler generates:
 1. SQL DDL scripts for database creation
 2. Kotlin entity classes with typed properties
-3. Navigation methods for the relationships above
+3. Navigation methods for the relationships above, as members of the generated classes
 
 For complete kddl documentation, see the [kddl project](https://github.com/arkanovicz/kddl).
 
 ### ksql Syntax
 
-Beyond the basic CRUD operations, skorm allows you to define custom queries and mutations using the `ksql` format. These definitions generate type-safe Kotlin objects and extension functions.
+Beyond the basic CRUD operations, skorm allows you to define custom queries and mutations using the `ksql` format. These definitions generate type-safe Kotlin objects and member functions on their receivers.
 
 #### Declaration Syntax
 

@@ -23,7 +23,9 @@ class ResolvedSchema(
     /** `bookshelf` */
     val objectName: String,
     val enums: List<EnumDecl>,
-    val entities: List<ResolvedEntity>
+    val entities: List<ResolvedEntity>,
+    /** the ksql attributes declared on the schema itself: members of its class */
+    val attributes: List<QueryAttribute>
 )
 
 class EnumDecl(val name: String, val values: List<String>)
@@ -49,7 +51,11 @@ class ResolvedEntity(
     /** kind value to subclass, for every descendant: `vip` → `ExampleDatabase.MainSchema.Vip` */
     val kinds: List<Pair<String, String>>,
     /** the value of `kind` for this table's own rows, when it belongs to a hierarchy: `vip` */
-    val kindValue: String?
+    val kindValue: String?,
+    /** the navigations declared on this entity: members of its class */
+    val joins: List<JoinAttribute>,
+    /** the ksql attributes declared on this entity: members of its class */
+    val attributes: List<QueryAttribute>
 )
 
 class ResolvedField(

@@ -126,6 +126,24 @@ OtherSchema.Badge.initialize()
                 set(v) { put("seen", v) }
             override val kind: PersonKind
                 get() = getString("kind")!!.let { PersonKind.valueOf(it) }
+            // reverse foreign key
+            suspend fun aFriendships(): Sequence<ShapesDatabase.MainSchema.Friendship> = query("aFriendships")
+            // reverse foreign key
+            suspend fun bFriendships(): Sequence<ShapesDatabase.MainSchema.Friendship> = query("bFriendships")
+            // reverse foreign key
+            suspend fun ownerAddresses(): Sequence<ShapesDatabase.MainSchema.Address> = query("ownerAddresses")
+            // left to right n-n join
+            suspend fun addresses(): Sequence<ShapesDatabase.MainSchema.Address> = query("addresses")
+            // reverse foreign key
+            suspend fun badges(): Sequence<ShapesDatabase.OtherSchema.Badge> = query("badges")
+            // attribute Person.mainAddress
+            suspend fun `mainAddress`() = retrieve<ShapesDatabase.MainSchema.Address?>("mainAddress")
+            // attribute Person.forget
+            suspend fun `forget`() = perform("forget")
+            // attribute Person.counts
+            suspend fun `counts`() = retrieve<Counts>("counts") as Counts
+            // attribute Person.cities
+            suspend fun `cities`() = query<String>("cities")
         }
         interface CountryFields {
             val code: String
@@ -150,6 +168,8 @@ OtherSchema.Badge.initialize()
             override var label: String
                 get() = getString("label")!!
                 set(v) { put("label", v) }
+            // reverse foreign key
+            suspend fun addresses(): Sequence<ShapesDatabase.MainSchema.Address> = query("addresses")
         }
         interface FriendshipFields {
             val aId: Int
@@ -178,6 +198,12 @@ OtherSchema.Badge.initialize()
             override var since: LocalDate
                 get() = getLocalDate("since")!!
                 set(v) { put("since", v) }
+            // forward foreign key
+            suspend fun a(): ShapesDatabase.MainSchema.Person = retrieve("a")
+            // forward foreign key
+            suspend fun b(): ShapesDatabase.MainSchema.Person = retrieve("b")
+            // reverse foreign key
+            suspend fun gifts(): Sequence<ShapesDatabase.MainSchema.Gift> = query("gifts")
         }
         interface GiftFields {
             val label: String
@@ -206,6 +232,8 @@ OtherSchema.Badge.initialize()
             override var bId: Int
                 get() = getInt("bId")!!
                 set(v) { put("bId", v) }
+            // forward foreign key
+            suspend fun friendship(): ShapesDatabase.MainSchema.Friendship = retrieve("friendship")
         }
         interface AddressFields {
             val addressId: Int
@@ -245,6 +273,14 @@ OtherSchema.Badge.initialize()
             override var code: String
                 get() = getString("code")!!
                 set(v) { put("code", v) }
+            // forward foreign key
+            suspend fun owner(): ShapesDatabase.MainSchema.Person = retrieve("owner")
+            // forward foreign key
+            suspend fun backup(): ShapesDatabase.MainSchema.Person? = retrieve("backup")
+            // forward foreign key
+            suspend fun country(): ShapesDatabase.MainSchema.Country = retrieve("country")
+            // right to left n-n join
+            suspend fun persons(): Sequence<ShapesDatabase.MainSchema.Person> = query("persons")
         }
         interface VipFields : ShapesDatabase.MainSchema.PersonFields {
         }
@@ -298,6 +334,14 @@ OtherSchema.Badge.initialize()
                 get() = getInt("addressId")!!
                 set(v) { put("addressId", v) }
         }
+        // attribute main.personCount
+        suspend fun `personCount`() = eval<Int>("personCount")
+        // attribute main.oldestBirth
+        suspend fun `oldestBirth`() = eval<LocalDate?>("oldestBirth")
+        // attribute main.summary
+        suspend fun `summary`() = retrieve<Json.Object>("summary")
+        // attribute main.everybody
+        suspend fun `everybody`() = query<ShapesDatabase.MainSchema.Person>("everybody")
     }
     class OtherSchema(db: Database): Schema("other", db) {
         interface BadgeFields {
@@ -322,6 +366,8 @@ OtherSchema.Badge.initialize()
             override var personId: Int
                 get() = getInt("personId")!!
                 set(v) { put("personId", v) }
+            // forward foreign key
+            suspend fun person(): ShapesDatabase.MainSchema.Person = retrieve("person")
         }
     }
 }

@@ -2,14 +2,8 @@ package $package
 
 import kotlinx.datetime.*
 import com.republicate.kson.Json
-## bring nested generated enum classes into scope so they can type attribute arguments
-#foreach($schema in $resolved.schemas)
-#foreach($enum in $schema.enums)
-import ${package}.${resolved.databaseClass}.${schema.className}.${enum.name}
-#end
-#end
 
-
+## the composite row classes ksql attributes declare; the accessors are members of their receivers
 #foreach($attr in $resolved.attributes)
 #if($attr.composite)
 open class ${attr.composite.className}(): ${attr.composite.parentClass}() {
@@ -18,10 +12,6 @@ open class ${attr.composite.className}(): ${attr.composite.parentClass}() {
         get() = get${field.type}("${field.name}")#if(!$field.nullable)!!#end
 #end
 }
+
 #end
-
-
-// attribute $attr.qualifiedName
-suspend fun ${attr.receiverClass}.`${attr.name}`(#typedArguments($attr.arguments)) = ${attr.verb}${attr.generics}("$attr.name"#if($attr.arguments), #if($attr.arguments.size() > 1)#namedValues($attr.arguments)#else#values($attr.arguments)#end#end)$attr.cast
-
 #end

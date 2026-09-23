@@ -22,7 +22,7 @@ import java.io.File
  * Single entry point for skorm code generation. What it emits depends on the platforms
  * the project builds for, unless the build declares [core] / [client] explicitly.
  *
- *   <out>/common/kotlin    entity classes, field interfaces, join and attribute accessors
+ *   <out>/common/kotlin    entity classes with their navigations and attributes, field interfaces, composites
  *   <out>/core/kotlin      server-side attribute registrations
  *   <out>/core/resources   database creation script
  *   <out>/client/kotlin    REST client attribute registrations
@@ -86,7 +86,6 @@ abstract class GenerateSkormCodeTask : BaseModelGenerationTask() {
         logger.lifecycle("$tag generating into $out (core: $withCore, client: $withClient)")
 
         generateCode("templates/skorm-objects.vtl", File(out, "common/kotlin/skormObjects.kt"))
-        generateCode("templates/skorm-joins.vtl", File(out, "common/kotlin/skormJoins.kt"))
         if (withCore) generateCode("templates/skorm-joins-core.vtl", File(out, "core/kotlin/skormJoinsCore.kt"))
         if (withClient) generateCode("templates/skorm-joins-client.vtl", File(out, "client/kotlin/skormJoinsClient.kt"))
 

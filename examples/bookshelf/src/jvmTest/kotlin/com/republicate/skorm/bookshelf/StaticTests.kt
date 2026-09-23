@@ -72,8 +72,8 @@ class StaticTests {
                 assertEquals(listOf(theBook.title), author.books().map { it.title }.toList())
                 assertEquals(
                     listOf("Author", "Tag"),
-                    Class.forName("com.republicate.skorm.bookshelf.SkormJoinsKt").methods
-                        .filter { it.name == "books" }.map { it.parameterTypes[0].simpleName }.sorted()
+                    listOf(Author::class, Dude::class, Tag::class)
+                        .filter { c -> c.java.methods.any { it.name == "books" } }.map { it.simpleName }
                 )
                 assertThrows<SkormException> {
                     ExampleDatabase.bookshelf.entity("dude").instanceAttributes.findAttribute<Any>("books")

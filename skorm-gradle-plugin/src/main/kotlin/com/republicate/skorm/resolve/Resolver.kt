@@ -36,21 +36,26 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
         return ResolvedModel(
             name = database.name,
             databaseClass = databaseClass,
-            schemas = database.schemas.values.map { schema(it, databaseClass) },
+            schemas = database.schemas.values.map { schema(it, databaseClass, joins, queries) },
             joins = joins,
             attributes = queries
         )
     }
 
-    private fun schema(schema: ASTSchema, databaseClass: String) = ResolvedSchema(
-        name = schema.name,
-        className = "${kotlin.pascal(schema.name)}Schema",
-        objectName = kotlin.camel(schema.name),
-        enums = kotlin.enumDecls(schema).map { EnumDecl(it.name, it.values) },
-        entities = schema.tables.values.map { entity(it, databaseClass) }
-    )
+    private fun schema(schema: ASTSchema, databaseClass: String, joins: List<JoinAttribute>, queries: List<QueryAttribute>): ResolvedSchema {
+        val schemaClass = "$databaseClass.${kotlin.pascal(schema.name)}Schema"
+        return ResolvedSchema(
+            name = schema.name,
+            className = "${kotlin.pascal(schema.name)}Schema",
+            objectName = kotlin.camel(schema.name),
+            enums = kotlin.enumDecls(schema).map { EnumDecl(it.name, it.values) },
+            entities = schema.tables.values.map { entity(it, databaseClass, joins, queries) },
+            attributes = queries.filter { it.receiverClass == schemaClass }
+        )
+    }
 
-    private fun entity(table: ASTTable, databaseClass: String): ResolvedEntity {
+    private fun entity(table: ASTTable, databaseClass: String, joins: List<JoinAttribute>, queries: List<QueryAttribute>): ResolvedEntity {
+        val entityClass = classOf(table, databaseClass)
         val own = table.fields.values.map { field -> field(table, field) }
         val inherited = generateSequence(table.parent) { it.parent }.toList().asReversed()
             .flatMap { ancestor -> ancestor.fields.values.map { field(ancestor, it) } }
@@ -65,7 +70,9 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
             parentClass = table.parent?.let { classOf(it, databaseClass) },
             source = sourceOf(table),
             kinds = descendants(table).map { it.name to classOf(it, databaseClass) },
-            kindValue = if (table.parent != null || table.children.isNotEmpty()) table.name else null
+            kindValue = if (table.parent != null || table.children.isNotEmpty()) table.name else null,
+            joins = joins.filter { it.receiverClass == entityClass },
+            attributes = queries.filter { it.receiverClass == entityClass }
         )
     }
 
