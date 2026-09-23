@@ -72,6 +72,8 @@ abstract class GenerateSkormCodeTask : BaseModelGenerationTask() {
     @TaskAction
     fun generate() {
         val out = outputDirectory.get().asFile
+        // a file that stops being emitted (a dropped table, a flag flipped) must not linger and get compiled
+        out.deleteRecursively()
         val withCore = generateCore()
         val withClient = generateClient()
         logger.lifecycle("$tag generating into $out (core: $withCore, client: $withClient)")

@@ -44,6 +44,29 @@ class SkormGradlePluginTest {
     }
 
     @Test
+    fun `a file no longer emitted does not survive the next run`() {
+        val project = ProjectBuilder.builder().build()
+        project.pluginManager.apply("com.republicate.skorm")
+        val out = File(project.projectDir, "out")
+        val params = (project.extensions.getByName("skorm") as SkormParams).apply {
+            model.set(File("src/test/resources/golden/shapes/model.kddl").absoluteFile)
+            destPackage.set("shapes.model")
+            dialect.set("postgresql") // the fixture inherits a table, which HyperSQL cannot express
+            core.set(true)
+            client.set(true)
+            outputDirectory.set(out)
+        }
+        val task = project.tasks.getByName(GEN_TASK_NAME) as GenerateSkormCodeTask
+        task.generate()
+        Assertions.assertTrue(File(out, "client/kotlin/skormJoinsClient.kt").exists())
+
+        params.client.set(false)
+        task.generate()
+        Assertions.assertFalse(File(out, "client/kotlin").exists(), "stale client output")
+        Assertions.assertTrue(File(out, "core/kotlin/skormJoinsCore.kt").exists())
+    }
+
+    @Test
     fun `core and client are left to derivation when not declared`() {
         val project = ProjectBuilder.builder().build()
         project.pluginManager.apply("com.republicate.skorm")

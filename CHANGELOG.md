@@ -6,6 +6,7 @@ All notable changes to Skorm are documented in this file.
 
 ### Fixed
 - The generated database's singleton guard said "instance already crated".
+- Generated files that stopped being emitted — a dropped table, `client` flipped off — lingered in `build/generated-src` and got compiled; the output directory is now cleared before each generation.
 
 ## [0.20] - 2026-09-21
 
