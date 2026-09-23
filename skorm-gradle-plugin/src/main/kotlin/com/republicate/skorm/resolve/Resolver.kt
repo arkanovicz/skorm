@@ -72,19 +72,18 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
 
     // ---- navigations ----------------------------------------------------------------------
 
-    private fun joins(schema: ASTSchema, databaseClass: String): List<JoinAttribute> {
-        val schemaClass = "$databaseClass.${kotlin.pascal(schema.name)}Schema"
-        val schemaObject = kotlin.camel(schema.name)
-        return schema.tables.values.flatMap { table ->
+    private fun joins(schema: ASTSchema, databaseClass: String): List<JoinAttribute> =
+        schema.tables.values.flatMap { table ->
             if (kotlin.isJoinTable(table)) manyToMany(table, databaseClass)
-            else table.foreignKeys.flatMap { fk -> foreignKey(fk, schemaClass, schemaObject) }
+            else table.foreignKeys.flatMap { fk -> foreignKey(fk, databaseClass) }
         }
-    }
 
-    private fun foreignKey(fk: ASTForeignKey, schemaClass: String, schemaObject: String): List<JoinAttribute> {
-        // FAITHFUL: both ends are named in the schema being iterated — wrong for a cross-schema link
-        val fromClass = "$schemaClass.${kotlin.pascal(fk.from.name)}"
-        val towardsClass = "$schemaClass.${kotlin.pascal(fk.towards.name)}"
+    private fun classOf(table: ASTTable, databaseClass: String) =
+        "$databaseClass.${kotlin.pascal(table.schema.name)}Schema.${kotlin.pascal(table.name)}"
+
+    private fun foreignKey(fk: ASTForeignKey, databaseClass: String): List<JoinAttribute> {
+        val fromClass = classOf(fk.from, databaseClass)
+        val towardsClass = classOf(fk.towards, databaseClass)
         val column = fk.fields.first().name
         val forwardName = when {
             fk.fields.size == 1 -> kotlin.attributeName(column)
@@ -93,7 +92,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
         }
         val forward = JoinAttribute(
             label = "forward foreign key",
-            ownerSchema = schemaObject, ownerEntity = kotlin.camel(fk.from.name),
+            ownerSchema = kotlin.camel(fk.from.schema.name), ownerEntity = kotlin.camel(fk.from.name),
             receiverClass = fromClass, name = forwardName, targetClass = towardsClass,
             nullable = !fk.nonNull, multiple = false,
             sql = kotlin.foreignKeyForwardQuery(fk),
@@ -105,7 +104,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
             else kotlin.attributeName(column) + kotlin.pascal(fk.from.name)
         val reverse = JoinAttribute(
             label = "reverse foreign key",
-            ownerSchema = schemaObject, ownerEntity = kotlin.camel(fk.towards.name),
+            ownerSchema = kotlin.camel(fk.towards.schema.name), ownerEntity = kotlin.camel(fk.towards.name),
             receiverClass = towardsClass, name = kotlin.plural(reverseBase), targetClass = fromClass,
             nullable = false, multiple = true,
             sql = kotlin.foreignKeyReverseQuery(fk),
@@ -119,7 +118,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
         val rightFk = join.foreignKeys[1]
         val left = leftFk.towards
         val right = rightFk.towards
-        fun classOf(table: ASTTable) = "$databaseClass.${kotlin.pascal(table.schema.name)}Schema.${kotlin.pascal(table.name)}"
+        fun classOf(table: ASTTable) = classOf(table, databaseClass)
         // the collection on each side is named after the far side's column, or its table for a multi-column key
         val rightToLeftBase = if (leftFk.fields.size == 1) kotlin.attributeName(leftFk.fields.first().name) else kotlin.camel(left.name)
         val leftToRightBase = if (rightFk.fields.size == 1) kotlin.attributeName(rightFk.fields.first().name) else kotlin.camel(right.name)

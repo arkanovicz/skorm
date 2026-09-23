@@ -104,6 +104,23 @@ class ResolverTest {
     }
 
     @Test
+    fun `a cross-schema link names each end in its own schema and registers on the owning entity`() {
+        val model = resolve("""
+            database d {
+              schema main { table person { name varchar(10) } }
+              schema other { table badge { label varchar(10) } badge *-- main.person }
+            }
+        """.trimIndent())
+        val person = model.join("Badge", "person")
+        assertEquals("DDatabase.MainSchema.Person", person.targetClass)
+        assertEquals("other" to "badge", person.ownerSchema to person.ownerEntity)
+        val badges = model.join("Person", "badges")
+        assertEquals("DDatabase.MainSchema.Person", badges.receiverClass)
+        assertEquals("DDatabase.OtherSchema.Badge", badges.targetClass)
+        assertEquals("main" to "person", badges.ownerSchema to badges.ownerEntity)
+    }
+
+    @Test
     fun `fields carry their Kotlin type, getter and enum class`() {
         val entity = resolve("""
             database d { schema s {

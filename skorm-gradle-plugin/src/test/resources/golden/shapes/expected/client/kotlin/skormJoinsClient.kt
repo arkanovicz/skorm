@@ -32,7 +32,7 @@ fun ShapesDatabase.initJoins() {
     // right to left n-n join attribute
     main.entity("address").instanceAttributes.rowSetAttribute<ShapesDatabase.MainSchema.Person>("persons", setOf("address_id"), ShapesDatabase.MainSchema.Person)
     // forward foreign key attribute
-    other.entity("badge").instanceAttributes.rowAttribute<ShapesDatabase.OtherSchema.Person>("person", setOf("person_id"), ShapesDatabase.OtherSchema.Person)
+    other.entity("badge").instanceAttributes.rowAttribute<ShapesDatabase.MainSchema.Person>("person", setOf("person_id"), ShapesDatabase.MainSchema.Person)
     // reverse foreign key attribute
-    other.entity("person").instanceAttributes.rowSetAttribute<ShapesDatabase.OtherSchema.Badge>("badges", setOf("person_id"), ShapesDatabase.OtherSchema.Badge)
+    main.entity("person").instanceAttributes.rowSetAttribute<ShapesDatabase.OtherSchema.Badge>("badges", setOf("person_id"), ShapesDatabase.OtherSchema.Badge)
 }

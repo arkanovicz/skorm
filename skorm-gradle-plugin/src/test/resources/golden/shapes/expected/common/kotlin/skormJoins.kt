@@ -28,6 +28,6 @@ suspend fun ShapesDatabase.MainSchema.Person.addresses(): Sequence<ShapesDatabas
 // right to left n-n join
 suspend fun ShapesDatabase.MainSchema.Address.persons(): Sequence<ShapesDatabase.MainSchema.Person> = entity.query("persons", this)
 // forward foreign key
-suspend fun ShapesDatabase.OtherSchema.Badge.person(): ShapesDatabase.OtherSchema.Person = entity.retrieve("person", this)
+suspend fun ShapesDatabase.OtherSchema.Badge.person(): ShapesDatabase.MainSchema.Person = entity.retrieve("person", this)
 // reverse foreign key
-suspend fun ShapesDatabase.OtherSchema.Person.badges(): Sequence<ShapesDatabase.OtherSchema.Badge> = entity.query("badges", this)
+suspend fun ShapesDatabase.MainSchema.Person.badges(): Sequence<ShapesDatabase.OtherSchema.Badge> = entity.query("badges", this)

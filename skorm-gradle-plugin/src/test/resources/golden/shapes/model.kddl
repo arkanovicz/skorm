@@ -50,6 +50,6 @@ database shapes {
     table badge {
       label varchar(20)
     }
-    badge *-- main.person                  // cross-schema link — today uncompilable (OtherSchema.Person)
+    badge *-- main.person                  // cross-schema link
   }
 }

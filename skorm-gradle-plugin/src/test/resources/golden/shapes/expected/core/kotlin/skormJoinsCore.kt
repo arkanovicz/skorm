@@ -32,7 +32,7 @@ fun ShapesDatabase.initJoins() {
    // right to left n-n join attribute
    ShapesDatabase.main.entity("address").instanceAttributes.rowSetAttribute<ShapesDatabase.MainSchema.Person>("persons", "SELECT towards_table.* FROM main.person_address AS join_table JOIN main.person AS towards_table ON towards_table.person_id = join_table.person_id WHERE join_table.address_id = {address_id};", ShapesDatabase.MainSchema.Person)
    // forward foreign key attribute
-   ShapesDatabase.other.entity("badge").instanceAttributes.rowAttribute<ShapesDatabase.OtherSchema.Person>("person", "SELECT * FROM main.person WHERE person.person_id = {person_id};", ShapesDatabase.OtherSchema.Person)
+   ShapesDatabase.other.entity("badge").instanceAttributes.rowAttribute<ShapesDatabase.MainSchema.Person>("person", "SELECT * FROM main.person WHERE person.person_id = {person_id};", ShapesDatabase.MainSchema.Person)
    // reverse foreign key attribute
-   ShapesDatabase.other.entity("person").instanceAttributes.rowSetAttribute<ShapesDatabase.OtherSchema.Badge>("badges", "SELECT * FROM other.badge WHERE badge.person_id = {person_id};", ShapesDatabase.OtherSchema.Badge)
+   ShapesDatabase.main.entity("person").instanceAttributes.rowSetAttribute<ShapesDatabase.OtherSchema.Badge>("badges", "SELECT * FROM other.badge WHERE badge.person_id = {person_id};", ShapesDatabase.OtherSchema.Badge)
 }
