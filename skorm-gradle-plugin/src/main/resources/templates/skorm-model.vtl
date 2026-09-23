@@ -14,7 +14,7 @@ import ${package}.${resolved.databaseClass}.${schema.className}.${enum.name}
 #if($attr.composite)
 open class ${attr.composite.className}(): ${attr.composite.parentClass}() {
 #foreach($field in $attr.composite.fields)
-    val ${field.name}: ${field.type}#if($field.nullable)?#end
+    val ${field.identifier}: ${field.type}#if($field.nullable)?#end
         get() = get${field.type}("${field.name}")#if(!$field.nullable)!!#end
 #end
 }

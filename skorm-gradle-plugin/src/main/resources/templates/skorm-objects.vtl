@@ -51,7 +51,7 @@ ${schema.className}.${entity.className}.initialize()
 ## the field contract, so a non-suspend view of a row can delegate it
         interface ${entity.className}Fields {
 #foreach ($field in $entity.fields)
-            val ${field.name}: ${field.kotlinType}#if($field.nullable)?#end
+            val ${field.identifier}: ${field.kotlinType}#if($field.nullable)?#end
 #end
         }
         open class ${entity.className}: Instance(Companion), ${entity.className}Fields {
@@ -74,7 +74,7 @@ ${schema.className}.${entity.className}.initialize()
 #foreach ($field in $entity.fields)
 ## TODO output PKs first
 ## TODO use delegates
-            override #if($field.primaryKey)val#{else}var#end ${field.name}: ${field.kotlinType}#if($field.nullable)?#end
+            override #if($field.primaryKey)val#{else}var#end ${field.identifier}: ${field.kotlinType}#if($field.nullable)?#end
 #if($field.enumClass)
                 get() = ${field.getter}("$field.name")#if($field.nullable)?#{else}!!#end.let { ${field.enumClass}.valueOf(it) }
 #if(!$field.primaryKey)

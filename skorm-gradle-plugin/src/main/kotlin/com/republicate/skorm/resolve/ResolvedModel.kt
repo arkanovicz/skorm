@@ -52,7 +52,10 @@ class ResolvedField(
     val getter: String,
     /** the enum class to convert through, when the field is an enum */
     val enumClass: String?
-)
+) {
+    /** the property name as written in Kotlin: backticked when it is a keyword */
+    val identifier get() = Collisions.identifier(name)
+}
 
 /** One navigation: its accessor and both registrations. */
 class JoinAttribute(
@@ -75,6 +78,8 @@ class JoinAttribute(
     /** the client registration's parameter names */
     val params: List<String>
 ) {
+    /** the name as written in Kotlin: backticked when it is a keyword */
+    val identifier get() = Collisions.identifier(name)
     /** `Sequence<…Tag>`, `…Dude?` */
     val returnType get() = if (multiple) "Sequence<$targetClass>" else if (nullable) "$targetClass?" else targetClass
     val verb get() = if (multiple) "query" else "retrieve"
@@ -120,4 +125,6 @@ class CompositeClass(
     val fields: List<CompositeField>
 )
 
-class CompositeField(val name: String, val type: String, val nullable: Boolean)
+class CompositeField(val name: String, val type: String, val nullable: Boolean) {
+    val identifier get() = Collisions.identifier(name)
+}

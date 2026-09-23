@@ -124,6 +124,67 @@ class ResolverTest {
         assertTrue(byName.getValue("bookId").primaryKey && byName.getValue("bookId").generated)
     }
 
+    @Test
+    fun `a keyword is spelled with backticks where it is declared`() {
+        val model = resolve("""
+            database d { schema s {
+              table person { name varchar(10) }
+              table pair {
+                object -> person     // a link column named after a Kotlin keyword
+                fun varchar(10)      // a plain column too
+              }
+            } }
+        """.trimIndent())
+        val link = model.joins.single()
+        assertEquals("object", link.name)
+        assertEquals("`object`", link.identifier)
+        val column = model.schemas.single().entities.single { it.className == "Pair" }.fields.single { it.name == "fun" }
+        assertEquals("`fun`", column.identifier)
+    }
+
+    @Test
+    fun `a column overriding an inherited row member is refused, naming the table and column`() {
+        val ex = assertThrows(SkormException::class.java) {
+            resolve("database d { schema s { table t { size int } } }")
+        }
+        assertTrue(ex.message!!.contains("table t") && ex.message!!.contains("'size'"), ex.message)
+        assertTrue("entity" in com.republicate.skorm.resolve.Collisions.inherited)
+        assertTrue("isPersisted" in com.republicate.skorm.resolve.Collisions.inherited)
+    }
+
+    @Test
+    fun `an attribute named like a navigation on the same receiver is refused`() {
+        val ex = assertThrows(SkormException::class.java) {
+            resolve(shelf, """
+                database shelf { schema main {
+                  attr Author.books: Int = SELECT count(*) FROM book WHERE author_id = {author_id};
+                } }
+            """.trimIndent())
+        }
+        assertTrue(ex.message!!.contains("'books'") && ex.message!!.contains("reverse foreign key"), ex.message)
+    }
+
+    /** The static list in [Collisions] must match what reflection sees here, where the full classpath exists. */
+    @Test
+    fun `the inherited-member list is what Instance actually exposes`() {
+        // a function collides by name; a parameterless getX/isX is also a property, which a column would override
+        val reflected = com.republicate.skorm.Instance::class.java.methods
+            .filter { '$' !in it.name }
+            .flatMap { m ->
+                val n = m.name
+                val property = when {
+                    m.parameterCount != 0 -> null
+                    n.length > 3 && n.startsWith("get") && n[3].isUpperCase() -> n[3].lowercase() + n.substring(4)
+                    n.length > 2 && n.startsWith("is") && n[2].isUpperCase() -> n
+                    else -> null
+                }
+                listOfNotNull(n, property)
+            }.toSet()
+        val listed = com.republicate.skorm.resolve.Collisions.inherited
+        println("INHERITED " + reflected.sorted().joinToString(" "))
+        assertEquals(reflected, listed)
+    }
+
     private val shelfSql = """
         database shelf {
           schema main {

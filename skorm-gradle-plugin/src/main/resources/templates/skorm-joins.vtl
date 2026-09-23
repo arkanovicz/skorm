@@ -3,5 +3,5 @@ package $package
 
 #foreach ($join in $resolved.joins)
 // $join.label
-suspend fun ${join.receiverClass}.${join.name}(): $join.returnType = entity.${join.verb}("$join.name", this)
+suspend fun ${join.receiverClass}.${join.identifier}(): $join.returnType = entity.${join.verb}("$join.name", this)
 #end

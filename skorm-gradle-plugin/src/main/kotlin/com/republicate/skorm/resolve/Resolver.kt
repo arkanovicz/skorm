@@ -23,14 +23,19 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
 
     fun resolve(database: ASTDatabase, attributes: RMDatabase?): ResolvedModel {
         val databaseClass = "${kotlin.pascal(database.name)}Database"
+        val joins = database.schemas.values.flatMap { joins(it, databaseClass) }
+        val queries = attributes?.schemas?.flatMap { rm ->
+            rm.items.map { queryAttribute(databaseClass, rm.name, it) }
+        } ?: emptyList()
+        joins.forEach { Collisions.checkAccessor(it.receiverClass, it.name, it.label) }
+        queries.forEach { Collisions.checkAccessor(it.receiverClass, it.name, "attribute") }
+        Collisions.checkUnique(joins, queries)
         return ResolvedModel(
             name = database.name,
             databaseClass = databaseClass,
             schemas = database.schemas.values.map { schema(it) },
-            joins = database.schemas.values.flatMap { joins(it, databaseClass) },
-            attributes = attributes?.schemas?.flatMap { rm ->
-                rm.items.map { queryAttribute(databaseClass, rm.name, it) }
-            } ?: emptyList()
+            joins = joins,
+            attributes = queries
         )
     }
 
@@ -49,8 +54,10 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
         hasPrimaryKey = table.getPrimaryKey().isNotEmpty(),
         fields = table.fields.values.map { field ->
             val rawType = field.type.toString()
+            val name = kotlin.camel(field.name)
+            Collisions.checkField(table.name, name)
             ResolvedField(
-                name = kotlin.camel(field.name),
+                name = name,
                 rawType = rawType,
                 kotlinType = kotlin.type(field),
                 nullable = !field.nonNull,
