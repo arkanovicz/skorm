@@ -6,6 +6,7 @@ import com.republicate.kddl.ASTSchema
 import com.republicate.kddl.ASTTable
 import com.republicate.kddl.FieldType
 import com.republicate.skorm.KotlinTool
+import com.republicate.skorm.SkormException
 import com.republicate.skorm.model.RMCompositeType
 import com.republicate.skorm.model.RMDatabase
 import com.republicate.skorm.model.RMItem
@@ -25,7 +26,9 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
         val databaseClass = "${kotlin.pascal(database.name)}Database"
         val joins = database.schemas.values.flatMap { joins(it, databaseClass) }
         val queries = attributes?.schemas?.flatMap { rm ->
-            rm.items.map { queryAttribute(databaseClass, rm.name, it) }
+            val schema = database.schemas[rm.name] ?: throw SkormException("ksql schema ${rm.name}: no such schema in the model")
+            val enums = kotlin.enumDecls(schema).map { it.name }.toSet()
+            rm.items.map { checkArguments(it, rm.name, enums); queryAttribute(databaseClass, rm.name, it) }
         } ?: emptyList()
         joins.forEach { Collisions.checkAccessor(it.receiverClass, it.name, it.label) }
         queries.forEach { Collisions.checkAccessor(it.receiverClass, it.name, "attribute") }
@@ -154,6 +157,19 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
     }
 
     // ---- ksql attributes --------------------------------------------------------------------
+
+    private val simpleTypes = setOf("Boolean", "Int", "Long", "Float", "Double", "LocalTime", "LocalDate",
+        "LocalDateTime", "DateTimePeriod", "Char", "String", "Json", "Any?")
+
+    /** An argument's type is a simple type or an enum class the schema declares. */
+    private fun checkArguments(item: RMItem, schemaName: String, enums: Set<String>) {
+        for ((name, type) in item.arguments ?: emptySet()) {
+            if (type !in simpleTypes && type !in enums) throw SkormException(
+                "attribute ${item.receiver?.let { "$it." } ?: ""}${item.name}: argument $name has type $type, " +
+                    "neither a simple type nor an enum of schema $schemaName" +
+                    (if (enums.isEmpty()) "" else " (${enums.joinToString(", ")})"))
+        }
+    }
 
     private fun queryAttribute(databaseClass: String, schemaName: String, item: RMItem): QueryAttribute {
         val schemaClass = "$databaseClass.${kotlin.pascal(schemaName)}Schema"

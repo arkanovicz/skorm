@@ -236,6 +236,39 @@ class ResolverTest {
         assertEquals(reflected, listed)
     }
 
+    @Test
+    fun `an argument may be typed by an enum of the schema, and by nothing else`() {
+        val model = resolve("""
+            database d { schema s {
+              table book { title varchar(10)  genre enum('essay', 'novel') }
+            } }
+        """.trimIndent(), """
+            database d { schema s {
+              attr countIn(genre: Genre): Int = SELECT count(*) FROM book WHERE genre = {genre};
+            } }
+        """.trimIndent())
+        assertEquals(listOf("genre" to "Genre"), model.attributes.single().arguments)
+
+        val ex = assertThrows(SkormException::class.java) {
+            resolve("database d { schema s { table book { title varchar(10) } } }", """
+                database d { schema s { attr countIn(genre: Colour): Int = SELECT count(*) FROM book; } }
+            """.trimIndent())
+        }
+        assertTrue(ex.message!!.contains("countIn") && ex.message!!.contains("Colour"), ex.message)
+    }
+
+    @Test
+    fun `a syntax error fails the parse, naming source, line and column`() {
+        val ex = assertThrows(SkormException::class.java) {
+            parseRuntimeModel(CharStreams.fromString("""
+                database d { schema s {
+                  attr broken: Int SELECT 1;
+                } }
+            """.trimIndent()), "broken.ksql")
+        }
+        assertTrue(ex.message!!.startsWith("broken.ksql: line 2:"), ex.message)
+    }
+
     private val shelfSql = """
         database shelf {
           schema main {

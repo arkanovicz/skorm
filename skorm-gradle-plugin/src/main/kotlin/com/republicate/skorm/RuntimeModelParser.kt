@@ -8,18 +8,22 @@ import com.republicate.skorm.model.RMSchema
 import com.republicate.skorm.model.RMSimpleType
 import com.republicate.skorm.parser.ksqlLexer
 import com.republicate.skorm.parser.ksqlParser
-import org.antlr.v4.kotlinruntime.ANTLRErrorListener
+import org.antlr.v4.kotlinruntime.BaseErrorListener
 import org.antlr.v4.kotlinruntime.CharStream
 import org.antlr.v4.kotlinruntime.CommonTokenStream
-import org.antlr.v4.kotlinruntime.ConsoleErrorListener
+import org.antlr.v4.kotlinruntime.RecognitionException
+import org.antlr.v4.kotlinruntime.Recognizer
 
-// CB TODO - we want another error listener!
-fun parseRuntimeModel(ksql: CharStream, errorListener: ANTLRErrorListener = ConsoleErrorListener()): RMDatabase {
-    val lexer = ksqlLexer(ksql)
+/** Parses [ksql], failing on the first syntax error: a model must not generate from a recovered, truncated tree. */
+fun parseRuntimeModel(ksql: CharStream, source: String = "ksql"): RMDatabase {
+    val strict = object : BaseErrorListener() {
+        override fun syntaxError(recognizer: Recognizer<*, *>, offendingSymbol: Any?, line: Int, charPositionInLine: Int, msg: String, e: RecognitionException?) {
+            throw SkormException("$source: line $line:$charPositionInLine $msg")
+        }
+    }
+    val lexer = ksqlLexer(ksql).apply { removeErrorListeners(); addErrorListener(strict) }
     val tokenStream = CommonTokenStream(lexer)
-    val parser = ksqlParser(tokenStream)
-    parser.addErrorListener(errorListener)
-    // parser.addParseListener(tracer)
+    val parser = ksqlParser(tokenStream).apply { removeErrorListeners(); addErrorListener(strict) }
     val root = parser.database()
     return digestAST(root)
 }
@@ -35,7 +39,7 @@ private fun digestAST(databaseContext: ksqlParser.DatabaseContext): RMDatabase {
             schema.items.add(item)
             item.receiver = itemContext.receiver?.text
             item.arguments = itemContext.arguments()?.argument()?.map {
-                Pair(it.LABEL().text, it.simple_type()?.text ?: "Any?")
+                Pair(it.name!!.text!!, it.simple_type()?.text ?: it.enumType?.text ?: "Any?")
             }?.toSet() ?: setOf()
             // itemContext.findArguments()?.LABEL()?.map { it.text }?.toSet()
             item.action = itemContext.attr_type!!.text!!.startsWith("mut")

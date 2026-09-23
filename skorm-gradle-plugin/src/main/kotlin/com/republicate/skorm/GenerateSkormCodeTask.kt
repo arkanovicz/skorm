@@ -59,7 +59,7 @@ abstract class GenerateSkormCodeTask : BaseModelGenerationTask() {
 
     @get:Internal
     protected val attributeModel: RMDatabase? by lazy {
-        attributes.orNull?.let { parseRuntimeModel(Utils.getFile(it.asFile.absolutePath)) }
+        attributes.orNull?.let { parseRuntimeModel(Utils.getFile(it.asFile.absolutePath), it.asFile.path) }
     }
 
     @get:Internal
