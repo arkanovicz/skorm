@@ -16,8 +16,9 @@ class AmbientTransaction(
 ): AbstractCoroutineContextElement(Key) {
     companion object Key : CoroutineContext.Key<AmbientTransaction>
 
+    // the read-only and the mutable database of one store share a processor: they share a transaction too
     internal fun find(database: Database): Transaction? =
-        generateSequence(this) { it.outer }.firstOrNull { it.database === database }?.tx
+        generateSequence(this) { it.outer }.firstOrNull { it.database.processor === database.processor }?.tx
 }
 
 /**

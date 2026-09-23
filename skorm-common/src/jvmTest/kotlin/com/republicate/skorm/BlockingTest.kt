@@ -16,9 +16,9 @@ class BlockingTest {
     private val noTransaction = object : Transaction {
         override suspend fun rollback() {}
         override suspend fun commit() {}
-        override suspend fun eval(path: String, params: Map<String, Any?>): Any? = null
-        override suspend fun retrieve(path: String, params: Map<String, Any?>, factory: RowFactory?): Json.Object? = null
-        override suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory?): Sequence<Json.Object> = emptySequence()
+        override suspend fun eval(path: String, params: Map<String, Any?>, mutable: Boolean): Any? = null
+        override suspend fun retrieve(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Json.Object? = null
+        override suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Sequence<Json.Object> = emptySequence()
         override suspend fun perform(path: String, params: Map<String, Any?>): Long = 0
         override suspend fun begin(schema: String): Transaction = this
         override val restMode = false

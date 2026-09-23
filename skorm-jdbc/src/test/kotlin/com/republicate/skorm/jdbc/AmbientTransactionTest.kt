@@ -48,7 +48,7 @@ class AmbientTransactionTest {
             book.addField(Field("bookId", "int", isPrimary = true, isGenerated = true))
             book.addField(Field("title", "varchar(100)"))
             schema.mutationAttribute("clearTitles", emptySet())
-            processor.define("${(schema as AttributeHolder).path}/clearTitles",
+            processor.define("${(schema as AttributeHolder).path}/clearTitles", mutable = true, definition =
                 SimpleQuery("tx", QueryDefinition("UPDATE TX.BOOK SET TITLE = 'cleared';", emptyList())))
             database.initialize()
         }

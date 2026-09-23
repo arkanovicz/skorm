@@ -7,7 +7,7 @@ fun AttributeHolder.parseAndDefine(name: String, query: String): AttributeDefini
     (processor as CoreProcessor).let { coreProcessor ->
         val queryDef = AttributeDefinition.parse(query, schema?.name ?: "", coreProcessor.readMapper)
         if (queryDef !is SimpleQuery) throw SkormException("non-mutation attribute can only contain a single query")
-        coreProcessor.define("${path}/$name", queryDef)
+        coreProcessor.define("${path}/$name", queryDef, mutable)
         return queryDef
     }
 }
@@ -34,6 +34,6 @@ inline fun <reified T: Json.MutableObject> AttributeHolder.rowSetAttribute(name:
 fun AttributeHolder.mutationAttribute(name: String, query: String): MutationAttribute {
     val coreProcessor = processor as CoreProcessor
     val queryDef = AttributeDefinition.parse(query, schema?.name ?: "", coreProcessor.readMapper)
-    coreProcessor.define("${path}/$name", queryDef)
+    coreProcessor.define("${path}/$name", queryDef, true)
     return mutationAttribute(name, queryDef.parameters())
 }

@@ -5,19 +5,29 @@ package com.republicate.skorm.core
 import com.republicate.kson.Json
 import com.republicate.skorm.*
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlin.jvm.JvmOverloads
 
 private val logger = KotlinLogging.logger("core")
 
 @Suppress("NOTHING_TO_INLINE")
 const val KIND_COLUMN = "kind"
 
-open class CoreProcessor(protected open val connector: Connector): Processor {
+/**
+ * Runs attributes on [connector]; the reads of a read-only database run on [readConnector] instead, the same
+ * connector by default — a separate one, on a SELECT-only role, is what makes a read-only database actually so.
+ * A store's read-only and mutable databases share one processor: attributes are registered by path *and*
+ * mutability, so both register the same reads and only the mutable one registers writes.
+ */
+open class CoreProcessor @JvmOverloads constructor(protected open val connector: Connector, protected open val readConnector: Connector = connector): Processor {
 
     override val configTag = "core"
     override val config = Configuration()
     override val restMode = false
 
-    internal var queries = mutableMapOf<String, AttributeDefinition>() // CB TODO - or concurrent?
+    internal var queries = mutableMapOf<Pair<String, Boolean>, AttributeDefinition>() // CB TODO - or concurrent?
+    private var initialized = false
+
+    private fun connectorFor(mutable: Boolean) = if (mutable) connector else readConnector
     // TODO
 //    private val readFilters = mutableMapOf<String, Mapper<*>>()
 //    private val writeFilters = mutableMapOf<String, Mapper<Any?>>()
@@ -38,29 +48,33 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     )
     internal var writeFilters = mutableMapOf<String, ValueFilter>()
 
-    private fun register(path: String, query: AttributeDefinition) {
-        logger.trace { "registering $path to $query" }
-        queries[path] = query
+    private fun register(path: String, mutable: Boolean, query: AttributeDefinition) {
+        logger.trace { "registering $path (mutable = $mutable) to $query" }
+        queries[Pair(path, mutable)] = query
     }
 
     // CB TODO - register() should make calls to define()
     override fun register(entity: Entity) {
-        register("${entity.path}/browse", SimpleQuery(entity.schema.name, entity.generateBrowseStatement()))
-        register("${entity.path}/insert", DynamicQuery(entity.schema.name) {
+        val mutable = entity is MutableEntity
+        register("${entity.path}/browse", mutable, SimpleQuery(entity.schema.name, entity.generateBrowseStatement()))
+        if (entity.primaryKey.isNotEmpty()) {
+            register("${entity.path}/fetch", mutable, SimpleQuery(entity.schema.name, entity.generateFetchStatement()))
+        }
+        if (!mutable) return
+        register("${entity.path}/insert", true, DynamicQuery(entity.schema.name) {
             entity.generateInsertStatement(it)
         })
         if (entity.primaryKey.isNotEmpty()) {
-            register("${entity.path}/delete", SimpleQuery(entity.schema.name, entity.generateDeleteStatement()))
-            register("${entity.path}/fetch", SimpleQuery(entity.schema.name, entity.generateFetchStatement()))
-            register("${entity.path}/update", DynamicQuery(entity.schema.name) {
+            register("${entity.path}/delete", true, SimpleQuery(entity.schema.name, entity.generateDeleteStatement()))
+            register("${entity.path}/update", true, DynamicQuery(entity.schema.name) {
                 entity.generateUpdateStatement(it)
             })
         }
     }
 
-    fun define(path: String, definition: AttributeDefinition) {
-        logger.trace { "defining $path to $definition" }
-        queries.put(path, definition)?.let {
+    fun define(path: String, definition: AttributeDefinition, mutable: Boolean) {
+        logger.trace { "defining $path (mutable = $mutable) to $definition" }
+        queries.put(Pair(path, mutable), definition)?.let {
             throw SkormException("attribute $path already defined")
         }
     }
@@ -98,8 +112,12 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
     }
 
     override fun initialize() {
-        connector.initialize(connector.configTag?.let {
-            config.getObject(it)
+        if (initialized) return // the store's second database initializes the same processor
+        initialized = true
+        connector.initialize(connector.configTag?.let { config.getObject(it) })
+        // the read connector takes its own settings from `read.<tag>`, or the same ones
+        if (readConnector !== connector) readConnector.initialize(readConnector.configTag?.let {
+            config.getObject("read")?.getObject(it) ?: config.getObject(it)
         })
         // provide default values for identifiers mappers based on meta infos
         // CB TODO - we may not want this, and require an explicit mapping
@@ -116,9 +134,9 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
         }
     }
 
-    override suspend fun eval(path: String, params: Map<String, Any?>): Any? {
-        val (schema, query) = getSingleQuery(path, params.keys)
-        val (names, it) = connector.query(schema, query.stmt, *query.params.map { params[it] }.toTypedArray())
+    override suspend fun eval(path: String, params: Map<String, Any?>, mutable: Boolean): Any? {
+        val (schema, query) = getSingleQuery(path, mutable, params.keys)
+        val (names, it) = connectorFor(mutable).query(schema, query.stmt, *query.params.map { params[it] }.toTypedArray())
         if (names.size != 1) throw SkormException("scalar attribute $path expects only one column")
         // No result row -> return null (indistinguishable from row with NULL value for nullable scalars)
         if (!it.hasNext()) return null
@@ -127,9 +145,9 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
         return row[0]  // Return the scalar value, not the row array
     }
 
-    override suspend fun retrieve(path: String, params: Map<String, Any?>, factory: RowFactory?): Json.Object? {
-        val (schema, query) = getSingleQuery(path, params.keys)
-        val (names, it, types) = connector.query(schema, query.stmt, *query.params.map { params[it] }.toTypedArray())
+    override suspend fun retrieve(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Json.Object? {
+        val (schema, query) = getSingleQuery(path, mutable, params.keys)
+        val (names, it, types) = connectorFor(mutable).query(schema, query.stmt, *query.params.map { params[it] }.toTypedArray())
         if (!it.hasNext()) return null // CB TODO - non-null result should be specifiable
         val rawValues = it.next()
         if (it.hasNext()) throw SkormException("raw attribute $path has more than one result row") // CB TODO - could be relaxed by config
@@ -149,9 +167,9 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
         }
     }
 
-    override suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory?): Sequence<Json.Object> {
-        val (schema, query) = getSingleQuery(path, params.keys)
-        val (names, it, types) = connector.query(schema, query.stmt, *query.params.map {
+    override suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Sequence<Json.Object> {
+        val (schema, query) = getSingleQuery(path, mutable, params.keys)
+        val (names, it, types) = connectorFor(mutable).query(schema, query.stmt, *query.params.map {
             params[it]
                 ?:
                 if (params.containsKey(it)) null
@@ -202,14 +220,14 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
         return CoreProcessorTransaction(connector.begin(schema), this)
     }
 
-    private inline fun getSingleQuery(path: String, params: Collection<String>) = queries.getOrElse(path) {
+    private inline fun getSingleQuery(path: String, mutable: Boolean, params: Collection<String>) = queries.getOrElse(Pair(path, mutable)) {
         throw SkormException("attribute not found: $path")
     }.let {
         Pair(it.schema,
             it.queries(params).firstOrNull() ?: throw SkormException("single query expected: $path"))
     }
 
-    private inline fun getMutationQueries(path: String, params: Collection<String>) = queries.getOrElse(path) {
+    private inline fun getMutationQueries(path: String, params: Collection<String>) = queries.getOrElse(Pair(path, true)) {
         throw SkormException("attribute not found: $path")
     }.let {
         Pair(it.schema, it.queries(params))
@@ -305,10 +323,12 @@ open class CoreProcessor(protected open val connector: Connector): Processor {
 
     override fun close() {
         connector.close()
+        if (readConnector !== connector) readConnector.close()
     }
 }
 
-class CoreProcessorTransaction(txConnector: TransactionConnector, parent: CoreProcessor) : CoreProcessor(txConnector), Transaction {
+/** Everything runs on the transaction's connection, reads of the read-only database included. */
+class CoreProcessorTransaction(txConnector: TransactionConnector, parent: CoreProcessor) : CoreProcessor(txConnector, txConnector), Transaction {
     init {
         // share the parent's registry, mappers and filters: only the connector differs
         queries = parent.queries

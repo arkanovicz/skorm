@@ -103,13 +103,13 @@ class ApiClient(val baseUrl: String) : Processor {
 //        delete("${instance.entity.schema.database.name}/${instance.entity.schema.name}/${instance.entity.name}/$pkString", instance)
 //    }
 
-    override suspend fun eval(path: String, params: Map<String, Any?>): Any? {
+    override suspend fun eval(path: String, params: Map<String, Any?>, mutable: Boolean): Any? {
         logger.info { "eval $path $params" }
         val response = get(path, params)
         return response.body()
     }
 
-    override suspend fun retrieve(path: String, params: Map<String, Any?>, factory: RowFactory?): Json.Object? {
+    override suspend fun retrieve(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Json.Object? {
         logger.info { "retrieve $path $params with params ${params.entries.joinToString(" ") { "${it.key}=${it.value}" }}" }
         var restPath = path
         var restParams = params
@@ -136,7 +136,7 @@ class ApiClient(val baseUrl: String) : Processor {
     }
 
     @Suppress("UNCHECKED_CAST")
-    override suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory?): Sequence<Json.Object> {
+    override suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Sequence<Json.Object> {
         logger.info { "query $path $params ${factory?.let { "as $factory.name" } ?: ""}" }
         var restPath = path
         var restParams = params

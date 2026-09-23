@@ -290,21 +290,21 @@ abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = 
 
     suspend inline fun <reified T> eval(attribute: Attribute<T>, vararg params: Any?): T {
         val (execPath, execParams) = prepare(attribute, *params)
-        return attribute.handleResult(currentProcessor().eval(execPath, execParams))
+        return attribute.handleResult(currentProcessor().eval(execPath, execParams, mutable))
     }
 
     suspend inline fun <reified T: Json.Object?> retrieve(attrName: String, vararg params: Any?) = retrieve(findAttribute<T>(attrName), *params)
 
     suspend inline fun <reified T: Json.Object?> retrieve(attribute: Attribute<T>, vararg params: Any?): T {
         val (execPath, execParams) = prepare(attribute, *params)
-        return attribute.handleResult(currentProcessor().retrieve(execPath, execParams, attribute.rowFactory))
+        return attribute.handleResult(currentProcessor().retrieve(execPath, execParams, attribute.rowFactory, mutable))
     }
 
     suspend inline fun <reified T: Json.Object> query(attrName: String, vararg params: Any?) = query(findAttribute<Sequence<T>>(attrName), *params)
 
     suspend inline fun <reified T: Json.Object> query(attribute: Attribute<Sequence<T>>, vararg params: Any?): Sequence<T> {
         val (execPath, execParams) = prepare(attribute, *params)
-        return attribute.handleResult(currentProcessor().query(execPath, execParams, attribute.rowFactory))
+        return attribute.handleResult(currentProcessor().query(execPath, execParams, attribute.rowFactory, mutable))
     }
 
     /** the execution of a mutation, public through [MutableAttributeHolder], [MutableEntity] and [MutableInstance] */

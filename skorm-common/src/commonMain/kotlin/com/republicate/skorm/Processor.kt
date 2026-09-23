@@ -34,10 +34,10 @@ interface Processor: Configurable, AutoCloseable {
     // TODO - review
     // fun register(path: String, definition: QueryDef ) {}
 
-    // attributes
-    suspend fun eval(path: String, params: Map<String, Any?>): Any?
-    suspend fun retrieve(path: String, params: Map<String, Any?>, factory: RowFactory? = null): Json.Object?
-    suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory? = null): Sequence<Json.Object>
+    // attributes; [mutable] says the caller is a holder of the mutable database, whose reads run where its writes do
+    suspend fun eval(path: String, params: Map<String, Any?>, mutable: Boolean = false): Any?
+    suspend fun retrieve(path: String, params: Map<String, Any?>, factory: RowFactory? = null, mutable: Boolean = false): Json.Object?
+    suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory? = null, mutable: Boolean = false): Sequence<Json.Object>
     suspend fun perform(path: String, params: Map<String, Any?>): Long
 
     // identifiers mapping
