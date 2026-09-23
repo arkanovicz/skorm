@@ -8,6 +8,7 @@ import com.republicate.kson.Json
 import kotlin.uuid.Uuid
 import kotlinx.datetime.*
 import com.republicate.skorm.*
+import kotlin.jvm.JvmName
 
 @OptIn(kotlin.uuid.ExperimentalUuidApi::class)
 class ShapesDatabase(processor: Processor): Database("shapes", processor) {
@@ -128,22 +129,43 @@ OtherSchema.Badge.initialize()
                 get() = getString("kind")!!.let { PersonKind.valueOf(it) }
             // reverse foreign key
             suspend fun aFriendships(): Sequence<ShapesDatabase.MainSchema.Friendship> = query("aFriendships")
+            // its blocking twin: what a reflection-driven caller reaches as `$join.name()`
+            @JvmName("aFriendships")
+            fun aFriendshipsBlocking(): List<ShapesDatabase.MainSchema.Friendship> = blocking { aFriendships().toList() }
             // reverse foreign key
             suspend fun bFriendships(): Sequence<ShapesDatabase.MainSchema.Friendship> = query("bFriendships")
+            // its blocking twin: what a reflection-driven caller reaches as `$join.name()`
+            @JvmName("bFriendships")
+            fun bFriendshipsBlocking(): List<ShapesDatabase.MainSchema.Friendship> = blocking { bFriendships().toList() }
             // reverse foreign key
             suspend fun ownerAddresses(): Sequence<ShapesDatabase.MainSchema.Address> = query("ownerAddresses")
+            // its blocking twin: what a reflection-driven caller reaches as `$join.name()`
+            @JvmName("ownerAddresses")
+            fun ownerAddressesBlocking(): List<ShapesDatabase.MainSchema.Address> = blocking { ownerAddresses().toList() }
             // left to right n-n join
             suspend fun addresses(): Sequence<ShapesDatabase.MainSchema.Address> = query("addresses")
+            // its blocking twin: what a reflection-driven caller reaches as `$join.name()`
+            @JvmName("addresses")
+            fun addressesBlocking(): List<ShapesDatabase.MainSchema.Address> = blocking { addresses().toList() }
             // reverse foreign key
             suspend fun badges(): Sequence<ShapesDatabase.OtherSchema.Badge> = query("badges")
+            // its blocking twin: what a reflection-driven caller reaches as `$join.name()`
+            @JvmName("badges")
+            fun badgesBlocking(): List<ShapesDatabase.OtherSchema.Badge> = blocking { badges().toList() }
             // attribute Person.mainAddress
             suspend fun `mainAddress`() = retrieve<ShapesDatabase.MainSchema.Address?>("mainAddress")
+            @JvmName("mainAddress")
+            fun mainAddressBlocking() = blocking { `mainAddress`() }
             // attribute Person.forget
             suspend fun `forget`() = perform("forget")
             // attribute Person.counts
             suspend fun `counts`() = retrieve<Counts>("counts") as Counts
+            @JvmName("counts")
+            fun countsBlocking() = blocking { `counts`() }
             // attribute Person.cities
             suspend fun `cities`() = query<String>("cities")
+            @JvmName("cities")
+            fun citiesBlocking() = blocking { `cities`().toList() }
         }
         interface CountryFields {
             val code: String
@@ -170,6 +192,9 @@ OtherSchema.Badge.initialize()
                 set(v) { put("label", v) }
             // reverse foreign key
             suspend fun addresses(): Sequence<ShapesDatabase.MainSchema.Address> = query("addresses")
+            // its blocking twin: what a reflection-driven caller reaches as `$join.name()`
+            @JvmName("addresses")
+            fun addressesBlocking(): List<ShapesDatabase.MainSchema.Address> = blocking { addresses().toList() }
         }
         interface FriendshipFields {
             val aId: Int
@@ -200,10 +225,19 @@ OtherSchema.Badge.initialize()
                 set(v) { put("since", v) }
             // forward foreign key
             suspend fun a(): ShapesDatabase.MainSchema.Person = retrieve("a")
+            // its blocking twin: what a reflection-driven caller reaches as `$join.name()`
+            @JvmName("a")
+            fun aBlocking(): ShapesDatabase.MainSchema.Person = blocking { a() }
             // forward foreign key
             suspend fun b(): ShapesDatabase.MainSchema.Person = retrieve("b")
+            // its blocking twin: what a reflection-driven caller reaches as `$join.name()`
+            @JvmName("b")
+            fun bBlocking(): ShapesDatabase.MainSchema.Person = blocking { b() }
             // reverse foreign key
             suspend fun gifts(): Sequence<ShapesDatabase.MainSchema.Gift> = query("gifts")
+            // its blocking twin: what a reflection-driven caller reaches as `$join.name()`
+            @JvmName("gifts")
+            fun giftsBlocking(): List<ShapesDatabase.MainSchema.Gift> = blocking { gifts().toList() }
         }
         interface GiftFields {
             val label: String
@@ -234,6 +268,9 @@ OtherSchema.Badge.initialize()
                 set(v) { put("bId", v) }
             // forward foreign key
             suspend fun friendship(): ShapesDatabase.MainSchema.Friendship = retrieve("friendship")
+            // its blocking twin: what a reflection-driven caller reaches as `$join.name()`
+            @JvmName("friendship")
+            fun friendshipBlocking(): ShapesDatabase.MainSchema.Friendship = blocking { friendship() }
         }
         interface AddressFields {
             val addressId: Int
@@ -275,12 +312,24 @@ OtherSchema.Badge.initialize()
                 set(v) { put("code", v) }
             // forward foreign key
             suspend fun owner(): ShapesDatabase.MainSchema.Person = retrieve("owner")
+            // its blocking twin: what a reflection-driven caller reaches as `$join.name()`
+            @JvmName("owner")
+            fun ownerBlocking(): ShapesDatabase.MainSchema.Person = blocking { owner() }
             // forward foreign key
             suspend fun backup(): ShapesDatabase.MainSchema.Person? = retrieve("backup")
+            // its blocking twin: what a reflection-driven caller reaches as `$join.name()`
+            @JvmName("backup")
+            fun backupBlocking(): ShapesDatabase.MainSchema.Person? = blocking { backup() }
             // forward foreign key
             suspend fun country(): ShapesDatabase.MainSchema.Country = retrieve("country")
+            // its blocking twin: what a reflection-driven caller reaches as `$join.name()`
+            @JvmName("country")
+            fun countryBlocking(): ShapesDatabase.MainSchema.Country = blocking { country() }
             // right to left n-n join
             suspend fun persons(): Sequence<ShapesDatabase.MainSchema.Person> = query("persons")
+            // its blocking twin: what a reflection-driven caller reaches as `$join.name()`
+            @JvmName("persons")
+            fun personsBlocking(): List<ShapesDatabase.MainSchema.Person> = blocking { persons().toList() }
         }
         interface VipFields : ShapesDatabase.MainSchema.PersonFields {
         }
@@ -336,12 +385,20 @@ OtherSchema.Badge.initialize()
         }
         // attribute main.personCount
         suspend fun `personCount`() = eval<Int>("personCount")
+        @JvmName("personCount")
+        fun personCountBlocking() = blocking { `personCount`() }
         // attribute main.oldestBirth
         suspend fun `oldestBirth`() = eval<LocalDate?>("oldestBirth")
+        @JvmName("oldestBirth")
+        fun oldestBirthBlocking() = blocking { `oldestBirth`() }
         // attribute main.summary
         suspend fun `summary`() = retrieve<Json.Object>("summary")
+        @JvmName("summary")
+        fun summaryBlocking() = blocking { `summary`() }
         // attribute main.everybody
         suspend fun `everybody`() = query<ShapesDatabase.MainSchema.Person>("everybody")
+        @JvmName("everybody")
+        fun everybodyBlocking() = blocking { `everybody`().toList() }
     }
     class OtherSchema(db: Database): Schema("other", db) {
         interface BadgeFields {
@@ -368,6 +425,9 @@ OtherSchema.Badge.initialize()
                 set(v) { put("personId", v) }
             // forward foreign key
             suspend fun person(): ShapesDatabase.MainSchema.Person = retrieve("person")
+            // its blocking twin: what a reflection-driven caller reaches as `$join.name()`
+            @JvmName("person")
+            fun personBlocking(): ShapesDatabase.MainSchema.Person = blocking { person() }
         }
     }
 }

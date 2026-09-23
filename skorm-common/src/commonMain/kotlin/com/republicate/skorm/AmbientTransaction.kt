@@ -48,7 +48,9 @@ suspend fun <T> Database.transaction(schema: String, block: suspend () -> T): T 
     if (ambient?.find(this) != null) return block() // join the enclosing transaction
     val tx = processor.begin(schema)
     try {
-        val result = withContext(AmbientTransaction(this, tx, ambient)) { block() }
+        val element = AmbientTransaction(this, tx, ambient)
+        // the companion lets blocking calls made while this coroutine runs join the transaction
+        val result = withContext(element + ambientCompanion(element)) { block() }
         tx.commit()
         return result
     } catch (t: Throwable) {

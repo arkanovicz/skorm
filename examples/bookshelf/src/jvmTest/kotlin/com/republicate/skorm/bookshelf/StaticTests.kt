@@ -1,6 +1,7 @@
 package com.republicate.skorm.bookshelf
 
 import com.republicate.skorm.SkormException
+import com.republicate.skorm.transaction
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.*
@@ -90,6 +91,17 @@ class StaticTests {
                 assertEquals(2L, ExampleDatabase.bookshelf.newBookBy("Ursula K. Le Guin", "A Wizard of Earthsea"))
                 val ursula = Author.browse().first { it.name == "Ursula K. Le Guin" }
                 assertEquals(listOf("A Wizard of Earthsea"), ursula.books().map { it.title }.toList())
+
+                // blocking twins: the same name for a reflection-driven caller, a List rather than a Sequence
+                assertEquals(theBook.tags().map { it.label }.toList(), theBook.tagsBlocking().map { it.label })
+                assertEquals(2, ExampleDatabase.bookshelf.booksCountBlocking())
+                assertTrue(Book::class.java.methods.any { it.name == "tags" && it.parameterCount == 0 })
+                // and a twin called while a transaction runs uses that transaction: it sees the uncommitted row
+                exampleDatabase.transaction {
+                    val tag = Tag().apply { label = "uncommitted"; insert() }
+                    BookTag().apply { bookId = theBook.bookId; tagId = tag.tagId; insert() }
+                    assertTrue("uncommitted" in theBook.tagsBlocking().map { it.label })
+                }
 
                 // the generated field interface is delegable, and the delegate's getters
                 // are real methods — what a reflection-driven template engine needs

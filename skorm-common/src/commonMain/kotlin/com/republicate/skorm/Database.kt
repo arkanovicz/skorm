@@ -4,6 +4,9 @@ import com.republicate.kson.Json
 
 open class Database protected constructor(name: String, override val processor: Processor): AttributeHolder(name), Configurable, AutoCloseable {
     override val database get() = this
+
+    /** where blocking twins dispatch their query; by default the calling thread itself */
+    var blockingContext: kotlin.coroutines.CoroutineContext = kotlin.coroutines.EmptyCoroutineContext
     var populated by initOnce(false)
     override val config = Configuration()
     override fun configure(cfg: Map<String, Any?>) {

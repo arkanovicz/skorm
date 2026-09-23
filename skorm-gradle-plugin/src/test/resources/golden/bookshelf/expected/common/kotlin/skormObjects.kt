@@ -7,6 +7,7 @@ package com.republicate.skorm.bookshelf
 import com.republicate.kson.Json
 import kotlinx.datetime.*
 import com.republicate.skorm.*
+import kotlin.jvm.JvmName
 
 class ExampleDatabase(processor: Processor): Database("example", processor) {
     companion object {
@@ -83,10 +84,17 @@ BookshelfSchema.BookTag.initialize()
                 set(v) { put("name", v) }
             // reverse foreign key
             suspend fun books(): Sequence<ExampleDatabase.BookshelfSchema.Book> = query("books")
+            // its blocking twin: what a reflection-driven caller reaches as `$join.name()`
+            @JvmName("books")
+            fun booksBlocking(): List<ExampleDatabase.BookshelfSchema.Book> = blocking { books().toList() }
             // attribute Author.countInGenre
             suspend fun `countInGenre`(genre: Genre) = eval<Int>("countInGenre", genre)
+            @JvmName("countInGenre")
+            fun countInGenreBlocking(genre: Genre) = blocking { `countInGenre`(genre) }
             // attribute Author.catalog
             suspend fun `catalog`() = query<Catalog>("catalog")
+            @JvmName("catalog")
+            fun catalogBlocking() = blocking { `catalog`().toList() }
         }
         interface BookFields {
             val bookId: Int
@@ -128,12 +136,23 @@ BookshelfSchema.BookTag.initialize()
                 set(v) { put("authorId", v) }
             // forward foreign key
             suspend fun donor(): ExampleDatabase.BookshelfSchema.Dude? = retrieve("donor")
+            // its blocking twin: what a reflection-driven caller reaches as `$join.name()`
+            @JvmName("donor")
+            fun donorBlocking(): ExampleDatabase.BookshelfSchema.Dude? = blocking { donor() }
             // forward foreign key
             suspend fun author(): ExampleDatabase.BookshelfSchema.Author = retrieve("author")
+            // its blocking twin: what a reflection-driven caller reaches as `$join.name()`
+            @JvmName("author")
+            fun authorBlocking(): ExampleDatabase.BookshelfSchema.Author = blocking { author() }
             // left to right n-n join
             suspend fun tags(): Sequence<ExampleDatabase.BookshelfSchema.Tag> = query("tags")
+            // its blocking twin: what a reflection-driven caller reaches as `$join.name()`
+            @JvmName("tags")
+            fun tagsBlocking(): List<ExampleDatabase.BookshelfSchema.Tag> = blocking { tags().toList() }
             // attribute Book.currentBorrower
             suspend fun `currentBorrower`() = retrieve<CurrentBorrower?>("currentBorrower") as CurrentBorrower?
+            @JvmName("currentBorrower")
+            fun currentBorrowerBlocking() = blocking { `currentBorrower`() }
             // attribute Book.lend
             suspend fun `lend`(dude_id: Long) = perform("lend", dude_id)
             // attribute Book.restitute
@@ -142,6 +161,8 @@ BookshelfSchema.BookTag.initialize()
             suspend fun `returnFrom`(dude_id: Long ,returned_on: LocalDate) = perform("returnFrom", mapOf("dudeId" to dude_id, "returnedOn" to returned_on))
             // attribute Book.stats
             suspend fun `stats`() = retrieve<Stats>("stats") as Stats
+            @JvmName("stats")
+            fun statsBlocking() = blocking { `stats`() }
         }
         interface BorrowingFields {
             val borrowingDate: LocalDate
@@ -177,8 +198,14 @@ BookshelfSchema.BookTag.initialize()
                 set(v) { put("dudeId", v) }
             // forward foreign key
             suspend fun book(): ExampleDatabase.BookshelfSchema.Book = retrieve("book")
+            // its blocking twin: what a reflection-driven caller reaches as `$join.name()`
+            @JvmName("book")
+            fun bookBlocking(): ExampleDatabase.BookshelfSchema.Book = blocking { book() }
             // forward foreign key
             suspend fun dude(): ExampleDatabase.BookshelfSchema.Dude = retrieve("dude")
+            // its blocking twin: what a reflection-driven caller reaches as `$join.name()`
+            @JvmName("dude")
+            fun dudeBlocking(): ExampleDatabase.BookshelfSchema.Dude = blocking { dude() }
         }
         interface TagFields {
             val tagId: Int
@@ -205,6 +232,9 @@ BookshelfSchema.BookTag.initialize()
                 set(v) { put("label", v) }
             // right to left n-n join
             suspend fun books(): Sequence<ExampleDatabase.BookshelfSchema.Book> = query("books")
+            // its blocking twin: what a reflection-driven caller reaches as `$join.name()`
+            @JvmName("books")
+            fun booksBlocking(): List<ExampleDatabase.BookshelfSchema.Book> = blocking { books().toList() }
         }
         interface BookTagFields {
             val bookId: Int
@@ -231,6 +261,8 @@ BookshelfSchema.BookTag.initialize()
         }
         // attribute bookshelf.booksCount
         suspend fun `booksCount`() = eval<Int>("booksCount")
+        @JvmName("booksCount")
+        fun booksCountBlocking() = blocking { `booksCount`() }
         // attribute bookshelf.newBookBy
         suspend fun `newBookBy`(author_name: String ,title: String) = perform("newBookBy", mapOf("authorName" to author_name, "title" to title))
     }

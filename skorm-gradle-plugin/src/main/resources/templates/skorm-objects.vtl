@@ -14,6 +14,7 @@ import kotlin.uuid.Uuid
 import kotlinx.datetime.*
 #end
 import com.republicate.skorm.*
+import kotlin.jvm.JvmName
 
 #if($useUuidType)
 @OptIn(kotlin.uuid.ExperimentalUuidApi::class)
@@ -105,16 +106,27 @@ ${schema.className}.${entity.className}.initialize()
 #foreach ($join in $entity.joins)
             // $join.label
             suspend fun ${join.identifier}(): $join.returnType = ${join.verb}("$join.name")
+            // its blocking twin: what a reflection-driven caller reaches as `$join.name()`
+            @JvmName("$join.name")
+            fun ${join.name}Blocking(): #if($join.multiple)List<$join.targetClass>#{else}$join.returnType#end = blocking { ${join.identifier}()#if($join.multiple).toList()#end }
 #end
 #foreach ($attr in $entity.attributes)
             // attribute $attr.qualifiedName
             suspend fun `${attr.name}`(#typedArguments($attr.arguments)) = ${attr.verb}${attr.generics}("$attr.name"#if($attr.arguments), #if($attr.arguments.size() > 1)#namedValues($attr.arguments)#else#values($attr.arguments)#end#end)$attr.cast
+#if($attr.verb != "perform")
+            @JvmName("$attr.name")
+            fun ${attr.name}Blocking(#typedArguments($attr.arguments)) = blocking { `${attr.name}`(#values($attr.arguments))#if($attr.verb == "query").toList()#end }
+#end
 #end
         }
 #end
 #foreach ($attr in $schema.attributes)
         // attribute $attr.qualifiedName
         suspend fun `${attr.name}`(#typedArguments($attr.arguments)) = ${attr.verb}${attr.generics}("$attr.name"#if($attr.arguments), #if($attr.arguments.size() > 1)#namedValues($attr.arguments)#else#values($attr.arguments)#end#end)$attr.cast
+#if($attr.verb != "perform")
+        @JvmName("$attr.name")
+        fun ${attr.name}Blocking(#typedArguments($attr.arguments)) = blocking { `${attr.name}`(#values($attr.arguments))#if($attr.verb == "query").toList()#end }
+#end
 #end
     }
 #end

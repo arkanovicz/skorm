@@ -351,7 +351,8 @@ saying which side holds the key (kddl ≥ 0.27).
 The kddl compiler generates:
 1. SQL DDL scripts for database creation
 2. Kotlin entity classes with typed properties
-3. Navigation methods for the relationships above, as members of the generated classes
+3. Navigation methods for the relationships above, as members of the generated classes — each with a
+   blocking twin (`book.tagsBlocking()`, reachable by reflection as `tags()`) for callers that cannot suspend
 
 For complete kddl documentation, see the [kddl project](https://github.com/arkanovicz/kddl).
 
