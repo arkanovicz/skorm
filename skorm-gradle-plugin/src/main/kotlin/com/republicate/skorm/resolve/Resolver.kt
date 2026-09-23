@@ -173,7 +173,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
         var generics = ""
         var cast = ""
         val verb = when {
-            item.transaction -> "attempt"
+            // a block of statements is performed too: the runtime runs several statements in one transaction
             item.action -> "perform"
             else -> {
                 when {

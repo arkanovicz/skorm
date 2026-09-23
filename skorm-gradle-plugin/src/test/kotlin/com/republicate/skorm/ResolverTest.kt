@@ -281,6 +281,24 @@ class ResolverTest {
     }
 
     @Test
+    fun `a block of statements is performed as one transaction, its statements handed over without the braces`() {
+        val forget = resolve(shelf, """
+            database shelf { schema main {
+              mut Dude.forget = {
+                DELETE FROM borrowing WHERE dude_id = {dude_id};
+                DELETE FROM dude WHERE dude_id = {dude_id};
+              }
+            } }
+        """.trimIndent()).attributes.single()
+        assertEquals("perform", forget.verb)
+        assertEquals("mutationAttribute", forget.coreRegistration)
+        assertEquals(
+            "DELETE FROM borrowing WHERE dude_id = {dude_id};\nDELETE FROM dude WHERE dude_id = {dude_id};",
+            forget.sql
+        )
+    }
+
+    @Test
     fun `a mutation performs and registers as such, a multiple composite queries a row set`() {
         val model = resolve(shelf, shelfSql)
         val lend = model.attributes.single { it.name == "lend" }

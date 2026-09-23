@@ -23,6 +23,9 @@ fun shapes.model.ShapesDatabase.initRuntimeModel() {
     // attribute Person.mainAddress
     ShapesDatabase.main.entity("person").instanceAttributes.nullableInstanceAttribute<ShapesDatabase.MainSchema.Address>("mainAddress", setOf("person_id"), ShapesDatabase.MainSchema.Address::new)
 
+    // attribute Person.forget
+    ShapesDatabase.main.entity("person").instanceAttributes.mutationAttribute("forget", setOf("person_id"))
+
     // attribute Person.counts
     ShapesDatabase.main.entity("person").instanceAttributes.rowAttribute<Counts>("counts", setOf("person_id"), ::Counts)
 

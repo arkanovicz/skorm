@@ -39,6 +39,13 @@ fun com.republicate.skorm.bookshelf.ExampleDatabase.initRuntimeModel() {
         WHERE book_id = {book_id} AND dude_id = {dude_id} AND restitution_date IS NULL;""".trimIndent())
 
 
+    // attribute bookshelf.newBookBy
+    ExampleDatabase.bookshelf.mutationAttribute("newBookBy", """
+        INSERT INTO author (name) VALUES ({author_name});
+INSERT INTO book (title, author_id, genre)
+        SELECT {title}, author_id, 'novel' FROM author WHERE name = {author_name};""".trimIndent())
+
+
     // attribute Author.countInGenre
     ExampleDatabase.bookshelf.entity("author").instanceAttributes.scalarAttribute<Int>("countInGenre", """
         SELECT count(*) FROM bookshelf.book

@@ -101,7 +101,7 @@ class QueryAttribute(
     val registrationPath: String,
     /** declared arguments, in order: name to Kotlin type */
     val arguments: List<Pair<String, String>>,
-    /** `retrieve`, `query`, `eval`, `perform`, `attempt` */
+    /** `retrieve`, `query`, `eval`, `perform` */
     val verb: String,
     /** `<Genre?>`, empty for mutations */
     val generics: String,

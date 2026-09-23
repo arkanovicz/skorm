@@ -36,6 +36,11 @@ suspend fun ExampleDatabase.BookshelfSchema.Book.`returnFrom`(dude_id: Long ,ret
 
 
 
+// attribute bookshelf.newBookBy
+suspend fun ExampleDatabase.BookshelfSchema.`newBookBy`(author_name: String ,title: String) = perform("newBookBy", mapOf("authorName" to author_name, "title" to title))
+
+
+
 // attribute Author.countInGenre
 suspend fun ExampleDatabase.BookshelfSchema.Author.`countInGenre`(genre: Genre) = eval<Int>("countInGenre", genre)
 

@@ -33,6 +33,12 @@ fun shapes.model.ShapesDatabase.initRuntimeModel() {
         SELECT * FROM address WHERE owner = {person_id} LIMIT 1;""".trimIndent(), ShapesDatabase.MainSchema.Address::new)
 
 
+    // attribute Person.forget
+    ShapesDatabase.main.entity("person").instanceAttributes.mutationAttribute("forget", """
+        DELETE FROM address WHERE owner = {person_id};
+DELETE FROM person WHERE person_id = {person_id};""".trimIndent())
+
+
     // attribute Person.counts
     ShapesDatabase.main.entity("person").instanceAttributes.rowAttribute<Counts>("counts", """
         SELECT (SELECT count(*) FROM address WHERE owner = {person_id}) addresses,

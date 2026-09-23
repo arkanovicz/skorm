@@ -23,6 +23,9 @@ fun com.republicate.skorm.bookshelf.ExampleDatabase.initRuntimeModel() {
     // attribute Book.returnFrom
     ExampleDatabase.bookshelf.entity("book").instanceAttributes.mutationAttribute("returnFrom", setOf("returned_on","book_id","dude_id"))
 
+    // attribute bookshelf.newBookBy
+    ExampleDatabase.bookshelf.mutationAttribute("newBookBy", setOf("author_name","title"))
+
     // attribute Author.countInGenre
     ExampleDatabase.bookshelf.entity("author").instanceAttributes.scalarAttribute<Int>("countInGenre", setOf("author_id","genre"))
 

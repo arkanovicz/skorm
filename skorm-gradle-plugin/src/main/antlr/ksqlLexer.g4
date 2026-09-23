@@ -37,7 +37,7 @@ DOT: '.' ;
 ST: '*' ;
 QM: '?' ;
 CM: ',' ;
-EQ: '='  -> pushMode( QUERY );
+EQ: '='  -> pushMode( BLOCK_OR_QUERY );
 SC: ';' ;
 
 // whitespaces and comments

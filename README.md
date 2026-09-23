@@ -212,8 +212,7 @@ Database *—— Schema *—— Entity *—— Instance
 + `eval(name, params...)` - returns a scalar value
 + `retrieve(name, params...)` - returns a single row (plus `Entity.fetch(params...)` to get an instance by ID)
 + `query(name, params...)` - returns a rowset
-+ `perform(name, params...)` - for atomic mutations
-+ `attempt(name, params...)` - for transactions
++ `perform(name, params...)` - for mutations; a `mut` declared as a block of statements (`= { …; …; }`) runs them in one transaction
 
 #### Identifiers Mapping
 

@@ -62,7 +62,10 @@ private fun digestAST(databaseContext: ksqlParser.DatabaseContext): RMDatabase {
                 qualif.QM() != null -> item.nullable = true
                 qualif.ST() != null -> item.multiple = true
             }
-            item.sql = itemContext.sql_spec().query?.text?.trim() ?: itemContext.sql_spec().queries?.text?.trim() ?: nullerr()
+            // a block's statements, without its braces: to the query parser `{` opens a parameter
+            item.sql = itemContext.sql_spec().query?.text?.trim()
+                ?: itemContext.sql_spec().queries?.sql()?.joinToString("\n") { it.text.trim() + ";" }
+                ?: nullerr()
         }
     }
     return database

@@ -85,6 +85,12 @@ class StaticTests {
                 val go = Tag.browse().first { it.label == "go" }
                 assertEquals(listOf(theBook.title), go.books().map { it.title }.toList())
 
+                // a multi-statement mutation runs as one transaction: the second statement sees the first,
+                // and the result counts the rows changed by both
+                assertEquals(2L, ExampleDatabase.bookshelf.newBookBy("Ursula K. Le Guin", "A Wizard of Earthsea"))
+                val ursula = Author.browse().first { it.name == "Ursula K. Le Guin" }
+                assertEquals(listOf("A Wizard of Earthsea"), ursula.books().map { it.title }.toList())
+
                 // the generated field interface is delegable, and the delegate's getters
                 // are real methods — what a reflection-driven template engine needs
                 val view = BookView(theBook)

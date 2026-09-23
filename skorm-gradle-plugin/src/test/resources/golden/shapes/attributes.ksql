@@ -17,6 +17,12 @@ database shapes {
     attr Person.mainAddress: Address? =
       SELECT * FROM address WHERE owner = {person_id} LIMIT 1;
 
+    // several statements: a transaction
+    mut Person.forget = {
+      DELETE FROM address WHERE owner = {person_id};
+      DELETE FROM person WHERE person_id = {person_id};
+    }
+
     attr Person.counts: (addresses: Int, friends: Int) =
       SELECT (SELECT count(*) FROM address WHERE owner = {person_id}) addresses,
              (SELECT count(*) FROM friendship WHERE a_id = {person_id}) friends;

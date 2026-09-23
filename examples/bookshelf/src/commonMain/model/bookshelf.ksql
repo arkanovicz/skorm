@@ -24,6 +24,13 @@ database example {
       UPDATE bookshelf.borrowing SET restitution_date = {returned_on}
         WHERE book_id = {book_id} AND dude_id = {dude_id} AND restitution_date IS NULL;
 
+    // a block of statements runs as one transaction: the author must exist before the book
+    mut newBookBy(author_name: String, title: String) = {
+      INSERT INTO author (name) VALUES ({author_name});
+      INSERT INTO book (title, author_id, genre)
+        SELECT {title}, author_id, 'novel' FROM author WHERE name = {author_name};
+    }
+
     attr Author.countInGenre(genre: Genre): Int =
       SELECT count(*) FROM bookshelf.book
         WHERE author_id = {author_id} AND genre = {genre};

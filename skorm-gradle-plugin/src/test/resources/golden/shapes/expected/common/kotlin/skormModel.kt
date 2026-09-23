@@ -32,6 +32,11 @@ suspend fun ShapesDatabase.MainSchema.`everybody`() = query<ShapesDatabase.MainS
 // attribute Person.mainAddress
 suspend fun ShapesDatabase.MainSchema.Person.`mainAddress`() = retrieve<ShapesDatabase.MainSchema.Address?>("mainAddress")
 
+
+
+// attribute Person.forget
+suspend fun ShapesDatabase.MainSchema.Person.`forget`() = perform("forget")
+
 open class Counts(): Json.MutableObject() {
     val addresses: Int
         get() = getInt("addresses")!!
