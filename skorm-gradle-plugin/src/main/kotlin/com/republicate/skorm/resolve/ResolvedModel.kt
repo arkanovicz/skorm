@@ -47,7 +47,9 @@ class ResolvedEntity(
      */
     val source: String?,
     /** kind value to subclass, for every descendant: `vip` → `ExampleDatabase.MainSchema.Vip` */
-    val kinds: List<Pair<String, String>>
+    val kinds: List<Pair<String, String>>,
+    /** the value of `kind` for this table's own rows, when it belongs to a hierarchy: `vip` */
+    val kindValue: String?
 )
 
 class ResolvedField(

@@ -82,6 +82,10 @@ ${schema.className}.${entity.className}.initialize()
 #end
                 }
             }
+#if ($entity.kindValue)
+            // a new row knows its kind before the database applies it; a subtype's init runs last and wins
+            init { put("kind", "$entity.kindValue") }
+#end
 #foreach ($field in $entity.ownFields)
 ## TODO output PKs first
 ## TODO use delegates

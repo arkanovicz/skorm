@@ -90,6 +90,8 @@ OtherSchema.Badge.initialize()
                     addField(Field("kind", "person_kind", false, false))
                 }
             }
+            // a new row knows its kind before the database applies it; a subtype's init runs last and wins
+            init { put("kind", "person") }
             override var name: String
                 get() = getString("name")!!
                 set(v) { put("name", v) }
@@ -270,6 +272,8 @@ OtherSchema.Badge.initialize()
                     addField(Field("kind", "person_kind", false, false))
                 }
             }
+            // a new row knows its kind before the database applies it; a subtype's init runs last and wins
+            init { put("kind", "vip") }
         }
         interface PersonAddressFields {
             val personId: Int

@@ -189,6 +189,7 @@ class ResolverTest {
         assertNull(entities.getValue("Star").source)
         assertEquals(listOf("vip" to "DDatabase.SSchema.Vip", "star" to "DDatabase.SSchema.Star"), entities.getValue("Person").kinds)
         assertEquals(emptyList<Pair<String, String>>(), entities.getValue("Address").kinds)
+        assertEquals(listOf("person", "vip", "star", null), listOf("Person", "Vip", "Star", "Address").map { entities.getValue(it).kindValue })
     }
 
     @Test

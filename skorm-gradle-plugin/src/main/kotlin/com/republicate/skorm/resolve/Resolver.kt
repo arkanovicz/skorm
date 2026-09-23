@@ -64,7 +64,8 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
             ownFields = own,
             parentClass = table.parent?.let { classOf(it, databaseClass) },
             source = sourceOf(table),
-            kinds = descendants(table).map { it.name to classOf(it, databaseClass) }
+            kinds = descendants(table).map { it.name to classOf(it, databaseClass) },
+            kindValue = if (table.parent != null || table.children.isNotEmpty()) table.name else null
         )
     }
 
