@@ -9,7 +9,7 @@ import kotlinx.datetime.*
 import com.republicate.skorm.*
 import kotlin.jvm.JvmName
 
-class ExampleDatabase(processor: Processor): Database("example", processor) {
+class ExampleDatabase(processor: Processor): Database("example", processor), MutableDatabase {
     companion object {
         lateinit var instance: Database
         private fun isInstantiated() = this::instance.isInitialized
@@ -28,7 +28,7 @@ BookshelfSchema.Tag.initialize()
 BookshelfSchema.BookTag.initialize()
         super.initialize()
     }
-    class BookshelfSchema(db: Database): Schema("bookshelf", db) {
+    class BookshelfSchema(db: Database): Schema("bookshelf", db), MutableSchema {
         enum class Genre {
             fiction,
             novel,
@@ -39,8 +39,8 @@ BookshelfSchema.BookTag.initialize()
             val dudeId: Int
             val name: String
         }
-        open class Dude(entity: Entity = Companion): Instance(entity), DudeFields {
-            companion object: Entity("dude", bookshelf) {
+        open class Dude(entity: Entity = Companion): Instance(entity), MutableInstance, DudeFields {
+            companion object: Entity("dude", bookshelf), MutableEntity {
                 override fun new(): Dude = Dude()
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Dude?
@@ -63,8 +63,8 @@ BookshelfSchema.BookTag.initialize()
             val authorId: Int
             val name: String
         }
-        open class Author(entity: Entity = Companion): Instance(entity), AuthorFields {
-            companion object: Entity("author", bookshelf) {
+        open class Author(entity: Entity = Companion): Instance(entity), MutableInstance, AuthorFields {
+            companion object: Entity("author", bookshelf), MutableEntity {
                 override fun new(): Author = Author()
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Author?
@@ -103,8 +103,8 @@ BookshelfSchema.BookTag.initialize()
             val donor: Int?
             val authorId: Int
         }
-        open class Book(entity: Entity = Companion): Instance(entity), BookFields {
-            companion object: Entity("book", bookshelf) {
+        open class Book(entity: Entity = Companion): Instance(entity), MutableInstance, BookFields {
+            companion object: Entity("book", bookshelf), MutableEntity {
                 override fun new(): Book = Book()
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Book?
@@ -170,8 +170,8 @@ BookshelfSchema.BookTag.initialize()
             val bookId: Int
             val dudeId: Int
         }
-        open class Borrowing(entity: Entity = Companion): Instance(entity), BorrowingFields {
-            companion object: Entity("borrowing", bookshelf) {
+        open class Borrowing(entity: Entity = Companion): Instance(entity), MutableInstance, BorrowingFields {
+            companion object: Entity("borrowing", bookshelf), MutableEntity {
                 override fun new(): Borrowing = Borrowing()
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun browse() = super.browse() as Sequence<Borrowing>
@@ -211,8 +211,8 @@ BookshelfSchema.BookTag.initialize()
             val tagId: Int
             val label: String
         }
-        open class Tag(entity: Entity = Companion): Instance(entity), TagFields {
-            companion object: Entity("tag", bookshelf) {
+        open class Tag(entity: Entity = Companion): Instance(entity), MutableInstance, TagFields {
+            companion object: Entity("tag", bookshelf), MutableEntity {
                 override fun new(): Tag = Tag()
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Tag?
@@ -240,8 +240,8 @@ BookshelfSchema.BookTag.initialize()
             val bookId: Int
             val tagId: Int
         }
-        open class BookTag(entity: Entity = Companion): Instance(entity), BookTagFields {
-            companion object: Entity("bookTag", bookshelf) {
+        open class BookTag(entity: Entity = Companion): Instance(entity), MutableInstance, BookTagFields {
+            companion object: Entity("bookTag", bookshelf), MutableEntity {
                 override fun new(): BookTag = BookTag()
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun browse() = super.browse() as Sequence<BookTag>

@@ -1,3 +1,5 @@
+@file:OptIn(SkormInternalApi::class)
+
 package com.republicate.skorm
 
 import com.republicate.kson.Json
@@ -34,21 +36,24 @@ fun Route.rest(entity: Entity) {
                      call.response.status(HttpStatusCode.NotFound)
                  }
             }
-            put {
-                entity.fetch(call.allParameters())?.also {
-                    it.putRawFields(call.allParameters())
-                    it.update()
-                    call.response.status(HttpStatusCode.OK)
-                } ?: run {
-                    call.response.status(HttpStatusCode.NotFound)
+            if (entity is MutableEntity) {
+                put {
+                    entity.fetch(call.allParameters())?.also {
+                        it as MutableInstance
+                        it.putRawFields(call.allParameters())
+                        it.update()
+                        call.response.status(HttpStatusCode.OK)
+                    } ?: run {
+                        call.response.status(HttpStatusCode.NotFound)
+                    }
                 }
-            }
-            delete {
-                entity.fetch(call.allParameters())?.also {
-                    it.delete()
-                    call.response.status(HttpStatusCode.OK)
-                } ?: run {
-                    call.response.status(HttpStatusCode.NotFound)
+                delete {
+                    entity.fetch(call.allParameters())?.also {
+                        (it as MutableInstance).delete()
+                        call.response.status(HttpStatusCode.OK)
+                    } ?: run {
+                        call.response.status(HttpStatusCode.NotFound)
+                    }
                 }
             }
             logger.info { "Defining attributes for entity ${entity.name}"}
@@ -134,7 +139,7 @@ fun Route.rest(entity: Entity) {
                         post(attribute.key) {
                             logger.info { "@@@ content type = ${call.request.contentType().contentType}" }
                             val params = call.receiveParameters().toMap() + call.parameters.toMap()
-                            call.respond(entity.instanceAttributes.perform(attribute.key, params) as Long)
+                            call.respond((entity as MutableEntity).perform(attribute.key, params))
                         }
                     }
                     is TransactionAttribute -> TODO()
@@ -144,11 +149,10 @@ fun Route.rest(entity: Entity) {
         get {
             call.respond(entity.browse().toCollection(Json.MutableArray()))
         }
-        post {
+        if (entity is MutableEntity) post {
             val instance = entity.new()
-            // instance.putAll(call.request.queryParameters.toMap())
             instance.putRawFields(call.allParameters())
-            instance.insert()
+            (instance as MutableInstance).insert()
             call.response.status(HttpStatusCode.OK)
         }
     }

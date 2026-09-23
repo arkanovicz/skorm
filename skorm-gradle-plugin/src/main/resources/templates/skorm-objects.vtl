@@ -19,7 +19,7 @@ import kotlin.jvm.JvmName
 #if($useUuidType)
 @OptIn(kotlin.uuid.ExperimentalUuidApi::class)
 #end
-class ${resolved.databaseClass}(processor: Processor): Database("$resolved.name", processor) {
+class ${resolved.databaseClass}(processor: Processor): Database("$resolved.name", processor), MutableDatabase {
     companion object {
         lateinit var instance: Database
         private fun isInstantiated() = this::instance.isInitialized
@@ -40,7 +40,7 @@ ${schema.className}.${entity.className}.initialize()
         super.initialize()
     }
 #foreach ($schema in $resolved.schemas)
-    class ${schema.className}(db: Database): Schema("$schema.name", db) {
+    class ${schema.className}(db: Database): Schema("$schema.name", db), MutableSchema {
 #foreach ($enum in $schema.enums)
         enum class $enum.name {
 #foreach ($value in $enum.values)
@@ -55,8 +55,8 @@ ${schema.className}.${entity.className}.initialize()
             val ${field.identifier}: ${field.kotlinType}#if($field.nullable)?#end
 #end
         }
-        open class ${entity.className}(entity: Entity = Companion): #if($entity.parentClass)${entity.parentClass}(entity)#{else}Instance(entity)#end, ${entity.className}Fields {
-            companion object: Entity("$entity.objectName", $schema.objectName#if($entity.parentClass), ${entity.parentClass}#end) {
+        open class ${entity.className}(entity: Entity = Companion): #if($entity.parentClass)${entity.parentClass}(entity)#{else}Instance(entity), MutableInstance#end, ${entity.className}Fields {
+            companion object: Entity("$entity.objectName", $schema.objectName#if($entity.parentClass), ${entity.parentClass}#end), MutableEntity {
                 override fun new(): ${entity.className} = ${entity.className}()
 #if (!$entity.kinds.isEmpty())
                 // rows are read joined with the subtypes' tables: each comes back as the class its kind names

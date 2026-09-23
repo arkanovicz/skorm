@@ -72,6 +72,7 @@ open class Entity protected constructor(val name: String, val schema: Schema, va
         override val schema get() = parent as Schema
         // a subtype answers to its parent entity's attributes: navigations, ksql attributes, all of it
         override val inherited: AttributeHolder? get() = this@Entity.parent?.instanceAttributes
+        override val mutable: Boolean get() = this@Entity is MutableEntity
 
         override fun prepare(attr: Attribute<*>, vararg params: Any?): Pair<String, Map<String, Any?>> {
             val doRestPK = processor.restMode && params.isNotEmpty() && params[0] is Instance && (params[0] as Instance).isPersisted
@@ -156,55 +157,34 @@ open class Entity protected constructor(val name: String, val schema: Schema, va
         return if (primaryKey.size == 1 && primaryKey.first().isGenerated) {
             // Convert property name to database column name
             val dbColName = instanceAttributes.processor.upstreamMapping(primaryKey.first().name)
-            instanceAttributes.perform(insertAttribute, instance, GeneratedKeyMarker(dbColName))
+            instanceAttributes.mutate(insertAttribute, instance, GeneratedKeyMarker(dbColName))
         } else {
-            instanceAttributes.perform(insertAttribute, instance)
+            instanceAttributes.mutate(insertAttribute, instance)
         }
     }
-    internal suspend fun update(instance: Instance) = instanceAttributes.perform(updateAttribute, instance)
-    internal suspend fun delete(instance: Instance) = instanceAttributes.perform(deleteAttribute, instance)
+    internal suspend fun update(instance: Instance) = instanceAttributes.mutate(updateAttribute, instance)
+    internal suspend fun delete(instance: Instance) = instanceAttributes.mutate(deleteAttribute, instance)
     /*internal*/ suspend inline fun <reified T: Any?> eval(attrName: String, vararg params: Any?) = instanceAttributes.eval<T>(attrName, *params)
     /*internal*/ suspend inline fun <reified T: Json.Object?> retrieve(attrName: String, vararg params: Any?) = instanceAttributes.retrieve<T>(attrName, *params)
     /*internal*/ suspend inline fun <reified T: Json.Object> query(attrName: String, vararg params: Any?) = instanceAttributes.query<T>(attrName, *params)
-    internal suspend fun perform(attrName: String, vararg params: Any?) = instanceAttributes.perform(attrName, *params)
 }
 
+/**
+ * A row, as the database gave it. Its map mutators write only when the row is a [MutableInstance] — what the
+ * rows of a mutable database implement — and refuse otherwise, so that a read-only row stays one under
+ * reflection too.
+ */
 open class Instance(val entity: Entity) : Json.MutableObject() {
     val dirtyFields = BitSet(MAX_FIELDS) // init size needed for multiplatform
     val generatedPrimaryKey: Boolean get() = entity.primaryKey.size == 1 && entity.primaryKey.first().isGenerated
     var isPersisted = false
     private val processor get() = entity.instanceAttributes.processor
 
-    // instance mutations
-
-    suspend fun insert() {
-        if (isPersisted) throw SkormException("cannot insert a persisted instance")
-        if (generatedPrimaryKey && containsKey(entity.primaryKey.first().name)) throw SkormException("generated primary key value cannot be specified at insertion")
-        val ret = entity.insert(this)
-        if (generatedPrimaryKey) put(entity.primaryKey.first().name, ret)
-        else if (ret != 1L) throw SkormException("unexpected number of changed rows, expected 1, found $ret")
-        isPersisted = true
-        setClean()
-    }
-
-    suspend fun update() {
-        if (!isPersisted) throw SkormException("cannot update a volatile instance")
-        entity.update(this)
-        setClean()
-    }
-
-    suspend fun upsert() = if (isPersisted) update() else insert()
-
-    suspend fun delete() {
-        if (!isPersisted) throw SkormException("cannot delete a volatile instance")
-        entity.delete(this)
-        isPersisted = false
-    }
-
     suspend fun refresh() {
         if (!isPersisted) throw SkormException("cannot refresh a volatile instance")
         val self = entity.fetch(this) ?: throw SkormException("cannot refresh instance, it doesn't exist")
-        putFields(self)
+        super.putAll(self)
+        setClean()
     }
 
     // dirty flags handling
@@ -216,29 +196,39 @@ open class Instance(val entity: Entity) : Json.MutableObject() {
 
     fun isDirty() = dirtyFields.nextSetBit(0) != -1
 
+    // the typed writes: only a mutable row takes them
+
+    private fun writable() {
+        if (this !is MutableInstance) throw SkormException("${entity.name} row is read-only")
+    }
+
+    /** the key must be a field; the row becomes dirty, and volatile again if a key column changed */
     override fun put(key: String, value: Any?): Any? {
-        val ret = super.put(key, value)
-        // coercitive version
+        writable()
         val field = entity.fields[key] ?: throw SkormException("${entity.name} has no field named $key")
+        val ret = super.put(key, value)
         if (isPersisted && field.isPrimary && ret != value) // CB TODO - since 'value' type is lax, 'value' may need a proper conversion before the comparison
                 isPersisted = false
         dirtyFields.set(entity.fieldIndices[key]!!, true)
-        // relaxed version
-        // val field = entity.fields[key]?.let { field ->
-        //     if (persisted && field.primary && ret != value) // CB TODO - since 'value' type is lax, 'value' may need a proper conversion before the comparison
-        //         persisted = false
-        //     dirtyFields.set(entity.fieldIndices[key]!!, true)
-        // }
         return ret
     }
 
-    fun putFields(from: Map<out String, Any?>) {
-        from.entries.filter { entity.fields.contains(it.key) }.forEach {
-            put(it.key, it.value)
-        }
+    override fun putAll(from: Map<out String, Any?>) = from.forEach { put(it.key, it.value) }
+
+    override fun remove(key: String): Any? {
+        writable()
+        return super.remove(key)
     }
 
-    open fun putRawFields(from: Map<out String, Any?>) {
+    override fun clear() {
+        writable()
+        super.clear()
+    }
+
+    // raw loading: database values under database names, filtered on the way in, nothing marked dirty
+
+    @SkormInternalApi
+    fun putRawFields(from: Map<out String, Any?>) {
         from.entries.forEach {
             val fieldName = processor.downstreamMapping(it.key)
             entity.fields[fieldName]?.also { field ->
@@ -248,8 +238,10 @@ open class Instance(val entity: Entity) : Json.MutableObject() {
     }
 
     // to allow subclasses to add key-value pairs besides entity columns
+    @SkormInternalApi
     fun putRawValue(key: String, value: Any?): Any? = super.put(key, value)
 
+    @SkormInternalApi
     fun putRawField(field: Field, value: Any?) {
         super.put(field.name, processor.downstreamFilter(field.type, value))
     }
@@ -257,7 +249,6 @@ open class Instance(val entity: Entity) : Json.MutableObject() {
     suspend inline fun <reified T: Any?> eval(attrName: String, vararg params: Any?) = entity.eval<T>(attrName, this, *params)
     suspend inline fun <reified T: Json.Object?> retrieve(attrName: String, vararg params: Any?) = entity.retrieve<T>(attrName, this, *params)
     suspend inline fun <reified T: Json.Object> query(attrName: String, vararg params: Any?) = entity.query<T>(attrName, this, *params)
-    suspend fun perform(attrName: String, vararg params: Any?) = entity.perform(attrName, this, *params)
 
     internal fun dirtyFieldNames(): Iterator<String> = object: Iterator<String> {
         var index = dirtyFields.nextSetBit(0)

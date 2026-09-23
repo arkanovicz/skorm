@@ -277,9 +277,9 @@ class ResolverTest {
 
     /** The static list in [Collisions] must match what reflection sees here, where the full classpath exists. */
     @Test
-    fun `the inherited-member list is what Instance actually exposes`() {
+    fun `the inherited-member list is what Instance and MutableInstance actually expose`() {
         // a function collides by name; a parameterless getX/isX is also a property, which a column would override
-        val reflected = com.republicate.skorm.Instance::class.java.methods
+        val reflected = (com.republicate.skorm.Instance::class.java.methods + com.republicate.skorm.MutableInstance::class.java.methods)
             .filter { '$' !in it.name }
             .flatMap { m ->
                 val n = m.name

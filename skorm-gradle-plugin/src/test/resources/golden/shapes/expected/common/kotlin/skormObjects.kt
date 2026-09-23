@@ -11,7 +11,7 @@ import com.republicate.skorm.*
 import kotlin.jvm.JvmName
 
 @OptIn(kotlin.uuid.ExperimentalUuidApi::class)
-class ShapesDatabase(processor: Processor): Database("shapes", processor) {
+class ShapesDatabase(processor: Processor): Database("shapes", processor), MutableDatabase {
     companion object {
         lateinit var instance: Database
         private fun isInstantiated() = this::instance.isInitialized
@@ -33,7 +33,7 @@ MainSchema.PersonAddress.initialize()
 OtherSchema.Badge.initialize()
         super.initialize()
     }
-    class MainSchema(db: Database): Schema("main", db) {
+    class MainSchema(db: Database): Schema("main", db), MutableSchema {
         enum class Level {
             low,
             high
@@ -60,8 +60,8 @@ OtherSchema.Badge.initialize()
             val seen: LocalDateTime?
             val kind: PersonKind
         }
-        open class Person(entity: Entity = Companion): Instance(entity), PersonFields {
-            companion object: Entity("person", main) {
+        open class Person(entity: Entity = Companion): Instance(entity), MutableInstance, PersonFields {
+            companion object: Entity("person", main), MutableEntity {
                 override fun new(): Person = Person()
                 // rows are read joined with the subtypes' tables: each comes back as the class its kind names
                 override val source = "main.person LEFT JOIN main.base_vip USING (person_id)"
@@ -171,8 +171,8 @@ OtherSchema.Badge.initialize()
             val code: String
             val label: String
         }
-        open class Country(entity: Entity = Companion): Instance(entity), CountryFields {
-            companion object: Entity("country", main) {
+        open class Country(entity: Entity = Companion): Instance(entity), MutableInstance, CountryFields {
+            companion object: Entity("country", main), MutableEntity {
                 override fun new(): Country = Country()
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Country?
@@ -201,8 +201,8 @@ OtherSchema.Badge.initialize()
             val bId: Int
             val since: LocalDate
         }
-        open class Friendship(entity: Entity = Companion): Instance(entity), FriendshipFields {
-            companion object: Entity("friendship", main) {
+        open class Friendship(entity: Entity = Companion): Instance(entity), MutableInstance, FriendshipFields {
+            companion object: Entity("friendship", main), MutableEntity {
                 override fun new(): Friendship = Friendship()
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Friendship?
@@ -244,8 +244,8 @@ OtherSchema.Badge.initialize()
             val aId: Int
             val bId: Int
         }
-        open class Gift(entity: Entity = Companion): Instance(entity), GiftFields {
-            companion object: Entity("gift", main) {
+        open class Gift(entity: Entity = Companion): Instance(entity), MutableInstance, GiftFields {
+            companion object: Entity("gift", main), MutableEntity {
                 override fun new(): Gift = Gift()
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun browse() = super.browse() as Sequence<Gift>
@@ -279,8 +279,8 @@ OtherSchema.Badge.initialize()
             val backup: Int?
             val code: String
         }
-        open class Address(entity: Entity = Companion): Instance(entity), AddressFields {
-            companion object: Entity("address", main) {
+        open class Address(entity: Entity = Companion): Instance(entity), MutableInstance, AddressFields {
+            companion object: Entity("address", main), MutableEntity {
                 override fun new(): Address = Address()
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Address?
@@ -334,7 +334,7 @@ OtherSchema.Badge.initialize()
         interface VipFields : ShapesDatabase.MainSchema.PersonFields {
         }
         open class Vip(entity: Entity = Companion): ShapesDatabase.MainSchema.Person(entity), VipFields {
-            companion object: Entity("vip", main, ShapesDatabase.MainSchema.Person) {
+            companion object: Entity("vip", main, ShapesDatabase.MainSchema.Person), MutableEntity {
                 override fun new(): Vip = Vip()
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Vip?
@@ -364,8 +364,8 @@ OtherSchema.Badge.initialize()
             val personId: Int
             val addressId: Int
         }
-        open class PersonAddress(entity: Entity = Companion): Instance(entity), PersonAddressFields {
-            companion object: Entity("personAddress", main) {
+        open class PersonAddress(entity: Entity = Companion): Instance(entity), MutableInstance, PersonAddressFields {
+            companion object: Entity("personAddress", main), MutableEntity {
                 override fun new(): PersonAddress = PersonAddress()
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun browse() = super.browse() as Sequence<PersonAddress>
@@ -400,13 +400,13 @@ OtherSchema.Badge.initialize()
         @JvmName("everybody")
         fun everybodyBlocking() = blocking { `everybody`().toList() }
     }
-    class OtherSchema(db: Database): Schema("other", db) {
+    class OtherSchema(db: Database): Schema("other", db), MutableSchema {
         interface BadgeFields {
             val label: String
             val personId: Int
         }
-        open class Badge(entity: Entity = Companion): Instance(entity), BadgeFields {
-            companion object: Entity("badge", other) {
+        open class Badge(entity: Entity = Companion): Instance(entity), MutableInstance, BadgeFields {
+            companion object: Entity("badge", other), MutableEntity {
                 override fun new(): Badge = Badge()
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun browse() = super.browse() as Sequence<Badge>

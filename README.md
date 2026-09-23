@@ -11,7 +11,7 @@ The nicest Kotlin multiplatform ORM around. Fully multiplatform. Coroutines-enab
 + **Database** - Root container for your data model
 + **Schema** - Logical grouping of entities (see [Configuration](#configuration))
 + **Entity** - Corresponds to a table or view (defined in [kddl syntax](#kddl-syntax))
-+ **Instance** - A single row in a table with CRUD operations
++ **Instance** - A single row in a table, read-only; a `MutableInstance` adds the writes
 + **Attribute** - Custom queries and mutations (see [ksql syntax](#ksql-syntax)), with five variants:
 
      + ScalarAttribute, returning Any?
@@ -22,10 +22,12 @@ The nicest Kotlin multiplatform ORM around. Fully multiplatform. Coroutines-enab
 
 *Four* main methods in the lifecycle of database objects instances (along with transaction handling):
 
-+ `Instance.insert()`
++ `MutableInstance.insert()`
 + `Entity.fetch(primaryKey)`
-+ `Instance.update()`
-+ `Instance.delete()`
++ `MutableInstance.update()`
++ `MutableInstance.delete()`
+
+The runtime has two halves: `Database`, `Schema`, `Entity`, `Instance` read; the objects of a mutable database also implement `MutableDatabase`, `MutableSchema`, `MutableEntity`, `MutableInstance`, which is where `perform` and the writes live. A read-only row refuses `put` at runtime, so it stays read-only under reflection.
 
 *Three* main customization points (see [Configuration](#configuration)):
 
@@ -212,7 +214,7 @@ Database *—— Schema *—— Entity *—— Instance
 + `eval(name, params...)` - returns a scalar value
 + `retrieve(name, params...)` - returns a single row (plus `Entity.fetch(params...)` to get an instance by ID)
 + `query(name, params...)` - returns a rowset
-+ `perform(name, params...)` - for mutations; a `mut` declared as a block of statements (`= { …; …; }`) runs them in one transaction
++ `perform(name, params...)` - for mutations, on the mutable objects only; a `mut` declared as a block of statements (`= { …; …; }`) runs them in one transaction
 
 #### Identifiers Mapping
 

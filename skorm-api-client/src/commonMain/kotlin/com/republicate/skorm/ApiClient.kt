@@ -1,3 +1,5 @@
+@file:OptIn(SkormInternalApi::class)
+
 package com.republicate.skorm
 
 import com.republicate.kson.Json

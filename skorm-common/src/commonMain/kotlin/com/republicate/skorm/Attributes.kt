@@ -250,6 +250,8 @@ abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = 
     open val database: Database? get() = parent?.database
     /** consulted after this holder's own attributes and before its parent's: an entity's parent entity */
     open val inherited: AttributeHolder? get() = null
+    /** whether mutations register and execute here: the holders of a mutable database */
+    open val mutable: Boolean get() = this is MutableAttributeHolder
     private val _attributes = mutableMapOf<String, Attribute<*>>()
     val attributes: Map<String, Attribute<*>> get() = _attributes
     val path: String by lazy { (parent?.path ?: "") + "/$name" }
@@ -273,6 +275,7 @@ abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = 
     }
 
     fun addAttribute(attr: Attribute<*>) {
+        if (attr is MutationAttribute && !mutable) throw SkormException("$path is read-only: cannot register mutation ${attr.name}")
         val previous = _attributes.put(attr.name, attr)
         if (previous != null) throw SkormException("attribute $path.${attr.name} cannot be overwritten")
         attr.holder = this
@@ -304,9 +307,9 @@ abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = 
         return attribute.handleResult(currentProcessor().query(execPath, execParams, attribute.rowFactory))
     }
 
-    suspend fun perform(attrName: String, vararg params: Any?) = perform(findAttribute<Long>(attrName), *params)
-
-    suspend fun perform(attribute: Attribute<Long>, vararg params: Any?): Long {
+    /** the execution of a mutation, public through [MutableAttributeHolder], [MutableEntity] and [MutableInstance] */
+    internal suspend fun mutate(attribute: Attribute<Long>, vararg params: Any?): Long {
+        if (!mutable) throw SkormException("$path is read-only: cannot perform ${attribute.name}")
         val (execPath, execParams) = prepare(attribute, *params)
         return attribute.handleResult(currentProcessor().perform(execPath, execParams))
     }

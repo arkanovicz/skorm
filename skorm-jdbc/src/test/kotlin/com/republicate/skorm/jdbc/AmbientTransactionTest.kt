@@ -4,6 +4,11 @@ import com.republicate.skorm.AttributeHolder
 import com.republicate.skorm.Database
 import com.republicate.skorm.Entity
 import com.republicate.skorm.Field
+import com.republicate.skorm.Instance
+import com.republicate.skorm.MutableDatabase
+import com.republicate.skorm.MutableEntity
+import com.republicate.skorm.MutableInstance
+import com.republicate.skorm.MutableSchema
 import com.republicate.skorm.QueryResult
 import com.republicate.skorm.Schema
 import com.republicate.skorm.core.CoreProcessor
@@ -22,12 +27,19 @@ import kotlin.test.assertFailsWith
  */
 class AmbientTransactionTest {
 
+    private class Row(entity: Entity) : Instance(entity), MutableInstance
+    private class TxDatabase(name: String, processor: CoreProcessor) : Database(name, processor), MutableDatabase
+    private class TxSchema(db: Database) : Schema("tx", db), MutableSchema
+    private class TxEntity(schema: Schema) : Entity("book", schema), MutableEntity {
+        override fun new() = Row(this)
+    }
+
     private class Fixture(dbName: String, url: String) {
         val connector = JdbcConnector(url)
         val processor = CoreProcessor(connector)
-        val database = object: Database(dbName, processor) {}
-        val schema = object: Schema("tx", database) {}
-        val book = object: Entity("book", schema) {}
+        val database = TxDatabase(dbName, processor)
+        val schema = TxSchema(database)
+        val book = TxEntity(schema)
 
         init {
             connector.initialize()
