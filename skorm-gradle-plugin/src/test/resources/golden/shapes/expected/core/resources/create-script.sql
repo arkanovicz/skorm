@@ -71,12 +71,22 @@ CREATE VIEW vip AS
 
 CREATE RULE insert_vip AS ON INSERT TO vip DO INSTEAD (
   INSERT INTO person (person_id,name,rank,nature,small,tiny,big,uid,meta,born,seen,kind)
-    VALUES (     COALESCE(NEW.person_id,NEXTVAL('person_person_id_seq')),NEW.name,NEW.rank,NEW.nature,NEW.small,NEW.tiny,NEW.big,NEW.uid,NEW.meta,NEW.born,NEW.seen,'vip')
-  RETURNING person.*;
-
-  SELECT SETVAL('person_person_id_seq', (SELECT MAX(person_id) FROM person)) person_id;
+    VALUES (     COALESCE(NEW.person_id,NEXTVAL('person_person_id_seq')),NEW.name,NEW.rank,NEW.nature,NEW.small,NEW.tiny,NEW.big,NEW.uid,NEW.meta,NEW.born,NEW.seen,'vip');
+  SELECT SETVAL('person_person_id_seq', NEW.person_id) person_id WHERE NEW.person_id > (SELECT last_value FROM person_person_id_seq);
   INSERT INTO base_vip (person_id)
-    VALUES (CURRVAL('person_person_id_seq'));
+    VALUES (COALESCE(NEW.person_id,CURRVAL('person_person_id_seq')))
+  RETURNING base_vip.person_id,
+            (SELECT name FROM person WHERE person.person_id = base_vip.person_id),
+            (SELECT rank FROM person WHERE person.person_id = base_vip.person_id),
+            (SELECT nature FROM person WHERE person.person_id = base_vip.person_id),
+            (SELECT small FROM person WHERE person.person_id = base_vip.person_id),
+            (SELECT tiny FROM person WHERE person.person_id = base_vip.person_id),
+            (SELECT big FROM person WHERE person.person_id = base_vip.person_id),
+            (SELECT uid FROM person WHERE person.person_id = base_vip.person_id),
+            (SELECT meta FROM person WHERE person.person_id = base_vip.person_id),
+            (SELECT born FROM person WHERE person.person_id = base_vip.person_id),
+            (SELECT seen FROM person WHERE person.person_id = base_vip.person_id),
+            'vip'::enum_person_kind;
 );
 
 CREATE RULE update_vip AS ON UPDATE TO vip DO INSTEAD (
