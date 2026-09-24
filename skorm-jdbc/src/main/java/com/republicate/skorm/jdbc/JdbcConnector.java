@@ -264,6 +264,10 @@ public class JdbcConnector implements Connector, Closeable
                     }
                 }
                 dataSource = new BasicDataSource(getUrl());
+            }
+            // a data source handed to the constructor needs its pools too
+            if (connectionFactory == null)
+            {
                 connectionFactory = new ConnectionFactory(dataSource, getLogin(), getPassword());
                 connectionPool = new ConnectionPool(connectionFactory, true);
                 txConnectionPool = new ConnectionPool(connectionFactory, false);
