@@ -12,7 +12,10 @@ interface MutableAttributeHolder {
     suspend fun perform(attribute: Attribute<Long>, vararg params: Any?): Long = (this as AttributeHolder).mutate(attribute, *params)
 }
 
-interface MutableDatabase : MutableAttributeHolder
+interface MutableDatabase : MutableAttributeHolder {
+    /** the read-only database over the same processor, for what must not write: a render, a user's template */
+    val readOnly: Database
+}
 
 interface MutableSchema : MutableAttributeHolder
 

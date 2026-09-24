@@ -126,14 +126,43 @@ build/generated-src/
 JS, wasm and native one. In a plain `kotlin("jvm")` project there is a single source set, and
 `common` and `core` are both registered on `main`.
 
-The generated classes are nested (`ExampleDatabase.BookshelfSchema.Book`); alias in your own code
+The generated types are nested (`ExampleDatabase.BookshelfSchema.Book`); alias in your own code
 the ones you use, e.g. `typealias Book = ExampleDatabase.BookshelfSchema.Book`.
+
+#### Two halves: read-only and mutable
+
+The generator emits a read-only database and a mutable one extending it, so that code which must
+not write — a render, a user-edited template — is handed a database that *cannot*, not one that
+promises not to:
+
+```
+ExampleDatabase                          MutableExampleDatabase : ExampleDatabase, MutableDatabase
+  BookshelfSchema                          MutableBookshelfSchema : BookshelfSchema, MutableSchema
+    interface Book : Instance                interface MutableBook : Book, MutableInstance
+      companion object : Entity               companion object : Entity, MutableEntity
+      val title; fun author(); fun tags()      override var title; override fun tags(): Sequence<MutableTag>
+      fun currentBorrower()                    fun lend(dude: Int)            // ksql mutations
+    open class BookImpl : InstanceImpl, Book   open class MutableBookImpl : MutableInstanceImpl, MutableBook
+```
+
+A row type is an interface, so a table hierarchy (`MutableVip : Vip, MutablePerson`) and mutability
+inherit side by side; the `Impl` class behind it is the storage, and carries the blocking twins.
+The companion object is the entity: `Book.browse()`, `Book.fetch(id)` read through the read-only
+database, `MutableBook.browse()`, `MutableBook.new()` through the mutable one. A row has no
+constructor: `MutableBook.new()` builds one to insert. Read attributes and navigations are
+declared once, on the read-only interface, and inherited; the mutable interface redeclares those
+returning rows, covariantly, and adds the mutations.
+
+Constructing a `MutableExampleDatabase` also constructs its read-only sibling over the same
+processor, reachable as `mutableDb.readOnly` (and `ExampleDatabase.instance`): both share the
+attribute registry and any ambient transaction, and the sibling reads on the processor's read
+connector when one is configured. An app that never writes constructs `ExampleDatabase` alone.
 
 ### 4. Use the generated code
 
 ```kotlin
-// Initialize database (JVM)
-val database = TodoAppDatabase(CoreProcessor(JdbcConnector()))
+// Initialize database (JVM): the mutable one, since we insert below
+val database = MutableTodoAppDatabase(CoreProcessor(JdbcConnector()))
 database.configure(mapOf(
     "jdbc" to mapOf(
         "url" to "jdbc:h2:mem:todo",
@@ -143,41 +172,41 @@ database.configure(mapOf(
 database.initialize()
 
 // Create a task
-val task = Task().apply {
+val task = MutableTask.new().apply {
     title = "Learn skorm"
     completed = false
     insert()
 }
 
 // Fetch and update
-val fetched = Task.fetch(task.taskId)
+val fetched = MutableTask.fetch(task.taskId)
 fetched?.let {
     it.completed = true
     it.update()
 }
 
-// Browse all tasks
+// Browse all tasks, read-only rows through the read-only sibling
 Task.browse().forEach { println(it.title) }
 ```
 
-That's it! The skorm Gradle plugin generates all the necessary Kotlin classes from your `.kddl` file.
+That's it! The skorm Gradle plugin generates all the necessary Kotlin types from your `.kddl` file.
 
 ### Dynamic Usage (Without Code Generation)
 
 You can also use skorm without the code generator, accessing entities dynamically:
 
 ```kotlin
-// Navigate the model
+// Navigate the model: a mutable database's entities hand out mutable rows
 val schema = database.schema("todos")
 val taskEntity = schema.entity("task")
 
 // CRUD operations
-val task = taskEntity.new()
+val task = taskEntity.new() as MutableInstance
 task["title"] = "Learn skorm"
 task["completed"] = false
 task.insert()
 
-val fetched = taskEntity.fetch(task["taskId"])
+val fetched = taskEntity.fetch(task["taskId"]) as MutableInstance?
 fetched?.let {
     it["completed"] = true
     it.update()
@@ -195,7 +224,7 @@ Transactions are ambient: wrap any suspend code in `database.transaction { ... }
 ```kotlin
 database.transaction {        // or transaction("schema") { ... } for multi-schema databases
     task.update()
-    Task().apply { title = "follow-up"; insert() }
+    MutableTask.new().apply { title = "follow-up"; insert() }
 }                             // commit on exit; rollback (and rethrow) on any throw
 ```
 
@@ -354,8 +383,8 @@ saying which side holds the key (kddl ≥ 0.27).
 
 The kddl compiler generates:
 1. SQL DDL scripts for database creation
-2. Kotlin entity classes with typed properties
-3. Navigation methods for the relationships above, as members of the generated classes — each with a
+2. Kotlin row interfaces with typed properties, read-only and mutable
+3. Navigation methods for the relationships above, as members of the generated interfaces — each with a
    blocking twin (`book.tagsBlocking()`, reachable by reflection as `tags()`) for callers that cannot suspend
 
 For complete kddl documentation, see the [kddl project](https://github.com/arkanovicz/kddl).
@@ -568,7 +597,7 @@ database example {
 import com.republicate.skorm.core.CoreProcessor
 import com.republicate.skorm.jdbc.JdbcConnector
 
-val database = ExampleDatabase(CoreProcessor(JdbcConnector()))
+val database = MutableExampleDatabase(CoreProcessor(JdbcConnector()))
 
 fun Application.configureDatabase() {
     // Configure from application.conf
@@ -579,18 +608,18 @@ fun Application.configureDatabase() {
 
     // Create test data
     runBlocking {
-        val author = Author().apply {
+        val author = MutableAuthor.new().apply {
             name = "Isaac Asimov"
             insert()
         }
 
-        val book = Book().apply {
+        val book = MutableBook.new().apply {
             title = "Foundation"
             authorId = author.authorId
             insert()
         }
 
-        Dude().apply {
+        MutableDude.new().apply {
             name = "Alice"
             insert()
         }
@@ -625,9 +654,9 @@ fun Application.configureRouting() {
             }
         }
 
-        // REST API endpoint
+        // REST API endpoint: the mutable schema, so the write routes exist
         route("/api/example") {
-            rest(ExampleDatabase.bookshelf)
+            rest(MutableExampleDatabase.bookshelf)
         }
     }
 }
@@ -639,7 +668,7 @@ fun Application.configureRouting() {
 import com.republicate.skorm.ApiClient
 import kotlinx.browser.window
 
-// Same database definition, different processor!
+// Same database definition, different processor — and read-only, this client only reads
 val database = ExampleDatabase(ApiClient("${window.location.origin}/api"))
 
 fun main() {

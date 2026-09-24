@@ -3,7 +3,7 @@ package com.republicate.skorm.bookshelf
 import kotlinx.datetime.*
 import com.republicate.kson.Json
 
-open class CurrentBorrower(): ExampleDatabase.BookshelfSchema.Dude() {
+open class CurrentBorrower(): ExampleDatabase.BookshelfSchema.DudeImpl() {
     val borrowingDate: LocalDate
         get() = getLocalDate("borrowingDate")!!
 }

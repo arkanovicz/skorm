@@ -93,13 +93,16 @@ class InheritanceTest {
             typealias Vip = InhDatabase.MainSchema.Vip
             typealias Address = InhDatabase.MainSchema.Address
             typealias PersonKind = InhDatabase.MainSchema.PersonKind
+            typealias MutablePerson = MutableInhDatabase.MutableMainSchema.MutablePerson
+            typealias MutableVip = MutableInhDatabase.MutableMainSchema.MutableVip
+            typealias MutableAddress = MutableInhDatabase.MutableMainSchema.MutableAddress
 
             class InheritanceCheck {
                 @Test
                 fun check() {
                     PostgreSQLContainer("postgres:16-alpine").use { pg ->
                         pg.start()
-                        val db = InhDatabase(CoreProcessor(JdbcConnector()))
+                        val db = MutableInhDatabase(CoreProcessor(JdbcConnector()))
                         db.configure(mapOf("core" to mapOf("jdbc" to mapOf(
                             "url" to pg.jdbcUrl, "login" to pg.username, "password" to pg.password))).toJsonObject())
                         db.initialize()
@@ -107,29 +110,37 @@ class InheritanceTest {
                         db.mutationAttribute("create", InheritanceCheck::class.java.getResource("/create-script.sql")!!.readText())
                         runBlocking {
                             db.perform("create")
-                            val alice = Person().apply { name = "Alice" }.also { it.insert() }
-                            val bob = Vip().apply { name = "Bob"; since = LocalDate(2020, 1, 1) }.also { it.insert() }
-                            Address().apply { city = "Paris"; owner = bob.personId }.insert()
+                            val alice = MutablePerson.new().apply { name = "Alice" }.also { it.insert() }
+                            val bob = MutableVip.new().apply { name = "Bob"; since = LocalDate(2020, 1, 1) }.also { it.insert() }
+                            MutableAddress.new().apply { city = "Paris"; owner = bob.personId }.insert()
 
-                            // browse: every row as its kind, a Vip complete with its own columns
-                            val all = Person.browse().toList()
+                            // browse through the mutable database: every row as its kind, a Vip complete with its own columns
+                            val all = MutablePerson.browse().toList()
                             assertEquals(2, all.size)
                             val bobRow = all.single { it.name == "Bob" }
-                            assertIs<Vip>(bobRow)
+                            assertIs<MutableVip>(bobRow)
                             assertEquals(PersonKind.vip, bobRow.kind)
                             assertEquals(LocalDate(2020, 1, 1), bobRow.since)
                             assertIsNot<Vip>(all.single { it.name == "Alice" })
                             // a new row knows its kind, and so does its fetched twin
                             assertEquals(PersonKind.person, alice.kind)
                             assertEquals(PersonKind.vip, bob.kind)
-                            assertEquals(PersonKind.person, Person.fetch(alice.personId)!!.kind)
+                            assertEquals(PersonKind.person, MutablePerson.fetch(alice.personId)!!.kind)
 
                             // fetch, and a navigation to a hierarchy member
-                            assertIs<Vip>(Person.fetch(bob.personId))
-                            assertIs<Vip>(Address.browse().first().owner())
+                            assertIs<MutableVip>(MutablePerson.fetch(bob.personId))
+                            assertIs<MutableVip>(MutableAddress.browse().first().owner())
 
                             // an inherited navigation, asked of a Vip: registered on person, found from vip
                             assertEquals(listOf("Paris"), bob.addresses().map { it.city }.toList())
+
+                            // the read-only sibling reads the same rows as read-only types: a Vip, but nothing mutable
+                            assertIs<InhDatabase>(db.readOnly)
+                            val readOnlyBob = Person.fetch(bob.personId)!!
+                            assertIs<Vip>(readOnlyBob)
+                            assertIsNot<com.republicate.skorm.MutableInstance>(readOnlyBob)
+                            assertEquals(listOf("Paris"), readOnlyBob.addresses().map { it.city }.toList())
+                            assertEquals(2, Person.browse().count())
                         }
                     }
                 }

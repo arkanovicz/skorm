@@ -3,10 +3,15 @@ package $package
 import com.republicate.skorm.core.*
 
 
-// attributes declaration for core
+// navigations declaration for core: the read-only database's, then the mutable one's when it exists
 fun ${resolved.databaseClass}.initJoins() {
-#foreach ($join in $resolved.joins)
-   // $join.label attribute
-   ${resolved.databaseClass}.${join.ownerSchema}.entity("$join.ownerEntity").instanceAttributes.${join.registration}<$join.targetClass>("$join.name", "$join.sql", $join.targetClass)
+#foreach ($half in $resolved.halves)
+#if($half.mutable)
+    if (!${half.databaseClass}.isInstantiated()) return
+#end
+#foreach ($join in $half.joins)
+    // $join.label attribute
+    ${half.databaseClass}.${join.ownerSchema}.entity("$join.ownerEntity").instanceAttributes.${join.registration}<$join.targetClass>("$join.name", "$join.sql", $join.targetClass)
+#end
 #end
 }

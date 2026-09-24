@@ -22,54 +22,86 @@ import com.republicate.skorm.model.RMSimpleType
  */
 class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
 
-    fun resolve(database: ASTDatabase, attributes: RMDatabase?): ResolvedModel {
-        val databaseClass = "${kotlin.pascal(database.name)}Database"
-        val joins = database.schemas.values.flatMap { joins(it, databaseClass) }
+    /**
+     * The names of one half. The read-only half names things as declared (`ExampleDatabase`, `Book`);
+     * the mutable half prefixes every class with `Mutable`, and each of its classes extends its read-only
+     * counterpart. Composite rows are read-only in both halves, so they always take the read-only names.
+     */
+    private inner class Naming(val mutable: Boolean) {
+        private val prefix = if (mutable) "Mutable" else ""
+        val readOnly: Naming get() = if (mutable) Naming(false) else this
+        fun database(db: ASTDatabase) = "$prefix${kotlin.pascal(db.name)}Database"
+        fun schema(schema: ASTSchema) = "$prefix${kotlin.pascal(schema.name)}Schema"
+        fun schemaClass(schema: ASTSchema) = "${database(schema.db)}.${schema(schema)}"
+        fun entity(table: ASTTable) = "$prefix${kotlin.pascal(table.name)}"
+        fun entityClass(table: ASTTable) = "${schemaClass(table.schema)}.${entity(table)}"
+        fun implClass(table: ASTTable) = "${schemaClass(table.schema)}.${entity(table)}Impl"
+        /** a ksql receiver or entity type, by its name in the ksql file */
+        fun entityClass(schema: ASTSchema, name: String) = "${schemaClass(schema)}.$prefix${kotlin.capitalize(name)}"
+    }
+
+    /** [readOnly]: generate the read-only half alone, for a build that never writes. */
+    fun resolve(database: ASTDatabase, attributes: RMDatabase?, readOnly: Boolean = false): ResolvedModel {
+        val mutable = if (readOnly) null else half(database, attributes, Naming(true), null)
+        val resolved = half(database, attributes, Naming(false), mutable)
+        resolved.joins.forEach { Collisions.checkAccessor(it.receiverClass, it.name, it.label) }
+        resolved.attributes.forEach { Collisions.checkAccessor(it.receiverClass, it.name, "attribute") }
+        Collisions.checkUnique(resolved.joins, resolved.attributes)
+        return resolved
+    }
+
+    private fun half(database: ASTDatabase, attributes: RMDatabase?, names: Naming, mutableTwin: ResolvedModel?): ResolvedModel {
+        val joins = database.schemas.values.flatMap { joins(it, names) }
         val queries = attributes?.schemas?.flatMap { rm ->
             val schema = database.schemas[rm.name] ?: throw SkormException("ksql schema ${rm.name}: no such schema in the model")
             val enums = kotlin.enumDecls(schema).map { it.name }.toSet()
-            rm.items.map { checkArguments(it, rm.name, enums); queryAttribute(databaseClass, rm.name, it) }
+            rm.items.filter { names.mutable || !it.action }
+                .map { checkArguments(it, rm.name, enums); queryAttribute(schema, names, it) }
         } ?: emptyList()
-        joins.forEach { Collisions.checkAccessor(it.receiverClass, it.name, it.label) }
-        queries.forEach { Collisions.checkAccessor(it.receiverClass, it.name, "attribute") }
-        Collisions.checkUnique(joins, queries)
         return ResolvedModel(
             name = database.name,
-            databaseClass = databaseClass,
-            schemas = database.schemas.values.map { schema(it, databaseClass, joins, queries) },
+            databaseClass = names.database(database),
+            schemas = database.schemas.values.map { schema(it, names, joins, queries) },
             joins = joins,
-            attributes = queries
+            attributes = queries,
+            mutable = names.mutable,
+            base = if (names.mutable) names.readOnly.database(database) else null,
+            mutableTwin = mutableTwin
         )
     }
 
-    private fun schema(schema: ASTSchema, databaseClass: String, joins: List<JoinAttribute>, queries: List<QueryAttribute>): ResolvedSchema {
-        val schemaClass = "$databaseClass.${kotlin.pascal(schema.name)}Schema"
+    private fun schema(schema: ASTSchema, names: Naming, joins: List<JoinAttribute>, queries: List<QueryAttribute>): ResolvedSchema {
+        val schemaClass = names.schemaClass(schema)
         return ResolvedSchema(
             name = schema.name,
-            className = "${kotlin.pascal(schema.name)}Schema",
+            className = names.schema(schema),
             objectName = kotlin.camel(schema.name),
+            base = if (names.mutable) names.readOnly.schemaClass(schema) else null,
             enums = kotlin.enumDecls(schema).map { EnumDecl(it.name, it.values) },
-            entities = schema.tables.values.map { entity(it, databaseClass, joins, queries) },
+            entities = schema.tables.values.map { entity(it, names, joins, queries) },
             attributes = queries.filter { it.receiverClass == schemaClass }
         )
     }
 
-    private fun entity(table: ASTTable, databaseClass: String, joins: List<JoinAttribute>, queries: List<QueryAttribute>): ResolvedEntity {
-        val entityClass = classOf(table, databaseClass)
+    private fun entity(table: ASTTable, names: Naming, joins: List<JoinAttribute>, queries: List<QueryAttribute>): ResolvedEntity {
+        val entityClass = names.entityClass(table)
         val own = table.fields.values.map { field -> field(table, field) }
         val inherited = generateSequence(table.parent) { it.parent }.toList().asReversed()
             .flatMap { ancestor -> ancestor.fields.values.map { field(ancestor, it) } }
         Collisions.checkHierarchy(table)
         return ResolvedEntity(
             tableName = table.name,
-            className = kotlin.pascal(table.name),
+            className = names.entity(table),
+            implClass = "${names.entity(table)}Impl",
             objectName = kotlin.camel(table.name),
+            base = if (names.mutable) names.readOnly.entityClass(table) else null,
             hasPrimaryKey = key(table).isNotEmpty(),
             fields = inherited + own,
             ownFields = own,
-            parentClass = table.parent?.let { classOf(it, databaseClass) },
+            parentClass = table.parent?.let { names.entityClass(it) },
+            parentImplClass = table.parent?.let { names.implClass(it) },
             source = sourceOf(table),
-            kinds = descendants(table).map { it.name to classOf(it, databaseClass) },
+            kinds = descendants(table).map { it.name to names.entityClass(it) },
             kindValue = if (table.parent != null || table.children.isNotEmpty()) table.name else null,
             joins = joins.filter { it.receiverClass == entityClass },
             attributes = queries.filter { it.receiverClass == entityClass }
@@ -119,10 +151,10 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
 
     // ---- navigations ----------------------------------------------------------------------
 
-    private fun joins(schema: ASTSchema, databaseClass: String): List<JoinAttribute> =
+    private fun joins(schema: ASTSchema, names: Naming): List<JoinAttribute> =
         schema.tables.values.flatMap { table ->
-            if (kotlin.isJoinTable(table)) manyToMany(table, databaseClass)
-            else table.foreignKeys.flatMap { fk -> foreignKey(fk, databaseClass) }
+            if (kotlin.isJoinTable(table)) manyToMany(table, names)
+            else table.foreignKeys.flatMap { fk -> foreignKey(fk, names) }
         }
 
     /**
@@ -135,12 +167,9 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
         return if (key != null && column == key) kotlin.camel(towards.name) else kotlin.attributeName(column)
     }
 
-    private fun classOf(table: ASTTable, databaseClass: String) =
-        "$databaseClass.${kotlin.pascal(table.schema.name)}Schema.${kotlin.pascal(table.name)}"
-
-    private fun foreignKey(fk: ASTForeignKey, databaseClass: String): List<JoinAttribute> {
-        val fromClass = classOf(fk.from, databaseClass)
-        val towardsClass = classOf(fk.towards, databaseClass)
+    private fun foreignKey(fk: ASTForeignKey, names: Naming): List<JoinAttribute> {
+        val fromClass = names.entityClass(fk.from)
+        val towardsClass = names.entityClass(fk.towards)
         val column = fk.fields.first().name
         val forwardName = when {
             fk.fields.size == 1 -> navigationName(column, fk.towards)
@@ -170,12 +199,12 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
         return listOf(forward, reverse)
     }
 
-    private fun manyToMany(join: ASTTable, databaseClass: String): List<JoinAttribute> {
+    private fun manyToMany(join: ASTTable, names: Naming): List<JoinAttribute> {
         val leftFk = join.foreignKeys[0]
         val rightFk = join.foreignKeys[1]
         val left = leftFk.towards
         val right = rightFk.towards
-        fun classOf(table: ASTTable) = classOf(table, databaseClass)
+        fun classOf(table: ASTTable) = names.entityClass(table)
         // the collection on each side is named after the far side's column, or its table for a multi-column key
         val rightToLeftBase = if (leftFk.fields.size == 1) navigationName(leftFk.fields.first().name, left) else kotlin.camel(left.name)
         val leftToRightBase = if (rightFk.fields.size == 1) navigationName(rightFk.fields.first().name, right) else kotlin.camel(right.name)
@@ -214,13 +243,14 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
         }
     }
 
-    private fun queryAttribute(databaseClass: String, schemaName: String, item: RMItem): QueryAttribute {
-        val schemaClass = "$databaseClass.${kotlin.pascal(schemaName)}Schema"
+    private fun queryAttribute(schema: ASTSchema, names: Naming, item: RMItem): QueryAttribute {
+        val schemaName = schema.name
+        val schemaClass = names.schemaClass(schema)
         val type = item.type
         val composite = (type as? RMCompositeType)?.let { c ->
             CompositeClass(
                 className = kotlin.pascal(item.name),
-                parentClass = c.parent?.let { "$schemaClass.${kotlin.pascal(it)}" } ?: "Json.MutableObject",
+                parentClass = c.parent?.let { "${names.readOnly.schemaClass(schema)}.${kotlin.pascal(it)}Impl" } ?: "Json.MutableObject",
                 // FAITHFUL: a composite field is never nullable (the runtime model carries no such flag)
                 fields = c.fields.map { CompositeField(kotlin.camel(it.name), it.type, false) }
             )
@@ -240,7 +270,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
                         generics = "<${kotlin.capitalize(item.name)}$q>"
                         if (!item.multiple) cast = " as ${kotlin.capitalize(item.name)}$q"
                     }
-                    isEntity -> generics = "<$schemaClass.${kotlin.capitalize(type!!.name)}$q>"
+                    isEntity -> generics = "<${names.entityClass(schema, type!!.name)}$q>"
                     else -> generics = "<${type!!.name}$q>"
                 }
                 when {
@@ -257,7 +287,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
         when {
             item.action -> { itemClass = null; factory = null }
             composite != null -> { itemClass = kotlin.pascal(item.name); factory = "::$itemClass" }
-            isEntity -> { itemClass = "$schemaClass.${kotlin.pascal(type!!.name)}"; factory = "$itemClass::new" }
+            isEntity -> { itemClass = names.entityClass(schema, type!!.name); factory = "$itemClass::new" }
             else -> { itemClass = null; factory = null }
         }
         fun rows(cls: String) = if (item.multiple) "rowSetAttribute<$cls>" else if (item.nullable) "nullableRowAttribute<$cls>" else "rowAttribute<$cls>"
@@ -282,10 +312,10 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
             qualifiedName = "${item.receiver ?: schemaName}.${item.name}",
             name = item.name,
             schema = kotlin.camel(schemaName),
-            receiverClass = item.receiver?.let { "$schemaClass.${kotlin.capitalize(it)}" } ?: schemaClass,
+            receiverClass = item.receiver?.let { names.entityClass(schema, it) } ?: schemaClass,
             registrationPath = item.receiver?.let { ".entity(\"${kotlin.snake(it)}\").instanceAttributes" } ?: "",
             arguments = item.arguments?.toList() ?: emptyList(),
-            verb = verb, generics = generics, cast = cast,
+            verb = verb, entityRows = isEntity, generics = generics, cast = cast,
             coreRegistration = core, clientRegistration = client, factory = factory,
             sql = item.sql ?: "",
             params = item.parameters.toList(),

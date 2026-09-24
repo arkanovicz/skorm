@@ -52,7 +52,8 @@ fun Application.module() {
     configureRouting()
 }
 
-val exampleDatabase = ExampleDatabase(CoreProcessor(JdbcConnector()))
+// the server writes (creation script, test data, REST write routes), hence the mutable half
+val exampleDatabase = MutableExampleDatabase(CoreProcessor(JdbcConnector()))
 
 const val CREATION_SCRIPT = "create-script.sql"
 
@@ -89,22 +90,22 @@ fun Application.configureDatabase() {
         println("@@@@@@@@@@@@@ ENTITIES ARE VISIBLE")
 
         // test data
-        val author = Author().apply {
+        val author = MutableAuthor.new().apply {
           name = "Motoki Noguchi"
           insert()
         }
-        val book = Book().apply {
+        val book = MutableBook.new().apply {
             title = "Le Language des Pierres"
             authorId = author.authorId
             genre = Genre.essay
             insert()
         }
         for (name in listOf("Alice", "Bob")) {
-            Dude().also { it.name = name }.insert()
+            MutableDude.new().also { it.name = name }.insert()
         }
         for (label in listOf("go", "stones")) {
-            val tag = Tag().apply { this.label = label; insert() }
-            BookTag().apply { bookId = book.bookId; tagId = tag.tagId; insert() }
+            val tag = MutableTag.new().apply { this.label = label; insert() }
+            MutableBookTag.new().apply { bookId = book.bookId; tagId = tag.tagId; insert() }
         }
     }
 }
@@ -185,7 +186,8 @@ fun Application.configureRouting() {
         }
 
         route("/api/example") {
-            rest(ExampleDatabase.bookshelf)
+            // the mutable schema, so that the write routes exist
+            rest(MutableExampleDatabase.bookshelf)
         }
 
         trace { application.log.warn(it.buildText()) }

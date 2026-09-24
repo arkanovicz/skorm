@@ -359,7 +359,8 @@ class ResolverTest {
         assertEquals("nullableRowAttribute<CurrentBorrower>", borrower.coreRegistration)
         assertEquals(borrower.coreRegistration, borrower.clientRegistration)
         assertEquals("::CurrentBorrower", borrower.factory)
-        assertEquals("ShelfDatabase.MainSchema.Dude", borrower.composite!!.parentClass)
+        // a composite is a read-only row, in both halves
+        assertEquals("ShelfDatabase.MainSchema.DudeImpl", borrower.composite!!.parentClass)
         assertEquals(listOf("borrowingDate"), borrower.composite!!.fields.map { it.name })
     }
 
@@ -382,7 +383,7 @@ class ResolverTest {
                 DELETE FROM dude WHERE dude_id = {dude_id};
               }
             } }
-        """.trimIndent()).attributes.single()
+        """.trimIndent()).mutableTwin!!.attributes.single()
         assertEquals("perform", forget.verb)
         assertEquals("mutationAttribute", forget.coreRegistration)
         assertEquals(
@@ -394,7 +395,9 @@ class ResolverTest {
     @Test
     fun `a mutation performs and registers as such, a multiple composite queries a row set`() {
         val model = resolve(shelf, shelfSql)
-        val lend = model.attributes.single { it.name == "lend" }
+        // a mutation belongs to the mutable half alone
+        assertTrue(model.attributes.none { it.name == "lend" })
+        val lend = model.mutableTwin!!.attributes.single { it.name == "lend" }
         assertEquals("perform", lend.verb)
         assertEquals("", lend.generics)
         assertEquals("mutationAttribute", lend.coreRegistration)

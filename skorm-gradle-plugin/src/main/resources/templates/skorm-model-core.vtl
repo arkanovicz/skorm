@@ -5,13 +5,17 @@ import com.republicate.skorm.core.*
 import com.republicate.kson.Json
 
 
-// runtime model attributes declaration for core
+// runtime model attributes declaration for core: the read-only database's, then the mutable one's when it exists
 fun ${package}.${resolved.databaseClass}.initRuntimeModel() {
-#foreach ($attr in $resolved.attributes)
+#foreach ($half in $resolved.halves)
+#if($half.mutable)
+    if (!${half.databaseClass}.isInstantiated()) return
+#end
+#foreach ($attr in $half.attributes)
 
     // attribute $attr.qualifiedName
-    ${resolved.databaseClass}.${attr.schema}${attr.registrationPath}.${attr.coreRegistration}("$attr.name", """
+    ${half.databaseClass}.${attr.schema}${attr.registrationPath}.${attr.coreRegistration}("$attr.name", """
         $attr.sql""".trimIndent()#if($attr.factory), ${attr.factory}#{end})
-
+#end
 #end
 }

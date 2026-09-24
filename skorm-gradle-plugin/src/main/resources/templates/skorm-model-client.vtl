@@ -5,11 +5,16 @@ import com.republicate.skorm.*
 import com.republicate.kson.Json
 
 
-// runtime model attributes declaration for client
+// runtime model attributes declaration for client: the read-only database's, then the mutable one's when it exists
 fun ${package}.${resolved.databaseClass}.initRuntimeModel() {
-#foreach ($attr in $resolved.attributes)
+#foreach ($half in $resolved.halves)
+#if($half.mutable)
+    if (!${half.databaseClass}.isInstantiated()) return
+#end
+#foreach ($attr in $half.attributes)
 
     // attribute $attr.qualifiedName
-    ${resolved.databaseClass}.${attr.schema}${attr.registrationPath}.${attr.clientRegistration}("$attr.name", setOf(#names($attr.params))#if($attr.factory), ${attr.factory}#end)
+    ${half.databaseClass}.${attr.schema}${attr.registrationPath}.${attr.clientRegistration}("$attr.name", setOf(#names($attr.params))#if($attr.factory), ${attr.factory}#end)
+#end
 #end
 }

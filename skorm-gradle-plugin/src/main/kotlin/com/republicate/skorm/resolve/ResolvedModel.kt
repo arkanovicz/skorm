@@ -7,21 +7,32 @@ package com.republicate.skorm.resolve
 class ResolvedModel(
     /** the database name as declared, `example` */
     val name: String,
-    /** `ExampleDatabase` */
+    /** `ExampleDatabase`, or `MutableExampleDatabase` for the mutable half */
     val databaseClass: String,
     val schemas: List<ResolvedSchema>,
     /** foreign-key and many-to-many navigations, in emission order */
     val joins: List<JoinAttribute>,
-    /** ksql attributes and mutations, in declaration order; empty without a ksql file */
-    val attributes: List<QueryAttribute>
-)
+    /** ksql attributes, in declaration order, the mutations only in the mutable half; empty without a ksql file */
+    val attributes: List<QueryAttribute>,
+    /** whether this is the mutable half: the classes extending the read-only ones, with the writes */
+    val mutable: Boolean,
+    /** the read-only database class the mutable half extends, `ExampleDatabase`; null in the read-only half */
+    val base: String?,
+    /** the mutable half, hung on the read-only one; null when only the read-only half is generated */
+    val mutableTwin: ResolvedModel?
+) {
+    /** the halves to emit registrations for: this one, then the mutable twin when there is one */
+    val halves: List<ResolvedModel> get() = listOfNotNull(this, mutableTwin)
+}
 
 class ResolvedSchema(
     val name: String,
-    /** `BookshelfSchema` */
+    /** `BookshelfSchema`, `MutableBookshelfSchema` in the mutable half */
     val className: String,
     /** `bookshelf` */
     val objectName: String,
+    /** the read-only schema class the mutable one extends, `ExampleDatabase.BookshelfSchema`; null in the read-only half */
+    val base: String?,
     val enums: List<EnumDecl>,
     val entities: List<ResolvedEntity>,
     /** the ksql attributes declared on the schema itself: members of its class */
@@ -32,10 +43,14 @@ class EnumDecl(val name: String, val values: List<String>)
 
 class ResolvedEntity(
     val tableName: String,
-    /** `Book` */
+    /** `Book`, `MutableBook` in the mutable half: the row interface, whose companion is the entity */
     val className: String,
+    /** `BookImpl`, `MutableBookImpl`: the class behind the interface */
+    val implClass: String,
     /** `book` */
     val objectName: String,
+    /** the read-only row interface the mutable one extends, `ExampleDatabase.BookshelfSchema.Book`; null in the read-only half */
+    val base: String?,
     val hasPrimaryKey: Boolean,
     /** every column the entity's rows carry: inherited first, then its own */
     val fields: List<ResolvedField>,
@@ -43,6 +58,8 @@ class ResolvedEntity(
     val ownFields: List<ResolvedField>,
     /** `ExampleDatabase.MainSchema.Person` for `table vip : person`, null for a table without a parent */
     val parentClass: String?,
+    /** `ExampleDatabase.MainSchema.PersonImpl`: what the impl class extends for a subtype, null for a table without a parent */
+    val parentImplClass: String?,
     /**
      * What a table with descendants reads from, its descendants' base tables LEFT JOINed on the key:
      * `main.person LEFT JOIN main.base_vip USING (person_id)`. Null for a table without descendants.
@@ -123,6 +140,8 @@ class QueryAttribute(
     val arguments: List<Pair<String, String>>,
     /** `retrieve`, `query`, `eval`, `perform` */
     val verb: String,
+    /** the rows are entities: the mutable half returns their mutable twins, so it redeclares the accessor */
+    val entityRows: Boolean,
     /** `<Genre?>`, empty for mutations */
     val generics: String,
     /** ` as CurrentBorrower?`, or empty */
@@ -142,7 +161,7 @@ class QueryAttribute(
 class CompositeClass(
     /** `CurrentBorrower` */
     val className: String,
-    /** `ExampleDatabase.BookshelfSchema.Dude` or `Json.MutableObject` */
+    /** `ExampleDatabase.BookshelfSchema.DudeImpl` or `Json.MutableObject`: composites are read-only rows */
     val parentClass: String,
     val fields: List<CompositeField>
 )

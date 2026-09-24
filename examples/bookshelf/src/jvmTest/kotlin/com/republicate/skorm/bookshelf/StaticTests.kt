@@ -2,6 +2,7 @@ package com.republicate.skorm.bookshelf
 
 import com.republicate.skorm.SkormException
 import com.republicate.skorm.transaction
+import com.republicate.skorm.bookshelf.MutableExampleDatabase.MutableBookshelfSchema.MutableBookImpl
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.*
@@ -17,8 +18,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-/** A non-suspend view of a row delegates the whole field contract. */
-private class BookView(row: Book) : BookFields by row
+/** A non-suspend view of a row delegates the whole field contract: the row interface itself. */
+private class BookView(row: Book) : Book by row
 
 class StaticTests {
     @Test
@@ -41,7 +42,8 @@ class StaticTests {
             // Generated-attribute runtime checks (single app boot — the database singleton
             // can only be initialized once, so these share testIndex's application).
             runBlocking {
-                val theBook = Book.browse().first()
+                // the writing half, down to the class behind the interface: that is where the blocking twins live
+                val theBook = MutableBook.browse().first() as MutableBookImpl
                 val alice = Dude.browse().first { it.name == "Alice" }
 
                 assertNull(theBook.currentBorrower())
@@ -69,15 +71,21 @@ class StaticTests {
                 assertNotNull(theBook.author())
 
                 // traversal intent: `book *-- author` exposes the collection, the chevron in
-                // `donor --> dude?` withholds it — neither the accessor nor its registration exists
+                // `donor --> dude?` withholds it — neither the accessor nor its registration exists,
+                // in either half
                 assertEquals(listOf(theBook.title), author.books().map { it.title }.toList())
                 assertEquals(
-                    listOf("Author", "Tag"),
-                    listOf(Author::class, Dude::class, Tag::class)
-                        .filter { c -> c.java.methods.any { it.name == "books" } }.map { it.simpleName }
+                    listOf("Author", "Tag", "MutableAuthor", "MutableTag"),
+                    listOf(
+                        Author::class, Dude::class, Tag::class,
+                        MutableAuthor::class, MutableDude::class, MutableTag::class
+                    ).filter { c -> c.java.methods.any { it.name == "books" } }.map { it.simpleName }
                 )
                 assertThrows<SkormException> {
                     ExampleDatabase.bookshelf.entity("dude").instanceAttributes.findAttribute<Any>("books")
+                }
+                assertThrows<SkormException> {
+                    MutableExampleDatabase.bookshelf.entity("dude").instanceAttributes.findAttribute<Any>("books")
                 }
 
                 // many-to-many, both ways: the accessor name, the query direction and the
@@ -88,22 +96,22 @@ class StaticTests {
 
                 // a multi-statement mutation runs as one transaction: the second statement sees the first,
                 // and the result counts the rows changed by both
-                assertEquals(2L, ExampleDatabase.bookshelf.newBookBy("Ursula K. Le Guin", "A Wizard of Earthsea"))
+                assertEquals(2L, MutableExampleDatabase.bookshelf.newBookBy("Ursula K. Le Guin", "A Wizard of Earthsea"))
                 val ursula = Author.browse().first { it.name == "Ursula K. Le Guin" }
                 assertEquals(listOf("A Wizard of Earthsea"), ursula.books().map { it.title }.toList())
 
                 // blocking twins: the same name for a reflection-driven caller, a List rather than a Sequence
                 assertEquals(theBook.tags().map { it.label }.toList(), theBook.tagsBlocking().map { it.label })
                 assertEquals(2, ExampleDatabase.bookshelf.booksCountBlocking())
-                assertTrue(Book::class.java.methods.any { it.name == "tags" && it.parameterCount == 0 })
+                assertTrue(theBook::class.java.methods.any { it.name == "tags" && it.parameterCount == 0 })
                 // and a twin called while a transaction runs uses that transaction: it sees the uncommitted row
                 exampleDatabase.transaction {
-                    val tag = Tag().apply { label = "uncommitted"; insert() }
-                    BookTag().apply { bookId = theBook.bookId; tagId = tag.tagId; insert() }
+                    val tag = MutableTag.new().apply { label = "uncommitted"; insert() }
+                    MutableBookTag.new().apply { bookId = theBook.bookId; tagId = tag.tagId; insert() }
                     assertTrue("uncommitted" in theBook.tagsBlocking().map { it.label })
                 }
 
-                // the generated field interface is delegable, and the delegate's getters
+                // the generated row interface is delegable, and the delegate's getters
                 // are real methods — what a reflection-driven template engine needs
                 val view = BookView(theBook)
                 assertEquals(theBook.title, view.title)
