@@ -7,6 +7,7 @@ All notable changes to Skorm are documented in this file.
 ### Changed
 - **FK navigation names**: a link column ending with the referenced key drops it, as `_id` already did: `club_code -> club` gives `club()`, not `clubCode()` beside the `clubCode` column property. Role-named columns (`donor`) keep their name.
 - **One initialization call.** `initialize()` now registers the navigations and the ksql attributes itself; `initJoins()` and `initRuntimeModel()` are gone. They were separate only because the registrations are generated into the platform source sets, which common code cannot call: the generated `initialize()` now ends with a `registerAttributes()` that the core and client outputs provide, an `expect`/`actual` pair in a multiplatform consumer and a plain call in a `kotlin("jvm")` one. An app that forgot one of the two got "attribute not found" at its first navigation. **Breaking**: delete the two calls.
+- **A read-only database holds a read-only processor.** `Database.processor` is a `ReadOnlyProcessor` view unless the database is mutable: reads delegate, `perform`, mutable-tagged reads and the transactions it begins refuse to write. Velocity can call a suspend function by passing `$null` as its continuation, so a template handed the read-only sibling could perform mutations through the processor it shares with the mutable database. `Processor.underlying` (an extension, invisible to reflection) is what registration and transactions use.
 
 ## [0.21] - 2026-09-24
 

@@ -69,6 +69,22 @@ class ReadOnlyTest {
     }
 
     @Test
+    fun aReadOnlyDatabaseHoldsAProcessorThatCannotWrite() = runTest {
+        val recorder = Recorder()
+        val mutable = MutableDb(recorder)
+        val readOnly = mutable.readOnly
+        assertTrue(mutable.processor === recorder, "the mutable database holds the processor itself")
+        assertTrue(readOnly.processor !== recorder && readOnly.processor.underlying === recorder)
+        // what reflection reaches on a read-only database: the interface, writes refused
+        assertFailsWith<SkormException> { readOnly.processor.perform("/d/s/wipe", mapOf()) }
+        assertFailsWith<SkormException> { readOnly.processor.eval("/d/s/x", mapOf(), mutable = true) }
+        assertEquals(null, readOnly.processor.eval("/d/s/x", mapOf()))
+        assertTrue(recorder.performed.isEmpty())
+        // a lone read-only database wraps too
+        assertTrue(Db(Recorder()).processor is ReadOnlyProcessor)
+    }
+
+    @Test
     fun aMutableHolderPerforms() = runTest {
         val recorder = Recorder()
         val schema = MutableSch(MutableDb(recorder))

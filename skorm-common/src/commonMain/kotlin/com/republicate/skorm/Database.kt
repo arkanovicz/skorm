@@ -2,8 +2,11 @@ package com.republicate.skorm
 
 import com.republicate.kson.Json
 
-open class Database protected constructor(name: String, override val processor: Processor): AttributeHolder(name), Configurable, AutoCloseable {
+open class Database protected constructor(name: String, processor: Processor): AttributeHolder(name), Configurable, AutoCloseable {
     override val database get() = this
+
+    /** a read-only database holds a processor that cannot write, whoever asks it */
+    override val processor: Processor = if (this is MutableDatabase) processor else processor.readOnly
 
     /** where blocking twins dispatch their query; by default the calling thread itself */
     var blockingContext: kotlin.coroutines.CoroutineContext = kotlin.coroutines.EmptyCoroutineContext

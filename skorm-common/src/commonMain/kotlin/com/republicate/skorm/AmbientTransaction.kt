@@ -18,7 +18,7 @@ class AmbientTransaction(
 
     // the read-only and the mutable database of one store share a processor: they share a transaction too
     internal fun find(database: Database): Transaction? =
-        generateSequence(this) { it.outer }.firstOrNull { it.database.processor === database.processor }?.tx
+        generateSequence(this) { it.outer }.firstOrNull { it.database.processor.underlying === database.processor.underlying }?.tx
 }
 
 /**
@@ -47,7 +47,7 @@ suspend fun AttributeHolder.currentProcessor(): Processor =
 suspend fun <T> Database.transaction(schema: String, block: suspend () -> T): T {
     val ambient = coroutineContext[AmbientTransaction]
     if (ambient?.find(this) != null) return block() // join the enclosing transaction
-    val tx = processor.begin(schema)
+    val tx = processor.underlying.begin(schema)
     try {
         val element = AmbientTransaction(this, tx, ambient)
         // the companion lets blocking calls made while this coroutine runs join the transaction

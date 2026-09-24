@@ -160,7 +160,9 @@ returning rows, covariantly, and adds the mutations.
 Constructing a `MutableExampleDatabase` also constructs its read-only sibling over the same
 processor, reachable as `mutableDb.readOnly` (and `ExampleDatabase.instance`): both share the
 attribute registry and any ambient transaction, and the sibling reads on the processor's read
-connector when one is configured. An app that never writes constructs `ExampleDatabase` alone —
+connector when one is configured. A read-only database holds the processor through a read-only
+view (`ReadOnlyProcessor`): a caller that ignores the Kotlin types, a template engine calling
+`processor.perform` by reflection, gets an exception, not a write. An app that never writes constructs `ExampleDatabase` alone —
 and can set `readOnly` on the plugin, so that the mutable half is not even generated.
 
 ### 4. Use the generated code

@@ -4,7 +4,7 @@ import com.republicate.kson.Json
 import com.republicate.skorm.*
 
 fun AttributeHolder.parseAndDefine(name: String, query: String): AttributeDefinition {
-    (processor as CoreProcessor).let { coreProcessor ->
+    (processor.underlying as CoreProcessor).let { coreProcessor ->
         val queryDef = AttributeDefinition.parse(query, schema?.name ?: "", coreProcessor.readMapper)
         if (queryDef !is SimpleQuery) throw SkormException("non-mutation attribute can only contain a single query")
         coreProcessor.define("${path}/$name", queryDef, mutable)
@@ -32,7 +32,7 @@ inline fun <reified T: Row> AttributeHolder.rowSetAttribute(name: String, query:
 }
 
 fun AttributeHolder.mutationAttribute(name: String, query: String): MutationAttribute {
-    val coreProcessor = processor as CoreProcessor
+    val coreProcessor = processor.underlying as CoreProcessor
     val queryDef = AttributeDefinition.parse(query, schema?.name ?: "", coreProcessor.readMapper)
     coreProcessor.define("${path}/$name", queryDef, true)
     return mutationAttribute(name, queryDef.parameters())

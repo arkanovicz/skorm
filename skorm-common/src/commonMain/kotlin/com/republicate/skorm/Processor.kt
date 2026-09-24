@@ -28,6 +28,7 @@ fun interface RowFactory {
 interface Transaction : Processor {
     suspend fun rollback(): Unit
     suspend fun commit(): Unit
+    override val readOnly: Transaction get() = ReadOnlyTransaction(this)
 }
 
 interface Processor: Configurable, AutoCloseable {
@@ -56,7 +57,37 @@ interface Processor: Configurable, AutoCloseable {
 
     // in rest mode, instances PK are appended to the path
     val restMode: Boolean
+
+    /** This processor as a read-only database holds it: the same reads, no writes. */
+    val readOnly: Processor get() = ReadOnlyProcessor(this)
 }
+
+/**
+ * The processor of a read-only database: reads delegate, writes throw. The Kotlin types already keep a
+ * read-only database from writing; this keeps a caller that ignores them — reflection, a template — from
+ * reaching the writes of the processor it shares with the mutable database.
+ */
+open class ReadOnlyProcessor(internal val delegate: Processor) : Processor by delegate {
+    override val readOnly: Processor get() = this
+    override suspend fun eval(path: String, params: Map<String, Any?>, mutable: Boolean): Any? =
+        if (mutable) refuse(path) else delegate.eval(path, params, false)
+    override suspend fun retrieve(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Row? =
+        if (mutable) refuse(path) else delegate.retrieve(path, params, factory, false)
+    override suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Sequence<Row> =
+        if (mutable) refuse(path) else delegate.query(path, params, factory, false)
+    override suspend fun perform(path: String, params: Map<String, Any?>): Long = refuse(path)
+    override suspend fun begin(schema: String): Transaction = delegate.begin(schema).readOnly
+    private fun refuse(path: String): Nothing = throw SkormException("read-only processor: cannot write $path")
+}
+
+class ReadOnlyTransaction(private val tx: Transaction) : ReadOnlyProcessor(tx), Transaction {
+    override val readOnly: Transaction get() = this
+    override suspend fun rollback() = tx.rollback()
+    override suspend fun commit() = tx.commit()
+}
+
+/** The processor behind a read-only view — an extension, so that reflection on the view does not reach it. */
+val Processor.underlying: Processor get() = if (this is ReadOnlyProcessor) delegate else this
 
 suspend fun Processor.transaction(schema: String, block: Transaction.()->Unit) {
     val tx = begin(schema)
