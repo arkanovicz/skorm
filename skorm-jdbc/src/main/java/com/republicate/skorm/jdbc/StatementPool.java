@@ -54,8 +54,17 @@ public class StatementPool implements Closeable
      */
     public StatementPool(ConnectionPool connectionPool, long connectionsCheckInterval)
     {
+        this(connectionPool, connectionsCheckInterval, DEFAULT_MAX_STATEMENTS);
+    }
+
+    /**
+     * @param maxStatements how many shared statements stay prepared: past it, the least recently used idle one is closed
+     */
+    public StatementPool(ConnectionPool connectionPool, long connectionsCheckInterval, int maxStatements)
+    {
         this.connectionPool = connectionPool;
         this.connectionsCheckInterval = connectionsCheckInterval;
+        this.maxStatements = maxStatements;
     }
 
     /**
@@ -103,10 +112,9 @@ public class StatementPool implements Closeable
                     it.remove();
                 }
             }
-            if (count == maxStatements)
-            {
-                throw new SQLException("Error: Too many opened prepared statements!");
-            }
+            makeRoom();
+            // makeRoom may have dropped this query's emptied list
+            availableStatements = statementsMap.computeIfAbsent(Pair.of(schema, query), (str) -> new ArrayList<>());
             connection = connectionPool.getConnection(schema);
         }
 
@@ -177,9 +185,46 @@ public class StatementPool implements Closeable
     }
 
     /**
+     * Keeps the shared statements under maxStatements, a bound on the cache, not on concurrency: the invalid ones are
+     * dropped, then the least recently used idle ones closed. Statements in use are never closed under their reader;
+     * when all are, the cache goes over until they are released (how many run at once is the connection pool's call).
+     */
+    private void makeRoom()
+    {
+        int total = 0;
+        for (Iterator<List<PooledStatement>> it = statementsMap.values().iterator(); it.hasNext(); )
+        {
+            List<PooledStatement> statements = it.next();
+            statements.removeIf(statement -> !statement.isValid());
+            if (statements.isEmpty()) it.remove();
+            else total += statements.size();
+        }
+        while (total >= maxStatements)
+        {
+            PooledStatement lru = null;
+            List<PooledStatement> owner = null;
+            for (List<PooledStatement> statements : statementsMap.values())
+            {
+                for (PooledStatement statement : statements)
+                {
+                    if (!statement.isInUse() && (lru == null || statement.getTagTime() < lru.getTagTime()))
+                    {
+                        lru = statement;
+                        owner = statements;
+                    }
+                }
+            }
+            if (lru == null) break;
+            owner.remove(lru);
+            lru.close();
+            --total;
+        }
+    }
+
+    /**
      * close all statements.
      */
-    public void clear()
+    public synchronized void clear()
     {
         // close all statements
         for(Iterator<Pair<String, String>> it = statementsMap.keySet().iterator(); it.hasNext(); )
@@ -244,21 +289,20 @@ public class StatementPool implements Closeable
      *
      * @return an int array : [nb of statements in use , total nb of statements]
      */
-    public int[] getUsageStats()
+    public synchronized int[] getUsageStats()
     {
         int[] stats = new int[] { 0, 0 };
-
-        for(Iterator<Pair<String, String>> it = statementsMap.keySet().iterator(); it.hasNext(); )
+        for (List<PooledStatement> statements : statementsMap.values())
         {
-            for (PooledStatement pooledStatement : statementsMap.get(it.next()))
+            for (PooledStatement pooledStatement : statements)
             {
-                if (!pooledStatement.isInUse())
+                if (pooledStatement.isInUse())
                 {
                     stats[0]++;
                 }
+                stats[1]++;
             }
         }
-        stats[1] = statementsMap.size();
         return stats;
     }
 
@@ -268,24 +312,9 @@ public class StatementPool implements Closeable
     private final ConnectionPool connectionPool;
 
     /**
-     * statements getCount.
-     */
-    private int count = 0;
-
-    /**
      * map queries -&gt; statements.
      */
     private final Map<Pair<String, String>,List<PooledStatement>> statementsMap = new HashMap<>();    // query -> PooledStatement
-
-    /**
-     * running thread.
-     */
-    private Thread checkTimeoutThread = null;
-
-    /**
-     * true if running.
-     */
-    private boolean running = true;
 
     /**
      * connections check interval
@@ -293,7 +322,10 @@ public class StatementPool implements Closeable
     private long connectionsCheckInterval;
 
     /**
-     * max number of statements.
+     * max number of shared statements kept prepared.
      */
-    private static final int maxStatements = 50;
+    private final int maxStatements;
+
+    /** the PostgreSQL driver's own per-connection cache default */
+    public static final int DEFAULT_MAX_STATEMENTS = 256;
 }
