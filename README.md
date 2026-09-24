@@ -311,7 +311,7 @@ database.configure(mapOf(
 ))
 ```
 
-**Read connector.** `CoreProcessor(connector, readConnector)` runs the reads of a read-only database on the second connector — a pool on a SELECT-only role is what makes the database actually read-only. It takes its settings from `core.read.<tag>` (`core.read.jdbc.url`, …), or the write connector's when absent. Inside a `transaction { }` of the mutable database, the read-only one reads on the transaction's connection.
+**Read connector.** `CoreProcessor(connector, readConnector)` runs the reads of a read-only database on the second connector — a pool on a SELECT-only role is what makes the database actually read-only. It takes its settings from `core.read.<tag>` (`core.read.jdbc.url`, …), or the write connector's when absent. With a single connector, `core.read.*` is ignored: the read-only build's SELECT-only guarantee comes from the database role, not from the library, which only routes the reads. Inside a `transaction { }` of the mutable database, the read-only one reads on the transaction's connection.
 
 **API Client (for JS/WASM):**
 ```kotlin
