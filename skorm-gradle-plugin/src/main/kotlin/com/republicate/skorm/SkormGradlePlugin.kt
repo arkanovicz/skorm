@@ -23,6 +23,7 @@ abstract class SkormGradlePlugin : Plugin<Project> {
             it.dialect.set(extension.dialect)
             it.core.set(extension.core)
             it.client.set(extension.client)
+            it.readOnly.set(extension.readOnly)
             it.outputDirectory.set(extension.outputDirectory)
         }
 

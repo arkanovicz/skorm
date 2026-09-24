@@ -50,6 +50,9 @@ abstract class GenerateSkormCodeTask : BaseModelGenerationTask() {
     @get:Optional
     abstract val client: Property<Boolean>
 
+    @get:Input
+    abstract val readOnly: Property<Boolean>
+
     /** Kotlin platform types the project builds for, as detected by the plugin. */
     @get:Input
     abstract val platforms: ListProperty<String>
@@ -80,10 +83,10 @@ abstract class GenerateSkormCodeTask : BaseModelGenerationTask() {
         // a file that stops being emitted (a dropped table, a flag flipped) must not linger and get compiled
         out.deleteRecursively()
         if (attributeModel != null) checkAttributeParameters()
-        resolved = Resolver(KotlinTool()).resolve(database, attributeModel)
+        resolved = Resolver(KotlinTool()).resolve(database, attributeModel, readOnly.get())
         val withCore = generateCore()
         val withClient = generateClient()
-        logger.lifecycle("$tag generating into $out (core: $withCore, client: $withClient)")
+        logger.lifecycle("$tag generating into $out (core: $withCore, client: $withClient, readOnly: ${readOnly.get()})")
 
         generateCode("templates/skorm-objects.vtl", File(out, "common/kotlin/skormObjects.kt"))
         if (withCore) generateCode("templates/skorm-joins-core.vtl", File(out, "core/kotlin/skormJoinsCore.kt"))

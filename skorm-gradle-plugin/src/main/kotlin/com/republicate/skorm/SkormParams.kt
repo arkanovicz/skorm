@@ -33,6 +33,9 @@ abstract class SkormParams @Inject constructor(project: Project) {
     /** REST client registrations. Unset: on when the project has a JS, wasm or native target. */
     val client: Property<Boolean> = objects.property(Boolean::class.java)
 
+    /** Only the read-only half: no mutable database, no setters, no mutations, for a build that never writes. */
+    val readOnly: Property<Boolean> = objects.property(Boolean::class.java).convention(false)
+
     val outputDirectory: DirectoryProperty = objects.directoryProperty().convention(
         project.layout.buildDirectory.dir(DEFAULT_OUTPUT_DIRECTORY)
     )

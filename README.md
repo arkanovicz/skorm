@@ -85,6 +85,7 @@ skorm {
     attributes.set(file("src/commonMain/model/todo.ksql"))    // optional
     destPackage.set("com.example.todo")
     dialect.set("postgresql")                                 // or "hypersql"
+    // readOnly.set(true)                                     // only the read-only half, for a build that never writes
 }
 
 dependencies {
@@ -156,7 +157,8 @@ returning rows, covariantly, and adds the mutations.
 Constructing a `MutableExampleDatabase` also constructs its read-only sibling over the same
 processor, reachable as `mutableDb.readOnly` (and `ExampleDatabase.instance`): both share the
 attribute registry and any ambient transaction, and the sibling reads on the processor's read
-connector when one is configured. An app that never writes constructs `ExampleDatabase` alone.
+connector when one is configured. An app that never writes constructs `ExampleDatabase` alone —
+and can set `readOnly` on the plugin, so that the mutable half is not even generated.
 
 ### 4. Use the generated code
 

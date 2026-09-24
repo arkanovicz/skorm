@@ -33,7 +33,16 @@ class GoldenOutputTest {
         "shapes.model", "postgresql"
     )
 
-    private fun check(name: String, model: File, attributes: File, destPackage: String, dialect: String) {
+    /** the shapes fixture again, only its read-only half */
+    @Test
+    fun readOnly() = check(
+        "readonly",
+        golden.resolve("shapes/model.kddl"),
+        golden.resolve("shapes/attributes.ksql"),
+        "shapes.model", "postgresql", readOnly = true
+    )
+
+    private fun check(name: String, model: File, attributes: File, destPackage: String, dialect: String, readOnly: Boolean = false) {
         val project = ProjectBuilder.builder().build()
         project.pluginManager.apply("com.republicate.skorm")
         (project.extensions.getByName(EXTENSION_NAME) as SkormParams).also {
@@ -44,6 +53,7 @@ class GoldenOutputTest {
             // every output, whatever the targets
             it.core.set(true)
             it.client.set(true)
+            it.readOnly.set(readOnly)
             it.outputDirectory.set(out)
         }
         (project.tasks.getByName(GEN_TASK_NAME) as GenerateSkormCodeTask).generate()

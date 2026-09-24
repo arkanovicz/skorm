@@ -18,7 +18,13 @@ class ConsumerShapesTest {
      * below it; the plugin must still find the Kotlin source sets.
      */
     @Test
-    fun `plugin pinned at the root, Kotlin applied only in a subproject`() {
+    fun `plugin pinned at the root, Kotlin applied only in a subproject`() = rootPinned(readOnly = false)
+
+    /** With `readOnly`, the generated code has no mutable half at all: the read-only one compiles alone. */
+    @Test
+    fun `a read-only build generates and compiles the read-only half alone`() = rootPinned(readOnly = true)
+
+    private fun rootPinned(readOnly: Boolean) {
         val skorm = File("..").canonicalFile.invariantSeparatorsPath
         dir.resolve("settings.gradle.kts").writeText("""
             rootProject.name = "root-pinned"
@@ -45,6 +51,7 @@ class ConsumerShapesTest {
                 model.set(file("src/main/model/tiny.kddl"))
                 destPackage.set("tiny.model")
                 dialect.set("hypersql")
+                readOnly.set($readOnly)
             }
             dependencies {
                 implementation("com.republicate.skorm:skorm-common")
@@ -63,10 +70,13 @@ class ConsumerShapesTest {
               }
             }
         """.trimIndent())
-        // compiles only if the generated sources reached this source set
+        // compiles only if the generated sources reached this source set; the mutable half only when generated
         dir.resolve("app/src/main/kotlin/Use.kt").writeText("""
             import tiny.model.*
             suspend fun titles(author: TinyDatabase.TinySchema.Author): List<String> = author.books().map { it.title }.toList()
+        """.trimIndent() + if (readOnly) "" else """
+
+            suspend fun rename(author: MutableTinyDatabase.MutableTinySchema.MutableAuthor) { author.name = "x"; author.update() }
         """.trimIndent())
 
         val result = GradleRunner.create()
@@ -77,5 +87,7 @@ class ConsumerShapesTest {
         Assertions.assertTrue(
             result.task(":app:compileKotlin")?.outcome in setOf(TaskOutcome.SUCCESS, TaskOutcome.FROM_CACHE)
         )
+        val generated = dir.resolve("app/build/generated-src/common/kotlin/skormObjects.kt").readText()
+        Assertions.assertEquals(!readOnly, "MutableTinyDatabase" in generated)
     }
 }
