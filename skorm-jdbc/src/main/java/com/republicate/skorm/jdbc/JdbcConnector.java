@@ -83,36 +83,34 @@ public class JdbcConnector implements Connector, Closeable
         @Override
         public QueryResult query(@Nullable String schema, @NotNull String query, @Nullable Object... params) throws SkormException
         {
-            try
-            {
-                PooledStatement stmt = statementPool.prepareQuery(schema, query, txConnection);
-                ResultSet rs = stmt.executeQuery(params);
-                return buildQueryResult(rs, stmt);
-            }
-            catch (SQLException sqle)
-            {
-                throw new SkormException("error running query " + shorten(query), sqle);
-            }
+            return read(schema, query, false, params);
         }
 
         @NotNull
         @Override
         public QueryResult stream(@Nullable String schema, @NotNull String query, @Nullable Object... params) throws SkormException
         {
+            return read(schema, query, true, params);
+        }
+
+        /** a transaction's statements are its own, prepared for one use: closed with their result, or on failure */
+        private QueryResult read(@Nullable String schema, @NotNull String query, boolean streamed, @Nullable Object[] params) throws SkormException
+        {
+            PooledStatement stmt = null;
             try
             {
-                // its own statement on the transaction's connection, closed by the reader
-                PooledStatement stmt = statementPool.prepareQuery(schema, query, txConnection);
-                stmt.setFetchSize(fetchSize);
-                ResultSet rs = stmt.executeQuery(params);
-                return buildQueryResult(rs, stmt, () -> {
-                    stmt.notifyOver();
-                    stmt.close();
+                stmt = statementPool.prepareQuery(schema, query, txConnection);
+                if (streamed) stmt.setFetchSize(fetchSize);
+                PooledStatement opened = stmt;
+                return buildQueryResult(stmt.executeQuery(params), stmt, () -> {
+                    opened.notifyOver();
+                    opened.close();
                     return kotlin.Unit.INSTANCE;
                 });
             }
             catch (SQLException sqle)
             {
+                if (stmt != null) stmt.close();
                 throw new SkormException("error running query " + shorten(query), sqle);
             }
         }
@@ -133,6 +131,7 @@ public class JdbcConnector implements Connector, Closeable
                 finally
                 {
                     stmt.notifyOver();
+                    stmt.close();
                 }
             }
             catch (SQLException sqle)
