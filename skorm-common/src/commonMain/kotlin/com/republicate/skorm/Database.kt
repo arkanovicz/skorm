@@ -18,7 +18,7 @@ open class Database protected constructor(name: String, processor: Processor): A
     }
 
     private val _schemas = mutableMapOf<String, Schema>()
-    val schemas: Collection<Schema> get() = _schemas.values
+    val schemas: Collection<Schema> = ReadOnlyCollection(_schemas.values)
     fun schema(name: String) = _schemas[name] ?: throw SkormException("no such schema: $name")
     internal fun addSchema(schema: Schema) {
         _schemas[schema.name] = schema
@@ -49,7 +49,7 @@ open class Schema protected constructor(name: String, parent: Database) : Attrib
     override val schema get() = this
 
     private val _entities = mutableMapOf<String, Entity>()
-    val entities: Collection<Entity> get() = _entities.values
+    val entities: Collection<Entity> = ReadOnlyCollection(_entities.values)
     fun entity(name: String) = _entities[name] ?: throw SkormException("no such entity: $name")
     fun addEntity(entity: Entity) {
         if (database.populated) throw RuntimeException("Already initialized")
@@ -102,7 +102,7 @@ open class Entity protected constructor(val name: String, val schema: Schema, va
     val path get() = instanceAttributes.path
 
     private val _fields = mutableMapOf<String, Field>()
-    val fields: Map<String, Field> get() = _fields
+    val fields: Map<String, Field> = ReadOnlyMap(_fields)
     val fieldNames: List<String> by lazy {
         _fields.map { it.key }
     }

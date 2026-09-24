@@ -253,7 +253,7 @@ abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = 
     /** whether mutations register and execute here: the holders of a mutable database */
     open val mutable: Boolean get() = this is MutableAttributeHolder
     private val _attributes = mutableMapOf<String, Attribute<*>>()
-    val attributes: Map<String, Attribute<*>> get() = _attributes
+    val attributes: Map<String, Attribute<*>> = ReadOnlyMap(_attributes)
     val path: String by lazy { (parent?.path ?: "") + "/$name" }
 
     inline fun <reified A> getAttribute(attrName: String): A? {
