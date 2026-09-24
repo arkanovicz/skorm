@@ -32,7 +32,9 @@ class ReadConnectorTest {
     }
 
     private class Db(processor: CoreProcessor) : Database("store", processor)
-    private class MutableDb(processor: CoreProcessor) : Database("store", processor), MutableDatabase
+    private class MutableDb(processor: CoreProcessor) : Database("store", processor), MutableDatabase {
+        override val readOnly: Database by lazy { Db(processor) }
+    }
     private class Sch(db: Database) : Schema("tx", db)
     private class MutableSch(db: Database) : Schema("tx", db), MutableSchema
     private class Ent(schema: Schema) : Entity("book", schema)

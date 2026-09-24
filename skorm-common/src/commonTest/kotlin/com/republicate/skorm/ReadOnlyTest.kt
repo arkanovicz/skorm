@@ -23,7 +23,9 @@ class ReadOnlyTest {
     }
 
     private class Db(processor: Processor) : Database("d", processor)
-    private class MutableDb(processor: Processor) : Database("d", processor), MutableDatabase
+    private class MutableDb(processor: Processor) : Database("d", processor), MutableDatabase {
+        override val readOnly: Database by lazy { Db(processor) }
+    }
     private class Sch(db: Database) : Schema("s", db)
     private class MutableSch(db: Database) : Schema("s", db), MutableSchema
     private class Ent(schema: Schema) : Entity("book", schema)

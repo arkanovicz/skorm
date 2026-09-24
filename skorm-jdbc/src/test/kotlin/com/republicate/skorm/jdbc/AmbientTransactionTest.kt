@@ -28,7 +28,9 @@ import kotlin.test.assertFailsWith
 class AmbientTransactionTest {
 
     private class Row(entity: Entity) : MutableInstanceImpl(entity)
-    private class TxDatabase(name: String, processor: CoreProcessor) : Database(name, processor), MutableDatabase
+    private class TxDatabase(name: String, processor: CoreProcessor) : Database(name, processor), MutableDatabase {
+        override val readOnly: Database by lazy { object : Database("$name-ro", processor) {} }
+    }
     private class TxSchema(db: Database) : Schema("tx", db), MutableSchema
     private class TxEntity(schema: Schema) : Entity("book", schema), MutableEntity {
         override fun new() = Row(this)
