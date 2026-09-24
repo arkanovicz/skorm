@@ -39,7 +39,7 @@ BookshelfSchema.BookTag.initialize()
             val dudeId: Int
             val name: String
         }
-        open class Dude(entity: Entity = Companion): Instance(entity), MutableInstance, DudeFields {
+        open class Dude(entity: Entity = Companion): MutableInstanceImpl(entity), DudeFields {
             companion object: Entity("dude", bookshelf), MutableEntity {
                 override fun new(): Dude = Dude()
                 @Suppress("UNCHECKED_CAST")
@@ -63,7 +63,7 @@ BookshelfSchema.BookTag.initialize()
             val authorId: Int
             val name: String
         }
-        open class Author(entity: Entity = Companion): Instance(entity), MutableInstance, AuthorFields {
+        open class Author(entity: Entity = Companion): MutableInstanceImpl(entity), AuthorFields {
             companion object: Entity("author", bookshelf), MutableEntity {
                 override fun new(): Author = Author()
                 @Suppress("UNCHECKED_CAST")
@@ -103,7 +103,7 @@ BookshelfSchema.BookTag.initialize()
             val donor: Int?
             val authorId: Int
         }
-        open class Book(entity: Entity = Companion): Instance(entity), MutableInstance, BookFields {
+        open class Book(entity: Entity = Companion): MutableInstanceImpl(entity), BookFields {
             companion object: Entity("book", bookshelf), MutableEntity {
                 override fun new(): Book = Book()
                 @Suppress("UNCHECKED_CAST")
@@ -170,7 +170,7 @@ BookshelfSchema.BookTag.initialize()
             val bookId: Int
             val dudeId: Int
         }
-        open class Borrowing(entity: Entity = Companion): Instance(entity), MutableInstance, BorrowingFields {
+        open class Borrowing(entity: Entity = Companion): MutableInstanceImpl(entity), BorrowingFields {
             companion object: Entity("borrowing", bookshelf), MutableEntity {
                 override fun new(): Borrowing = Borrowing()
                 @Suppress("UNCHECKED_CAST")
@@ -211,7 +211,7 @@ BookshelfSchema.BookTag.initialize()
             val tagId: Int
             val label: String
         }
-        open class Tag(entity: Entity = Companion): Instance(entity), MutableInstance, TagFields {
+        open class Tag(entity: Entity = Companion): MutableInstanceImpl(entity), TagFields {
             companion object: Entity("tag", bookshelf), MutableEntity {
                 override fun new(): Tag = Tag()
                 @Suppress("UNCHECKED_CAST")
@@ -240,7 +240,7 @@ BookshelfSchema.BookTag.initialize()
             val bookId: Int
             val tagId: Int
         }
-        open class BookTag(entity: Entity = Companion): Instance(entity), MutableInstance, BookTagFields {
+        open class BookTag(entity: Entity = Companion): MutableInstanceImpl(entity), BookTagFields {
             companion object: Entity("bookTag", bookshelf), MutableEntity {
                 override fun new(): BookTag = BookTag()
                 @Suppress("UNCHECKED_CAST")

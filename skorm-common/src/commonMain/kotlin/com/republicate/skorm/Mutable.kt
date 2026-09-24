@@ -22,10 +22,14 @@ interface MutableEntity {
         (this as Entity).instanceAttributes.let { it.mutate(it.findAttribute<Long>(attrName), *params) }
 }
 
-private val MutableInstance.self get() = this as Instance
+private val MutableInstance.self get() = this as MutableInstanceImpl
 
-/** A row that can be written and sent back. Every implementation is an [Instance], whose map mutators it unlocks; this adds the database writes. */
-interface MutableInstance {
+/** A row that can be written and sent back: it unlocks the storage's map mutators and adds the database writes. */
+interface MutableInstance : Instance {
+
+    /** the typed write: the key must be a field; the row becomes dirty, and volatile again if a key column changed */
+    fun put(key: String, value: Any?): Any?
+    fun dirtyFieldNames(): Iterator<String>
 
     fun putFields(from: Map<out String, Any?>) {
         from.entries.filter { self.entity.fields.contains(it.key) }.forEach {

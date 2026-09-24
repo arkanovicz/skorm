@@ -13,8 +13,8 @@ class ReadOnlyTest {
     private class Recorder : Processor {
         var performed = mutableListOf<String>()
         override suspend fun eval(path: String, params: Map<String, Any?>, mutable: Boolean): Any? = null
-        override suspend fun retrieve(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Json.Object? = null
-        override suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Sequence<Json.Object> = emptySequence()
+        override suspend fun retrieve(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Row? = null
+        override suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Sequence<Row> = emptySequence()
         override suspend fun perform(path: String, params: Map<String, Any?>): Long { performed += path; return 1 }
         override suspend fun begin(schema: String): Transaction = throw UnsupportedOperationException()
         override val restMode = false
@@ -30,17 +30,16 @@ class ReadOnlyTest {
     private class MutableEnt(schema: Schema) : Entity("book", schema), MutableEntity {
         override fun new() = Row(this)
     }
-    private class Row(entity: Entity) : Instance(entity), MutableInstance
+    private class Row(entity: Entity) : MutableInstanceImpl(entity)
 
-    private fun Entity.withTitle() = apply { addField(Field("title", "varchar")) }
+    private fun <E: Entity> E.withTitle() = apply { addField(Field("title", "varchar")) }
 
     @Test
-    fun aReadOnlyRowRefusesWrites() {
+    fun aReadOnlyRowHasNoWrites() {
         val row = Ent(Sch(Db(Recorder()))).withTitle().new()
-        assertFailsWith<SkormException> { row.put("title", "x") }
-        assertFailsWith<SkormException> { row.putAll(mapOf("title" to "x")) }
-        assertFailsWith<SkormException> { row.remove("title") }
-        assertFailsWith<SkormException> { row.clear() }
+        assertTrue(row !is MutableMap<*, *>, "a read-only row is not a mutable map")
+        assertTrue(row !is MutableInstance)
+        assertTrue(row is Json.Object && row !is Json.MutableObject)
         assertTrue(row.isEmpty())
     }
 

@@ -145,7 +145,7 @@ open class CoreProcessor @JvmOverloads constructor(protected open val connector:
         return row[0]  // Return the scalar value, not the row array
     }
 
-    override suspend fun retrieve(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Json.Object? {
+    override suspend fun retrieve(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Row? {
         val (schema, query) = getSingleQuery(path, mutable, params.keys)
         val (names, it, types) = connectorFor(mutable).query(schema, query.stmt, *query.params.map { params[it] }.toTypedArray())
         if (!it.hasNext()) return null // CB TODO - non-null result should be specifiable
@@ -167,7 +167,7 @@ open class CoreProcessor @JvmOverloads constructor(protected open val connector:
         }
     }
 
-    override suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Sequence<Json.Object> {
+    override suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Sequence<Row> {
         val (schema, query) = getSingleQuery(path, mutable, params.keys)
         val (names, it, types) = connectorFor(mutable).query(schema, query.stmt, *query.params.map {
             params[it]

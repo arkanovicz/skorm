@@ -15,11 +15,14 @@ class GeneratedKeyMarker(
     override fun toString() = "out:generated_key($colName)"
 }
 
+/** What a row is read into: an [Instance] or a plain kson object. */
+typealias Row = Map<String, Any?>
+
 /** Builds the object a row is read into. */
 fun interface RowFactory {
-    fun new(): Json.MutableObject
+    fun new(): Row
     /** [kind] is the row's discriminator when the rows carry one: a hierarchy root builds the subclass it names. */
-    fun new(kind: String?): Json.MutableObject = new()
+    fun new(kind: String?): Row = new()
 }
 
 interface Transaction : Processor {
@@ -36,8 +39,8 @@ interface Processor: Configurable, AutoCloseable {
 
     // attributes; [mutable] says the caller is a holder of the mutable database, whose reads run where its writes do
     suspend fun eval(path: String, params: Map<String, Any?>, mutable: Boolean = false): Any?
-    suspend fun retrieve(path: String, params: Map<String, Any?>, factory: RowFactory? = null, mutable: Boolean = false): Json.Object?
-    suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory? = null, mutable: Boolean = false): Sequence<Json.Object>
+    suspend fun retrieve(path: String, params: Map<String, Any?>, factory: RowFactory? = null, mutable: Boolean = false): Row?
+    suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory? = null, mutable: Boolean = false): Sequence<Row>
     suspend fun perform(path: String, params: Map<String, Any?>): Long
 
     // identifiers mapping

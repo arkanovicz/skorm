@@ -4,7 +4,7 @@ import com.republicate.skorm.Connector
 import com.republicate.skorm.Database
 import com.republicate.skorm.Entity
 import com.republicate.skorm.Field
-import com.republicate.skorm.Instance
+import com.republicate.skorm.MutableInstanceImpl
 import com.republicate.skorm.MutableDatabase
 import com.republicate.skorm.MutableEntity
 import com.republicate.skorm.MutableInstance
@@ -39,7 +39,7 @@ class ReadConnectorTest {
     private class MutableEnt(schema: Schema) : Entity("book", schema), MutableEntity {
         override fun new() = Row(this)
     }
-    private class Row(entity: Entity) : Instance(entity), MutableInstance
+    private class Row(entity: Entity) : MutableInstanceImpl(entity)
 
     private fun <E: Entity> E.withFields() = apply {
         addField(Field("bookId", "int", isPrimary = true, isGenerated = true))

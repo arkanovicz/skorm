@@ -4,7 +4,7 @@ import com.republicate.skorm.AttributeHolder
 import com.republicate.skorm.Database
 import com.republicate.skorm.Entity
 import com.republicate.skorm.Field
-import com.republicate.skorm.Instance
+import com.republicate.skorm.MutableInstanceImpl
 import com.republicate.skorm.MutableDatabase
 import com.republicate.skorm.MutableEntity
 import com.republicate.skorm.MutableInstance
@@ -27,7 +27,7 @@ import kotlin.test.assertFailsWith
  */
 class AmbientTransactionTest {
 
-    private class Row(entity: Entity) : Instance(entity), MutableInstance
+    private class Row(entity: Entity) : MutableInstanceImpl(entity)
     private class TxDatabase(name: String, processor: CoreProcessor) : Database(name, processor), MutableDatabase
     private class TxSchema(db: Database) : Schema("tx", db), MutableSchema
     private class TxEntity(schema: Schema) : Entity("book", schema), MutableEntity {

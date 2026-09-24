@@ -60,7 +60,7 @@ OtherSchema.Badge.initialize()
             val seen: LocalDateTime?
             val kind: PersonKind
         }
-        open class Person(entity: Entity = Companion): Instance(entity), MutableInstance, PersonFields {
+        open class Person(entity: Entity = Companion): MutableInstanceImpl(entity), PersonFields {
             companion object: Entity("person", main), MutableEntity {
                 override fun new(): Person = Person()
                 // rows are read joined with the subtypes' tables: each comes back as the class its kind names
@@ -171,7 +171,7 @@ OtherSchema.Badge.initialize()
             val code: String
             val label: String
         }
-        open class Country(entity: Entity = Companion): Instance(entity), MutableInstance, CountryFields {
+        open class Country(entity: Entity = Companion): MutableInstanceImpl(entity), CountryFields {
             companion object: Entity("country", main), MutableEntity {
                 override fun new(): Country = Country()
                 @Suppress("UNCHECKED_CAST")
@@ -201,7 +201,7 @@ OtherSchema.Badge.initialize()
             val bId: Int
             val since: LocalDate
         }
-        open class Friendship(entity: Entity = Companion): Instance(entity), MutableInstance, FriendshipFields {
+        open class Friendship(entity: Entity = Companion): MutableInstanceImpl(entity), FriendshipFields {
             companion object: Entity("friendship", main), MutableEntity {
                 override fun new(): Friendship = Friendship()
                 @Suppress("UNCHECKED_CAST")
@@ -244,7 +244,7 @@ OtherSchema.Badge.initialize()
             val aId: Int
             val bId: Int
         }
-        open class Gift(entity: Entity = Companion): Instance(entity), MutableInstance, GiftFields {
+        open class Gift(entity: Entity = Companion): MutableInstanceImpl(entity), GiftFields {
             companion object: Entity("gift", main), MutableEntity {
                 override fun new(): Gift = Gift()
                 @Suppress("UNCHECKED_CAST")
@@ -279,7 +279,7 @@ OtherSchema.Badge.initialize()
             val backup: Int?
             val code: String
         }
-        open class Address(entity: Entity = Companion): Instance(entity), MutableInstance, AddressFields {
+        open class Address(entity: Entity = Companion): MutableInstanceImpl(entity), AddressFields {
             companion object: Entity("address", main), MutableEntity {
                 override fun new(): Address = Address()
                 @Suppress("UNCHECKED_CAST")
@@ -364,7 +364,7 @@ OtherSchema.Badge.initialize()
             val personId: Int
             val addressId: Int
         }
-        open class PersonAddress(entity: Entity = Companion): Instance(entity), MutableInstance, PersonAddressFields {
+        open class PersonAddress(entity: Entity = Companion): MutableInstanceImpl(entity), PersonAddressFields {
             companion object: Entity("personAddress", main), MutableEntity {
                 override fun new(): PersonAddress = PersonAddress()
                 @Suppress("UNCHECKED_CAST")
@@ -405,7 +405,7 @@ OtherSchema.Badge.initialize()
             val label: String
             val personId: Int
         }
-        open class Badge(entity: Entity = Companion): Instance(entity), MutableInstance, BadgeFields {
+        open class Badge(entity: Entity = Companion): MutableInstanceImpl(entity), BadgeFields {
             companion object: Entity("badge", other), MutableEntity {
                 override fun new(): Badge = Badge()
                 @Suppress("UNCHECKED_CAST")

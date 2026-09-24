@@ -55,7 +55,7 @@ ${schema.className}.${entity.className}.initialize()
             val ${field.identifier}: ${field.kotlinType}#if($field.nullable)?#end
 #end
         }
-        open class ${entity.className}(entity: Entity = Companion): #if($entity.parentClass)${entity.parentClass}(entity)#{else}Instance(entity), MutableInstance#end, ${entity.className}Fields {
+        open class ${entity.className}(entity: Entity = Companion): #if($entity.parentClass)${entity.parentClass}(entity)#{else}MutableInstanceImpl(entity)#end, ${entity.className}Fields {
             companion object: Entity("$entity.objectName", $schema.objectName#if($entity.parentClass), ${entity.parentClass}#end), MutableEntity {
                 override fun new(): ${entity.className} = ${entity.className}()
 #if (!$entity.kinds.isEmpty())

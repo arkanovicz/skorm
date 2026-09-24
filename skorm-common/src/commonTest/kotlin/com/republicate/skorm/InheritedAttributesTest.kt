@@ -10,8 +10,8 @@ class InheritedAttributesTest {
 
     private val noProcessor = object : Processor {
         override suspend fun eval(path: String, params: Map<String, Any?>, mutable: Boolean): Any? = null
-        override suspend fun retrieve(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Json.Object? = null
-        override suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Sequence<Json.Object> = emptySequence()
+        override suspend fun retrieve(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Row? = null
+        override suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Sequence<Row> = emptySequence()
         override suspend fun perform(path: String, params: Map<String, Any?>): Long = 0
         override suspend fun begin(schema: String): Transaction = throw UnsupportedOperationException()
         override val restMode = false

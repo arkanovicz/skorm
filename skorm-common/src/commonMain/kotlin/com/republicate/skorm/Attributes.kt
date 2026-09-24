@@ -36,13 +36,13 @@ sealed class Attribute<out T>(val name: String, private val parameters: Set<Stri
         val params: Set<String> =
             if (useDirtyFields) {
                 if (rawValues.isEmpty() ||
-                    rawValues.first() !is Instance ||
+                    rawValues.first() !is MutableInstance ||
                     rawValues.size > 2 ||
                     rawValues.size == 2 && rawValues.last() !is GeneratedKeyMarker
                 ) {
-                    throw SkormException("Attributes based on dirty fields are only valid with a single instance parameter or receiver")
+                    throw SkormException("Attributes based on dirty fields are only valid with a single mutable instance parameter or receiver")
                 }
-                val instance = rawValues.first() as Instance
+                val instance = rawValues.first() as MutableInstance
                 if (rawValues.size == 2) ret[GeneratedKeyMarker.PARAM_KEY] = rawValues.last()
                 // Include both dirty fields and primary key fields (needed for UPDATE WHERE clause)
                 instance.dirtyFieldNames().asSequence().toSet() + instance.entity.primaryKey.map { it.name }
@@ -226,14 +226,14 @@ class NullableBytesAttribute(name: String, parameters: Set<String>): ScalarAttri
 }
 
 @Suppress("UNCHECKED_CAST")
-class RowAttribute<out T: Json.MutableObject>(name: String, parameters: Set<String>, factory: RowFactory): Attribute<T>(name, parameters, rowFactory = factory) {
+class RowAttribute<out T: Row>(name: String, parameters: Set<String>, factory: RowFactory): Attribute<T>(name, parameters, rowFactory = factory) {
     override fun handleResult(result: Any?) =
         result as? T? ?: throw SkormException("attribute $name cannot have a null result")
 }
 
-class NullableRowAttribute<out T: Json.MutableObject>(name: String, parameters: Set<String>, factory: RowFactory): Attribute<T?>(name, parameters, rowFactory = factory)
+class NullableRowAttribute<out T: Row>(name: String, parameters: Set<String>, factory: RowFactory): Attribute<T?>(name, parameters, rowFactory = factory)
 
-class RowSetAttribute<out T: Json.MutableObject>(name: String, parameters: Set<String>, factory: RowFactory): Attribute<Sequence<T>>(name, parameters, rowFactory = factory)
+class RowSetAttribute<out T: Row>(name: String, parameters: Set<String>, factory: RowFactory): Attribute<Sequence<T>>(name, parameters, rowFactory = factory)
     
 class MutationAttribute(name: String, parameters: Set<String> = setOf(), useDirtyFields: Boolean = false): Attribute<Long>(name, parameters, useDirtyFields = useDirtyFields)
 
@@ -293,16 +293,16 @@ abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = 
         return attribute.handleResult(currentProcessor().eval(execPath, execParams, mutable))
     }
 
-    suspend inline fun <reified T: Json.Object?> retrieve(attrName: String, vararg params: Any?) = retrieve(findAttribute<T>(attrName), *params)
+    suspend inline fun <reified T: Row?> retrieve(attrName: String, vararg params: Any?) = retrieve(findAttribute<T>(attrName), *params)
 
-    suspend inline fun <reified T: Json.Object?> retrieve(attribute: Attribute<T>, vararg params: Any?): T {
+    suspend inline fun <reified T: Row?> retrieve(attribute: Attribute<T>, vararg params: Any?): T {
         val (execPath, execParams) = prepare(attribute, *params)
         return attribute.handleResult(currentProcessor().retrieve(execPath, execParams, attribute.rowFactory, mutable))
     }
 
-    suspend inline fun <reified T: Json.Object> query(attrName: String, vararg params: Any?) = query(findAttribute<Sequence<T>>(attrName), *params)
+    suspend inline fun <reified T: Row> query(attrName: String, vararg params: Any?) = query(findAttribute<Sequence<T>>(attrName), *params)
 
-    suspend inline fun <reified T: Json.Object> query(attribute: Attribute<Sequence<T>>, vararg params: Any?): Sequence<T> {
+    suspend inline fun <reified T: Row> query(attribute: Attribute<Sequence<T>>, vararg params: Any?): Sequence<T> {
         val (execPath, execParams) = prepare(attribute, *params)
         return attribute.handleResult(currentProcessor().query(execPath, execParams, attribute.rowFactory, mutable))
     }
@@ -364,19 +364,19 @@ inline fun <reified T> AttributeHolder.scalarAttribute(name: String, params: Set
 /** Rows are read into what the factory builds: the entity they belong to, or by default a plain object. */
 val plainRows = RowFactory { Json.MutableObject() }
 
-fun <T: Json.MutableObject> AttributeHolder.rowAttribute(name: String, params: Set<String>, factory: RowFactory = plainRows): RowAttribute<T> =
+fun <T: Row> AttributeHolder.rowAttribute(name: String, params: Set<String>, factory: RowFactory = plainRows): RowAttribute<T> =
     RowAttribute<T>(name, params, factory).also {
         addAttribute(it)
     }
 
 
-fun <T: Json.MutableObject> AttributeHolder.nullableRowAttribute(name: String, params: Set<String>, factory: RowFactory = plainRows): NullableRowAttribute<T> =
+fun <T: Row> AttributeHolder.nullableRowAttribute(name: String, params: Set<String>, factory: RowFactory = plainRows): NullableRowAttribute<T> =
     NullableRowAttribute<T>(name, params, factory).also {
         addAttribute(it)
     }
 
 
-fun <T: Json.MutableObject> AttributeHolder.rowSetAttribute(name: String, params: Set<String>, factory: RowFactory = plainRows): RowSetAttribute<T> =
+fun <T: Row> AttributeHolder.rowSetAttribute(name: String, params: Set<String>, factory: RowFactory = plainRows): RowSetAttribute<T> =
     RowSetAttribute<T>(name, params, factory).also {
         addAttribute(it)
     }

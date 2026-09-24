@@ -22,17 +22,18 @@ object Collisions {
      * Once consumers build on Gradle 9 (stdlib 2.2+), replace the list with that reflection.
      */
     val inherited: Set<String> = setOf(
-        "asArray", "asObject", "class", "clear", "compute", "computeIfAbsent", "computeIfPresent", "containsKey", "containsValue",
-        "copy", "delete", "dirtyFields", "ensureIsArray", "ensureIsObject", "entity", "entries", "entrySet", "equals",
-        "eval", "forEach", "generatedPrimaryKey", "get", "getArray", "getAs", "getBigDecimal", "getBigInteger", "getBoolean",
-        "getByte", "getBytes", "getChar", "getClass", "getDirtyFields", "getDouble", "getEntity", "getEntries", "getFloat",
-        "getGeneratedPrimaryKey", "getInstant", "getInt", "getInteger", "getJson", "getKeys", "getLocalDate", "getLocalDateTime", "getLocalTime",
-        "getLong", "getObject", "getOrDefault", "getShort", "getSize", "getString", "getUuid", "getValues", "hashCode",
+        "asArray", "asObject", "class", "clear", "compute", "computeIfAbsent", "computeIfPresent", "containsKey",
+        "containsValue", "copy", "delete", "dirtyFieldNames", "dirtyFields", "ensureIsArray", "ensureIsObject",
+        "entity", "entries", "entrySet", "equals", "forEach", "generatedPrimaryKey", "get", "getArray", "getAs",
+        "getBigDecimal", "getBigInteger", "getBoolean", "getByte", "getBytes", "getChar", "getClass",
+        "getDirtyFields", "getDouble", "getEntity", "getEntries", "getFloat", "getGeneratedPrimaryKey", "getInstant",
+        "getInt", "getInteger", "getJson", "getKeys", "getLocalDate", "getLocalDateTime", "getLocalTime", "getLong",
+        "getObject", "getOrDefault", "getShort", "getSize", "getString", "getUuid", "getValues", "hashCode",
         "insert", "isArray", "isDirty", "isEmpty", "isMutable", "isObject", "isPersisted", "iterator", "keySet",
         "keys", "merge", "notify", "notifyAll", "perform", "put", "putAll", "putFields", "putIfAbsent",
-        "putRawField", "putRawFields", "putRawValue", "query", "refresh", "remove", "replace", "replaceAll", "retrieve",
-        "set", "setAll", "setClean", "setPersisted", "size", "spliterator", "toPrettyString", "toString", "update",
-        "upsert", "values", "wait"
+        "putRawField", "putRawFields", "putRawValue", "refresh", "remove", "replace", "replaceAll", "set", "setAll",
+        "setClean", "setPersisted", "size", "spliterator", "toPrettyString", "toString", "update", "upsert",
+        "values", "wait"
     )
 
     /** The identifier as it must be written in Kotlin. */

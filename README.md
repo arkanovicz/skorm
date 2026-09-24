@@ -27,7 +27,7 @@ The nicest Kotlin multiplatform ORM around. Fully multiplatform. Coroutines-enab
 + `MutableInstance.update()`
 + `MutableInstance.delete()`
 
-The runtime has two halves: `Database`, `Schema`, `Entity`, `Instance` read; the objects of a mutable database also implement `MutableDatabase`, `MutableSchema`, `MutableEntity`, `MutableInstance`, which is where `perform` and the writes live. A read-only row refuses `put` at runtime, so it stays read-only under reflection.
+The runtime has two halves: `Database`, `Schema`, `Entity`, `Instance` read; the objects of a mutable database also implement `MutableDatabase`, `MutableSchema`, `MutableEntity`, `MutableInstance`, which is where `perform` and the writes live. `Instance` is an interface over a read-only map (`InstanceImpl`); a `MutableInstance` is backed by a mutable one (`MutableInstanceImpl`) — a read-only row has no `put` at all.
 
 *Three* main customization points (see [Configuration](#configuration)):
 
