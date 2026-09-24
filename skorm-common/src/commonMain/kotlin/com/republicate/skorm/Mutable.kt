@@ -27,7 +27,7 @@ interface MutableEntity {
 
 private val MutableInstance.self get() = this as MutableInstanceImpl
 
-/** A row that can be written and sent back: it unlocks the storage's map mutators and adds the database writes. */
+/** A row that can be written and sent back: the typed [put], and the database writes. */
 interface MutableInstance : Instance {
 
     /** the typed write: the key must be a field; the row becomes dirty, and volatile again if a key column changed */

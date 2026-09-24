@@ -152,7 +152,7 @@ open class Entity protected constructor(val name: String, val schema: Schema, va
     open suspend fun browse() = instanceAttributes.query<Instance>(browseAttribute)
     open suspend operator fun iterator() = browse().iterator()
 
-    // Other operations are not visible directly, they are proxied from Instance
+    // Other operations are not visible directly, they are proxied from MutableInstance
     internal suspend fun insert(instance: Instance): Long {
         return if (primaryKey.size == 1 && primaryKey.first().isGenerated) {
             // Convert property name to database column name
