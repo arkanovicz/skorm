@@ -23,6 +23,10 @@ public class JdbcConnector implements Connector, Closeable
 
     private final Configuration config = new Configuration();
 
+    /** rows per fetch of a streamed query */
+    private int fetchSize = DEFAULT_FETCH_SIZE;
+    public static final int DEFAULT_FETCH_SIZE = 1000;
+
     private class TxConnector implements TransactionConnector
     {
         Connection txConnection;
@@ -84,6 +88,28 @@ public class JdbcConnector implements Connector, Closeable
                 PooledStatement stmt = statementPool.prepareQuery(schema, query, txConnection);
                 ResultSet rs = stmt.executeQuery(params);
                 return buildQueryResult(rs, stmt);
+            }
+            catch (SQLException sqle)
+            {
+                throw new SkormException("error running query " + shorten(query), sqle);
+            }
+        }
+
+        @NotNull
+        @Override
+        public QueryResult stream(@Nullable String schema, @NotNull String query, @Nullable Object... params) throws SkormException
+        {
+            try
+            {
+                // its own statement on the transaction's connection, closed by the reader
+                PooledStatement stmt = statementPool.prepareQuery(schema, query, txConnection);
+                stmt.setFetchSize(fetchSize);
+                ResultSet rs = stmt.executeQuery(params);
+                return buildQueryResult(rs, stmt, () -> {
+                    stmt.notifyOver();
+                    stmt.close();
+                    return kotlin.Unit.INSTANCE;
+                });
             }
             catch (SQLException sqle)
             {
@@ -235,6 +261,8 @@ public class JdbcConnector implements Connector, Closeable
                 connectionPool = new ConnectionPool(connectionFactory, true);
                 txConnectionPool = new ConnectionPool(connectionFactory, false);
                 statementPool = new StatementPool(connectionPool);
+                Integer configured = config.getInt("fetchSize");
+                if (configured != null) fetchSize = configured;
             }
         }
         catch (SQLException sqle)
@@ -315,6 +343,62 @@ public class JdbcConnector implements Connector, Closeable
         }
     }
 
+    /**
+     * Many rows, fetched as the reader goes: the driver only streams a forward-only result set with autocommit off,
+     * so the query runs on a connection of the transaction pool, held until the reader closes the result, then
+     * committed and released. Single-row reads stay on the shared, autocommit statements: no commit round trip.
+     */
+    @NotNull
+    @Override
+    public QueryResult stream(@Nullable String schema, @NotNull String query, @Nullable Object... params) throws SkormException
+    {
+        if (schema == null) {
+            schema = config.getString("defaultSchema");
+        }
+        Connection connection;
+        try
+        {
+            connection = txConnectionPool.getConnection(schema);
+        }
+        catch (SQLException sqle)
+        {
+            throw new SkormException("error running query " + shorten(query), sqle);
+        }
+        try
+        {
+            PooledStatement stmt = statementPool.prepareQuery(schema, query, connection);
+            stmt.setFetchSize(fetchSize);
+            ResultSet rs = stmt.executeQuery(params);
+            return buildQueryResult(rs, stmt, () -> {
+                stmt.notifyOver();
+                stmt.close();
+                try
+                {
+                    connection.commit();
+                }
+                catch (SQLException sqle)
+                {
+                    throw new RuntimeException("could not end the read", sqle);
+                }
+                finally
+                {
+                    connection.leaveBusyState();
+                }
+                return kotlin.Unit.INSTANCE;
+            });
+        }
+        catch (SQLException sqle)
+        {
+            try
+            {
+                connection.rollback();
+            }
+            catch (SQLException ignored) {}
+            connection.leaveBusyState();
+            throw new SkormException("error running query " + shorten(query), sqle);
+        }
+    }
+
     @Override
     public long mutate(@Nullable String schema, @NotNull String query, @Nullable Object... params) throws SkormException
     {
@@ -344,6 +428,11 @@ public class JdbcConnector implements Connector, Closeable
 
     private static QueryResult buildQueryResult(ResultSet rs, PooledStatement stmt) throws SQLException
     {
+        return buildQueryResult(rs, stmt, () -> kotlin.Unit.INSTANCE);
+    }
+
+    private static QueryResult buildQueryResult(ResultSet rs, PooledStatement stmt, kotlin.jvm.functions.Function0<kotlin.Unit> closer) throws SQLException
+    {
         ResultSetMetaData meta = rs.getMetaData();
         int n = meta.getColumnCount();
         String names[] = new String[n];
@@ -353,7 +442,7 @@ public class JdbcConnector implements Connector, Closeable
             names[i] = meta.getColumnName(i + 1);
             types[i] = meta.getColumnTypeName(i + 1);
         }
-        return new QueryResult(names, new RowIterator(rs, stmt), types);
+        return new QueryResult(names, new RowIterator(rs, stmt), types, closer);
     }
 
     @Override

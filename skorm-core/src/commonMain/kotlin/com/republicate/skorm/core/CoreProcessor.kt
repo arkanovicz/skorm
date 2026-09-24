@@ -200,7 +200,7 @@ open class CoreProcessor @JvmOverloads constructor(
         }.toTypedArray()
         val connector = connectorFor(mutable)
         return flow {
-            val result = blocking { connector.query(schema, query.stmt, *values) }
+            val result = blocking { connector.stream(schema, query.stmt, *values) }
             try {
                 val (names, it, types) = result
                 while (true) {

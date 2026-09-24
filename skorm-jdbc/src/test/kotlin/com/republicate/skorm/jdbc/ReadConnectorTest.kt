@@ -13,6 +13,7 @@ import com.republicate.skorm.QueryResult
 import com.republicate.skorm.Schema
 import com.republicate.skorm.core.CoreProcessor
 import com.republicate.skorm.transaction
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -28,6 +29,10 @@ class ReadConnectorTest {
         override fun query(schema: String, query: String, vararg params: Any?): QueryResult {
             reads++
             return inner.query(schema, query, *params)
+        }
+        override fun stream(schema: String, query: String, vararg params: Any?): QueryResult {
+            reads++
+            return inner.stream(schema, query, *params)
         }
     }
 

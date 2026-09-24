@@ -36,6 +36,10 @@ interface Connector: Configurable, AutoCloseable {
     @Throws(SkormException::class)
     fun query(schema: String, query: String, vararg params: Any?): QueryResult
 
+    /** A query expected to return many rows: fetched as the reader goes when the connector can, and closed by the reader. */
+    @Throws(SkormException::class)
+    fun stream(schema: String, query: String, vararg params: Any?): QueryResult = query(schema, query, *params)
+
     // mutations
     @Throws(SkormException::class)
     fun mutate(schema: String, query: String, vararg params: Any?): Long

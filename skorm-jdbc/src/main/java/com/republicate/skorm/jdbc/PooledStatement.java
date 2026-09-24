@@ -141,6 +141,12 @@ public class PooledStatement implements Closeable // TODO implements RowValues
         return preparedStatement != null && valid;
     }
 
+    /** rows the driver fetches at a time, where it honours it (PostgreSQL: forward-only, autocommit off) */
+    public synchronized void setFetchSize(int rows) throws SQLException
+    {
+        preparedStatement.setFetchSize(rows);
+    }
+
     public synchronized ResultSet executeQuery(Object... paramValues) throws SQLException
     {
         try
