@@ -80,6 +80,7 @@ open class CoreProcessor @JvmOverloads constructor(protected open val connector:
     }
 
     override fun configure(cfg: Map<String, Any?>) {
+        if (initialized) throw SkormException("processor already initialized") // the mappers are live: no reconfiguration through a handed-out database
         super.configure(cfg)
         config.getStrings("mapping.read")?.forEachIndexed { i, name ->
             val mapper = IdentifiersMapping[name]
