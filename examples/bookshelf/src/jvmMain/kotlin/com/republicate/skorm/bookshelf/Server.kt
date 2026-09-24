@@ -64,8 +64,6 @@ fun Application.configureDatabase() {
         exampleDatabase.configure(toMap().toJsonObject())
     }
     exampleDatabase.initialize()
-    exampleDatabase.initJoins()
-    exampleDatabase.initRuntimeModel()
 
     println("Creating database...")
     val creationScript = Application::class.java.getResource("/${CREATION_SCRIPT}").readText()

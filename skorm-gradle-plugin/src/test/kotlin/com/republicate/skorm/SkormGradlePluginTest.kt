@@ -58,12 +58,12 @@ class SkormGradlePluginTest {
         }
         val task = project.tasks.getByName(GEN_TASK_NAME) as GenerateSkormCodeTask
         task.generate()
-        Assertions.assertTrue(File(out, "client/kotlin/skormJoinsClient.kt").exists())
+        Assertions.assertTrue(File(out, "client/kotlin/skormAttributes.kt").exists())
 
         params.client.set(false)
         task.generate()
         Assertions.assertFalse(File(out, "client/kotlin").exists(), "stale client output")
-        Assertions.assertTrue(File(out, "core/kotlin/skormJoinsCore.kt").exists())
+        Assertions.assertTrue(File(out, "core/kotlin/skormAttributes.kt").exists())
     }
 
     @Test

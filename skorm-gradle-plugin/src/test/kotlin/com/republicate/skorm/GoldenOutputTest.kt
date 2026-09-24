@@ -56,7 +56,8 @@ class GoldenOutputTest {
             it.readOnly.set(readOnly)
             it.outputDirectory.set(out)
         }
-        (project.tasks.getByName(GEN_TASK_NAME) as GenerateSkormCodeTask).generate()
+        // the expect/actual form; ConsumerShapesTest compiles the plain call of a single-target module
+        (project.tasks.getByName(GEN_TASK_NAME) as GenerateSkormCodeTask).also { it.multiplatform.set(true) }.generate()
 
         val expected = golden.resolve("$name/expected")
         val actual = out.filesByPath()

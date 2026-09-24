@@ -24,6 +24,7 @@ internal object KotlinSourceWiring {
     fun wireMultiplatform(project: Project, generate: TaskProvider<GenerateSkormCodeTask>) = reaching(project) {
         val kotlin = project.extensions.getByName("kotlin")
         val sourceSets = kotlin.sourceSets()
+        generate.configure { it.multiplatform.set(true) }
         sourceSets.named("commonMain") { it.kotlinDir().srcDir(generate.dir(COMMON, "kotlin")) }
         @Suppress("UNCHECKED_CAST")
         (kotlin.invoke("getTargets") as NamedDomainObjectCollection<Any>).all { target ->

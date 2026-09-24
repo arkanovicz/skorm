@@ -124,6 +124,10 @@ open class ${half.databaseClass}(processor: Processor): Database("$half.name", p
         super.initialize()
 #if($half.mutable)
         readOnly.initialize()
+#elseif($half.mutableTwin)
+        if (this !is ${half.mutableTwin.databaseClass}) registerAttributes() // once per store, after both databases exist
+#else
+        registerAttributes()
 #end
     }
 #foreach ($schema in $half.schemas)
@@ -193,6 +197,11 @@ open class ${half.databaseClass}(processor: Processor): Database("$half.name", p
 }
 #end
 ## ---- the file --------------------------------------------------------------------------------------
+#if($multiplatform)
+/** The platform's registrations of the navigations and ksql attributes, run by initialize(). */
+internal expect fun ${resolved.databaseClass}.registerAttributes()
+
+#end
 #half($resolved)
 #if($resolved.mutableTwin)
 

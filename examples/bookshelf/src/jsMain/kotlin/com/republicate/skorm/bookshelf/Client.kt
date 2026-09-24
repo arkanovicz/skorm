@@ -21,8 +21,6 @@ fun main() {
     window.onload = {
         logger.info { "window loaded" }
         exampleDatabase.initialize()
-        exampleDatabase.initJoins()
-        exampleDatabase.initRuntimeModel()
         logger.info { "db initialized" }
 
         sel(".lend-form").submit { event ->

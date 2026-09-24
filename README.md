@@ -103,6 +103,7 @@ Nothing else to declare: the single `generateSkormCode` task registers its outpu
 source sets, so Gradle sequences generation before compilation on its own — no `srcDir`, no
 `dependsOn`. What it emits follows the platforms you build for, and `core` / `client` force either
 one on or off, for instance to emit client code in a project that has no JS target of its own.
+One call, `initialize()`, registers the entities, the navigations and the ksql attributes.
 
 Options:
 
@@ -175,9 +176,7 @@ database.configure(mapOf(
         )
     )
 ))
-database.initialize()
-database.initJoins()
-database.initRuntimeModel()   // registers the ksql attributes, pendingCount and toggle
+database.initialize()   // registers the entities, the navigations and the ksql attributes (pendingCount, toggle)
 // the tables must exist: run the generated create-script.sql first (the bookshelf example does it with a "create" mutation)
 
 // Create a task
@@ -622,8 +621,6 @@ fun Application.configureDatabase() {
     // Configure from application.conf
     database.configure(environment.config.config("skorm").toMap())
     database.initialize()
-    database.initJoins()
-    database.initRuntimeModel()
 
     // Create test data
     runBlocking {
@@ -694,8 +691,6 @@ val database = MutableExampleDatabase(ApiClient("${window.location.origin}/api")
 fun main() {
     window.onload = {
         database.initialize()
-        database.initJoins()
-        database.initRuntimeModel()
 
         // Same code as backend!
         document.querySelector(".lend-form")?.addEventListener("submit") { event ->

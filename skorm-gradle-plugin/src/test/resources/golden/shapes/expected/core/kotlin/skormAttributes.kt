@@ -1,10 +1,12 @@
 package shapes.model
 
 import com.republicate.skorm.core.*
+import kotlinx.datetime.*
+import com.republicate.kson.Json
 
 
-// navigations declaration for core: the read-only database's, then the mutable one's when it exists
-fun ShapesDatabase.initJoins() {
+// attribute registrations for core, called from initialize(): the read-only database's, then the mutable one's when it exists
+internal actual fun ShapesDatabase.registerAttributes() {
     // forward foreign key attribute
     ShapesDatabase.main.entity("friendship").instanceAttributes.rowAttribute<ShapesDatabase.MainSchema.Person>("a", "SELECT * FROM main.person LEFT JOIN main.base_vip USING (person_id) WHERE person.person_id = {a_id};", ShapesDatabase.MainSchema.Person)
     // reverse foreign key attribute
@@ -35,6 +37,35 @@ fun ShapesDatabase.initJoins() {
     ShapesDatabase.other.entity("badge").instanceAttributes.rowAttribute<ShapesDatabase.MainSchema.Person>("person", "SELECT * FROM main.person LEFT JOIN main.base_vip USING (person_id) WHERE person.person_id = {person_id};", ShapesDatabase.MainSchema.Person)
     // reverse foreign key attribute
     ShapesDatabase.main.entity("person").instanceAttributes.rowSetAttribute<ShapesDatabase.OtherSchema.Badge>("badges", "SELECT * FROM other.badge WHERE badge.person_id = {person_id};", ShapesDatabase.OtherSchema.Badge)
+
+    // attribute main.personCount
+    ShapesDatabase.main.scalarAttribute<Int>("personCount", """
+        SELECT count(*) FROM person;""".trimIndent())
+
+    // attribute main.oldestBirth
+    ShapesDatabase.main.scalarAttribute<LocalDate?>("oldestBirth", """
+        SELECT min(born) FROM person;""".trimIndent())
+
+    // attribute main.summary
+    ShapesDatabase.main.rowAttribute<Json.MutableObject>("summary", """
+        SELECT count(*) AS persons FROM person;""".trimIndent())
+
+    // attribute main.everybody
+    ShapesDatabase.main.rowSetAttribute<ShapesDatabase.MainSchema.Person>("everybody", """
+        SELECT * FROM person;""".trimIndent(), ShapesDatabase.MainSchema.Person::new)
+
+    // attribute Person.mainAddress
+    ShapesDatabase.main.entity("person").instanceAttributes.nullableRowAttribute<ShapesDatabase.MainSchema.Address>("mainAddress", """
+        SELECT * FROM address WHERE owner = {person_id} LIMIT 1;""".trimIndent(), ShapesDatabase.MainSchema.Address::new)
+
+    // attribute Person.counts
+    ShapesDatabase.main.entity("person").instanceAttributes.rowAttribute<Counts>("counts", """
+        SELECT (SELECT count(*) FROM address WHERE owner = {person_id}) addresses,
+             (SELECT count(*) FROM friendship WHERE a_id = {person_id}) friends;""".trimIndent(), ::Counts)
+
+    // attribute Person.cities
+    ShapesDatabase.main.entity("person").instanceAttributes.rowSetAttribute<Json.MutableObject>("cities", """
+        SELECT city FROM address WHERE owner = {person_id};""".trimIndent())
     if (!MutableShapesDatabase.isInstantiated()) return
     // forward foreign key attribute
     MutableShapesDatabase.main.entity("friendship").instanceAttributes.rowAttribute<MutableShapesDatabase.MutableMainSchema.MutablePerson>("a", "SELECT * FROM main.person LEFT JOIN main.base_vip USING (person_id) WHERE person.person_id = {a_id};", MutableShapesDatabase.MutableMainSchema.MutablePerson)
@@ -66,4 +97,38 @@ fun ShapesDatabase.initJoins() {
     MutableShapesDatabase.other.entity("badge").instanceAttributes.rowAttribute<MutableShapesDatabase.MutableMainSchema.MutablePerson>("person", "SELECT * FROM main.person LEFT JOIN main.base_vip USING (person_id) WHERE person.person_id = {person_id};", MutableShapesDatabase.MutableMainSchema.MutablePerson)
     // reverse foreign key attribute
     MutableShapesDatabase.main.entity("person").instanceAttributes.rowSetAttribute<MutableShapesDatabase.MutableOtherSchema.MutableBadge>("badges", "SELECT * FROM other.badge WHERE badge.person_id = {person_id};", MutableShapesDatabase.MutableOtherSchema.MutableBadge)
+
+    // attribute main.personCount
+    MutableShapesDatabase.main.scalarAttribute<Int>("personCount", """
+        SELECT count(*) FROM person;""".trimIndent())
+
+    // attribute main.oldestBirth
+    MutableShapesDatabase.main.scalarAttribute<LocalDate?>("oldestBirth", """
+        SELECT min(born) FROM person;""".trimIndent())
+
+    // attribute main.summary
+    MutableShapesDatabase.main.rowAttribute<Json.MutableObject>("summary", """
+        SELECT count(*) AS persons FROM person;""".trimIndent())
+
+    // attribute main.everybody
+    MutableShapesDatabase.main.rowSetAttribute<MutableShapesDatabase.MutableMainSchema.MutablePerson>("everybody", """
+        SELECT * FROM person;""".trimIndent(), MutableShapesDatabase.MutableMainSchema.MutablePerson::new)
+
+    // attribute Person.mainAddress
+    MutableShapesDatabase.main.entity("person").instanceAttributes.nullableRowAttribute<MutableShapesDatabase.MutableMainSchema.MutableAddress>("mainAddress", """
+        SELECT * FROM address WHERE owner = {person_id} LIMIT 1;""".trimIndent(), MutableShapesDatabase.MutableMainSchema.MutableAddress::new)
+
+    // attribute Person.forget
+    MutableShapesDatabase.main.entity("person").instanceAttributes.mutationAttribute("forget", """
+        DELETE FROM address WHERE owner = {person_id};
+DELETE FROM person WHERE person_id = {person_id};""".trimIndent())
+
+    // attribute Person.counts
+    MutableShapesDatabase.main.entity("person").instanceAttributes.rowAttribute<Counts>("counts", """
+        SELECT (SELECT count(*) FROM address WHERE owner = {person_id}) addresses,
+             (SELECT count(*) FROM friendship WHERE a_id = {person_id}) friends;""".trimIndent(), ::Counts)
+
+    // attribute Person.cities
+    MutableShapesDatabase.main.entity("person").instanceAttributes.rowSetAttribute<Json.MutableObject>("cities", """
+        SELECT city FROM address WHERE owner = {person_id};""".trimIndent())
 }

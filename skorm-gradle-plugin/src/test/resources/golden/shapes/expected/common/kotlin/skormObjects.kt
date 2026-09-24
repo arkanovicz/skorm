@@ -17,6 +17,9 @@ import shapes.model.ShapesDatabase.MainSchema.Level
 import shapes.model.ShapesDatabase.MainSchema.PersonKind
 import shapes.model.ShapesDatabase.MainSchema.PersonNature
 
+/** The platform's registrations of the navigations and ksql attributes, run by initialize(). */
+internal expect fun ShapesDatabase.registerAttributes()
+
 @OptIn(kotlin.uuid.ExperimentalUuidApi::class)
 open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
     companion object {
@@ -46,6 +49,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
         MainSchema.PersonAddress.initialize()
         OtherSchema.Badge.initialize()
         super.initialize()
+        if (this !is MutableShapesDatabase) registerAttributes() // once per store, after both databases exist
     }
     open class MainSchema(db: Database): Schema("main", db) {
         enum class Level {

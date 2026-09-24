@@ -106,7 +106,6 @@ class InheritanceTest {
                         db.configure(mapOf("core" to mapOf("jdbc" to mapOf(
                             "url" to pg.jdbcUrl, "login" to pg.username, "password" to pg.password))).toJsonObject())
                         db.initialize()
-                        db.initJoins()
                         db.mutationAttribute("create", InheritanceCheck::class.java.getResource("/create-script.sql")!!.readText())
                         runBlocking {
                             db.perform("create")

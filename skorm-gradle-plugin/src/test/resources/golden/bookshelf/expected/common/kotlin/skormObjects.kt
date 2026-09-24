@@ -14,6 +14,9 @@ import com.republicate.skorm.*
 import kotlin.jvm.JvmName
 import com.republicate.skorm.bookshelf.ExampleDatabase.BookshelfSchema.Genre
 
+/** The platform's registrations of the navigations and ksql attributes, run by initialize(). */
+internal expect fun ExampleDatabase.registerAttributes()
+
 open class ExampleDatabase(processor: Processor): Database("example", processor) {
     companion object {
         lateinit var instance: ExampleDatabase
@@ -37,6 +40,7 @@ open class ExampleDatabase(processor: Processor): Database("example", processor)
         BookshelfSchema.Tag.initialize()
         BookshelfSchema.BookTag.initialize()
         super.initialize()
+        if (this !is MutableExampleDatabase) registerAttributes() // once per store, after both databases exist
     }
     open class BookshelfSchema(db: Database): Schema("bookshelf", db) {
         enum class Genre {

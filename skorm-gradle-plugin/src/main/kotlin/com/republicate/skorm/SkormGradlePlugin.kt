@@ -24,6 +24,7 @@ abstract class SkormGradlePlugin : Plugin<Project> {
             it.core.set(extension.core)
             it.client.set(extension.client)
             it.readOnly.set(extension.readOnly)
+            it.multiplatform.convention(false)
             it.outputDirectory.set(extension.outputDirectory)
         }
 

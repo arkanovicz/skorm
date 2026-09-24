@@ -1,10 +1,12 @@
 package shapes.model
 
 import com.republicate.skorm.*
+import kotlinx.datetime.*
+import com.republicate.kson.Json
 
 
-// navigations declaration for client: the read-only database's, then the mutable one's when it exists
-fun ShapesDatabase.initJoins() {
+// attribute registrations for client, called from initialize(): the read-only database's, then the mutable one's when it exists
+internal actual fun ShapesDatabase.registerAttributes() {
     // forward foreign key attribute
     ShapesDatabase.main.entity("friendship").instanceAttributes.rowAttribute<ShapesDatabase.MainSchema.Person>("a", setOf("a_id"), ShapesDatabase.MainSchema.Person)
     // reverse foreign key attribute
@@ -35,4 +37,25 @@ fun ShapesDatabase.initJoins() {
     ShapesDatabase.other.entity("badge").instanceAttributes.rowAttribute<ShapesDatabase.MainSchema.Person>("person", setOf("person_id"), ShapesDatabase.MainSchema.Person)
     // reverse foreign key attribute
     ShapesDatabase.main.entity("person").instanceAttributes.rowSetAttribute<ShapesDatabase.OtherSchema.Badge>("badges", setOf("person_id"), ShapesDatabase.OtherSchema.Badge)
+
+    // attribute main.personCount
+    ShapesDatabase.main.scalarAttribute<Int>("personCount", setOf())
+
+    // attribute main.oldestBirth
+    ShapesDatabase.main.scalarAttribute<LocalDate?>("oldestBirth", setOf())
+
+    // attribute main.summary
+    ShapesDatabase.main.scalarAttribute<Json.Object>("summary", setOf())
+
+    // attribute main.everybody
+    ShapesDatabase.main.rowSetAttribute<ShapesDatabase.MainSchema.Person>("everybody", setOf(), ShapesDatabase.MainSchema.Person::new)
+
+    // attribute Person.mainAddress
+    ShapesDatabase.main.entity("person").instanceAttributes.nullableInstanceAttribute<ShapesDatabase.MainSchema.Address>("mainAddress", setOf("person_id"), ShapesDatabase.MainSchema.Address::new)
+
+    // attribute Person.counts
+    ShapesDatabase.main.entity("person").instanceAttributes.rowAttribute<Counts>("counts", setOf("person_id"), ::Counts)
+
+    // attribute Person.cities
+    ShapesDatabase.main.entity("person").instanceAttributes.scalarAttribute<String>("cities", setOf("person_id"))
 }

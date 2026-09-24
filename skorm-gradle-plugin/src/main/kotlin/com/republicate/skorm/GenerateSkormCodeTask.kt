@@ -23,9 +23,9 @@ import java.io.File
  * the project builds for, unless the build declares [core] / [client] explicitly.
  *
  *   <out>/common/kotlin    entity classes with their navigations and attributes, field interfaces, composites
- *   <out>/core/kotlin      server-side attribute registrations
+ *   <out>/core/kotlin      server-side attribute registrations, called from initialize()
  *   <out>/core/resources   database creation script
- *   <out>/client/kotlin    REST client attribute registrations
+ *   <out>/client/kotlin    REST client attribute registrations, called from initialize()
  */
 abstract class GenerateSkormCodeTask : BaseModelGenerationTask() {
 
@@ -57,6 +57,10 @@ abstract class GenerateSkormCodeTask : BaseModelGenerationTask() {
     @get:Input
     abstract val platforms: ListProperty<String>
 
+    /** Whether the consumer is a multiplatform module: common code then reaches the platform registrations through `expect`. */
+    @get:Input
+    abstract val multiplatform: Property<Boolean>
+
     @get:OutputDirectory
     abstract val outputDirectory: DirectoryProperty
 
@@ -71,6 +75,7 @@ abstract class GenerateSkormCodeTask : BaseModelGenerationTask() {
     override fun populateContext(context: VelocityContext) {
         super.populateContext(context)
         context.put("resolved", resolved)
+        context.put("multiplatform", multiplatform.get())
     }
 
     private fun generateCore() = core.orNull ?: platforms.get().any { it in JVM_PLATFORMS }
@@ -89,14 +94,10 @@ abstract class GenerateSkormCodeTask : BaseModelGenerationTask() {
         logger.lifecycle("$tag generating into $out (core: $withCore, client: $withClient, readOnly: ${readOnly.get()})")
 
         generateCode("templates/skorm-objects.vtl", File(out, "common/kotlin/skormObjects.kt"))
-        if (withCore) generateCode("templates/skorm-joins-core.vtl", File(out, "core/kotlin/skormJoinsCore.kt"))
-        if (withClient) generateCode("templates/skorm-joins-client.vtl", File(out, "client/kotlin/skormJoinsClient.kt"))
-
-        if (attributeModel != null) {
-            generateCode("templates/skorm-model.vtl", File(out, "common/kotlin/skormModel.kt"))
-            if (withCore) generateCode("templates/skorm-model-core.vtl", File(out, "core/kotlin/skormModelCore.kt"))
-            if (withClient) generateCode("templates/skorm-model-client.vtl", File(out, "client/kotlin/skormModelClient.kt"))
-        }
+        if (attributeModel != null) generateCode("templates/skorm-model.vtl", File(out, "common/kotlin/skormModel.kt"))
+        // one registration function per platform, navigations and ksql attributes alike
+        if (withCore) generateCode("templates/skorm-attributes-core.vtl", File(out, "core/kotlin/skormAttributes.kt"))
+        if (withClient) generateCode("templates/skorm-attributes-client.vtl", File(out, "client/kotlin/skormAttributes.kt"))
 
         if (withCore) generateCreationScript(File(out, "core/resources/$CREATION_SCRIPT_FILE"))
     }

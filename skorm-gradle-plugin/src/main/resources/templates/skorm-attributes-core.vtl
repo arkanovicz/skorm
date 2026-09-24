@@ -1,0 +1,27 @@
+package $package
+
+import com.republicate.skorm.core.*
+#if(!$resolved.attributes.isEmpty())
+import kotlinx.datetime.*
+import com.republicate.kson.Json
+#end
+
+
+// attribute registrations for core, called from initialize(): the read-only database's, then the mutable one's when it exists
+internal #if($multiplatform)actual #{end}fun ${resolved.databaseClass}.registerAttributes() {
+#foreach ($half in $resolved.halves)
+#if($half.mutable)
+    if (!${half.databaseClass}.isInstantiated()) return
+#end
+#foreach ($join in $half.joins)
+    // $join.label attribute
+    ${half.databaseClass}.${join.ownerSchema}.entity("$join.ownerEntity").instanceAttributes.${join.registration}<$join.targetClass>("$join.name", "$join.sql", $join.targetClass)
+#end
+#foreach ($attr in $half.attributes)
+
+    // attribute $attr.qualifiedName
+    ${half.databaseClass}.${attr.schema}${attr.registrationPath}.${attr.coreRegistration}("$attr.name", """
+        $attr.sql""".trimIndent()#if($attr.factory), ${attr.factory}#{end})
+#end
+#end
+}
