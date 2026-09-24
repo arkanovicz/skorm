@@ -160,11 +160,15 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
     /**
      * What a single-column link is called from the referencing side: the referenced table when the column
      * is named after that table's key (as kddl names an implicit column — `author_id`, or `code` for a
-     * table keyed by `code`), the column itself otherwise (`donor`, `parent`).
+     * table keyed by `code`), the column itself otherwise (`donor`, `parent`), less a trailing `_<key>`
+     * (`club_code` -> `club`).
      */
     private fun navigationName(column: String, towards: ASTTable): String {
-        val key = towards.getPrimaryKey().singleOrNull()?.name
-        return if (key != null && column == key) kotlin.camel(towards.name) else kotlin.attributeName(column)
+        val key = towards.getPrimaryKey().singleOrNull()?.name ?: return kotlin.attributeName(column)
+        if (column == key) return kotlin.camel(towards.name)
+        // a `_<key>` suffix is the same noise as `_id`
+        val bare = column.removeSuffix("_$key").removeSuffix(kotlin.pascal(key))
+        return kotlin.attributeName(bare)
     }
 
     private fun foreignKey(fk: ASTForeignKey, names: Naming): List<JoinAttribute> {

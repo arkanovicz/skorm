@@ -4,6 +4,9 @@ All notable changes to Skorm are documented in this file.
 
 ## [0.22] - unreleased
 
+### Changed
+- **FK navigation names**: a link column ending with the referenced key drops it, as `_id` already did: `club_code -> club` gives `club()`, not `clubCode()` beside the `clubCode` column property. Role-named columns (`donor`) keep their name.
+
 ## [0.21] - 2026-09-24
 
 ### Changed

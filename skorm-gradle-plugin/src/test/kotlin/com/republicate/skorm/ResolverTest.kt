@@ -141,6 +141,25 @@ class ResolverTest {
     }
 
     @Test
+    fun `a link column ending with the referenced key drops it, like _id`() {
+        val model = resolve("""
+            database d { schema s {
+              table club { *code char(3) }
+              table team { *id int }
+              table member {
+                name varchar(10)
+                club_code -> club     // `_code` suffix, the club's key: `club`, not `clubCode`
+                owner_code -> club?   // role plus key: `owner`
+                donor -> club?        // role alone: unchanged
+                team_id -> team       // `_id` suffix of an `id` key: `team`
+              }
+            } }
+        """.trimIndent())
+        val names = model.joins.filter { it.receiverClass.endsWith(".Member") }.map { it.name }.toSet()
+        assertEquals(setOf("club", "owner", "donor", "team"), names)
+    }
+
+    @Test
     fun `a hierarchy's kind is an enum the database maintains, so it is read-only`() {
         val person = resolve("""
             database d { schema s {
