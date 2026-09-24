@@ -47,4 +47,16 @@ class BlockingTest {
         // without the companion, a blocking call joins nothing
         withContext(ambient) { assertNull(db.blocking { kotlin.coroutines.coroutineContext[AmbientTransaction] }) }
     }
+
+    @Test
+    fun aTwinCalledFromAnotherTwinJoinsTheTransactionOnAnotherThread() = runBlocking(Dispatchers.Default) {
+        val db = TestDatabase(noTransaction)
+        db.blockingContext = Dispatchers.IO
+        db.transaction("s") {
+            val ambient = kotlin.coroutines.coroutineContext[AmbientTransaction]
+            // the outer twin runs on an IO thread: the inner one finds the transaction only if the companion came along
+            val seen = db.blocking { db.blocking { kotlin.coroutines.coroutineContext[AmbientTransaction] } }
+            assertSame(ambient, seen)
+        }
+    }
 }

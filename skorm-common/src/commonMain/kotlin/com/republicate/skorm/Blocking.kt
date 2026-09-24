@@ -18,9 +18,10 @@ internal expect fun ambientOnThread(): AmbientTransaction?
 /**
  * Where a blocking twin runs: the database's [Database.blockingContext], joined by the transaction of the
  * coroutine that is rendering, when there is one — a template inside `transaction { }` sees its own writes.
+ * The companion comes along, so that a twin called from this block joins too, whatever thread it runs on.
  */
 fun <T> Database.blocking(block: suspend () -> T): T =
-    blockingOn(blockingContext + (ambientOnThread() ?: EmptyCoroutineContext), block)
+    blockingOn(blockingContext + (ambientOnThread()?.let { it + ambientCompanion(it) } ?: EmptyCoroutineContext), block)
 
 fun <T> Instance.blocking(block: suspend () -> T): T = entity.schema.database.blocking(block)
 
