@@ -34,7 +34,7 @@ object KsonConverter: ContentConverter {
         while (true) {
             if (first) first = false
             else buffer.append('\n')
-            if (!content.readUTF8LineTo(buffer)) break
+            if (content.readLineTo(buffer, LineEnding.Lenient) < 0) break
         }
         return Json.parseValue(buffer.toString())
     }

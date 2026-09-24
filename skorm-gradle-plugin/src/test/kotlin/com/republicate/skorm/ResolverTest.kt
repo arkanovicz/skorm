@@ -361,7 +361,7 @@ class ResolverTest {
         assertEquals("::CurrentBorrower", borrower.factory)
         // a composite is a read-only row, in both halves
         assertEquals("ShelfDatabase.MainSchema.DudeImpl", borrower.composite!!.parentClass)
-        assertEquals(listOf("borrowingDate"), borrower.composite!!.fields.map { it.name })
+        assertEquals(listOf("borrowingDate"), borrower.composite.fields.map { it.name })
     }
 
     @Test

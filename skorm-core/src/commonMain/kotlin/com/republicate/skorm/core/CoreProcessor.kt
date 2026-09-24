@@ -220,14 +220,14 @@ open class CoreProcessor @JvmOverloads constructor(protected open val connector:
         return CoreProcessorTransaction(connector.begin(schema), this)
     }
 
-    private inline fun getSingleQuery(path: String, mutable: Boolean, params: Collection<String>) = queries.getOrElse(Pair(path, mutable)) {
+    private fun getSingleQuery(path: String, mutable: Boolean, params: Collection<String>) = queries.getOrElse(Pair(path, mutable)) {
         throw SkormException("attribute not found: $path")
     }.let {
         Pair(it.schema,
             it.queries(params).firstOrNull() ?: throw SkormException("single query expected: $path"))
     }
 
-    private inline fun getMutationQueries(path: String, params: Collection<String>) = queries.getOrElse(Pair(path, true)) {
+    private fun getMutationQueries(path: String, params: Collection<String>) = queries.getOrElse(Pair(path, true)) {
         throw SkormException("attribute not found: $path")
     }.let {
         Pair(it.schema, it.queries(params))

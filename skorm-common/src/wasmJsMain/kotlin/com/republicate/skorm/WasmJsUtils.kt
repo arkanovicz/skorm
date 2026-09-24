@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalWasmJsInterop::class)
+
 package com.republicate.skorm
 
 fun getProperty(obj: JsAny, prop: String): JsAny? = js("obj[prop]")
