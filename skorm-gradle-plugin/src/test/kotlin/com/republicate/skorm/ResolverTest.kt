@@ -58,7 +58,7 @@ class ResolverTest {
         assertEquals("book", model.join("Book", "donor").ownerEntity)
         val books = model.join("Dude", "books")
         assertEquals("dude", books.ownerEntity)
-        assertEquals("Sequence<ShelfDatabase.MainSchema.Book>", books.returnType)
+        assertEquals("Flow<ShelfDatabase.MainSchema.Book>", books.returnType)
         assertEquals("query", books.verb)
         assertEquals("rowSetAttribute", books.registration)
         assertEquals(listOf("dude_id"), books.params)

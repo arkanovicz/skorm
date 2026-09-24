@@ -1,5 +1,8 @@
 package com.republicate.skorm
 
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
+
 import com.republicate.kson.Json
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -14,7 +17,7 @@ class ReadOnlyTest {
         var performed = mutableListOf<String>()
         override suspend fun eval(path: String, params: Map<String, Any?>, mutable: Boolean): Any? = null
         override suspend fun retrieve(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Row? = null
-        override suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Sequence<Row> = emptySequence()
+        override suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Flow<Row> = emptyFlow()
         override suspend fun perform(path: String, params: Map<String, Any?>): Long { performed += path; return 1 }
         override suspend fun begin(schema: String): Transaction = throw UnsupportedOperationException()
         override val restMode = false

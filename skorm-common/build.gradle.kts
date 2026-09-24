@@ -94,7 +94,7 @@ kotlin {
                 implementation(kotlin("stdlib"))
                 api(libs.essential.kson)
                 api(libs.kotlinx.datetime)
-                implementation(libs.kotlinx.coroutines)
+                api(libs.kotlinx.coroutines) // Flow is in the API
                 implementation(libs.kotlinx.atomicfu)
                 implementation(libs.kotlin.logging)
                 implementation(libs.kotlinx.serialization.core)

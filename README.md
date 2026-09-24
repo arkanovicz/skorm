@@ -16,7 +16,7 @@ The nicest Kotlin multiplatform ORM around. Fully multiplatform. Coroutines-enab
 
      + ScalarAttribute, returning Any?
      + RowAttribute (and NullableRowAttribute), returning a row: an Instance, or a plain kson object
-     + RowSetAttribute, returning a Sequence of rows
+     + RowSetAttribute, returning a Flow of rows
      + MutationAttribute, returning Long (either the number of modified rows, or the generated serial value)
      + TransactionAttribute, work in progress (a `mut` block of statements is a MutationAttribute, run in one transaction)
 
@@ -144,7 +144,7 @@ ExampleDatabase                          MutableExampleDatabase : ExampleDatabas
   BookshelfSchema                          MutableBookshelfSchema : BookshelfSchema, MutableSchema
     interface Book : Instance                interface MutableBook : Book, MutableInstance
       companion object : Entity               companion object : Entity, MutableEntity
-      val title; fun author(); fun tags()      override var title; override fun tags(): Sequence<MutableTag>
+      val title; fun author(); fun tags()      override var title; override fun tags(): Flow<MutableTag>
       fun currentBorrower()                    fun lend(dude: Int)            // ksql mutations
     open class BookImpl : InstanceImpl, Book   open class MutableBookImpl : MutableInstanceImpl, MutableBook
 ```
@@ -196,7 +196,7 @@ fetched?.let {
 }
 
 // Browse all tasks, read-only rows through the read-only sibling
-Task.browse().forEach { println(it.title) }
+Task.browse().collect { println(it.title) }
 ```
 
 That's it! The skorm Gradle plugin generates all the necessary Kotlin types from your `.kddl` file.
@@ -222,7 +222,7 @@ fetched?.let {
     it.update()
 }
 
-taskEntity.browse().forEach { println(it["title"]) }
+taskEntity.browse().collect { println(it["title"]) }
 ```
 
 This is useful for generic tools, migrations, or when the schema is only known at runtime.
@@ -238,7 +238,7 @@ database.transaction {        // or transaction("schema") { ... } for multi-sche
 }                             // commit on exit; rollback (and rethrow) on any throw
 ```
 
-Nested blocks on the same database join the enclosing transaction (single commit). The transaction holds one connection: don't fan out parallel coroutines inside the block, and iterate lazy `Sequence` results before the block exits. Not available in REST mode.
+Nested blocks on the same database join the enclosing transaction (single commit). The transaction holds one connection: don't fan out parallel coroutines inside the block, and collect row flows before the block exits. Not available in REST mode.
 
 ## Reference
 
@@ -311,6 +311,8 @@ database.configure(mapOf(
     )
 ))
 ```
+
+**Rows are a `Flow`.** `browse()`, navigations to many rows and `*` attributes return a cold `Flow`: nothing runs until it is collected, rows are fetched as they are collected, and what backs them is released when the collection ends, exhausted or not. Collect once, inside the transaction the flow was queried in. Every call the processor makes to its connector runs on `CoreProcessor.blockingContext`, `Dispatchers.IO` on the JVM, so a handler on an event loop awaits rows instead of blocking on them. Blocking twins are the exception by construction: they park the calling thread, so a template that uses them is rendered off the event loop, `withContext(Dispatchers.IO) { template.merge(…) }`.
 
 **Read connector.** `CoreProcessor(connector, readConnector)` runs the reads of a read-only database on the second connector — a pool on a SELECT-only role is what makes the database actually read-only. It takes its settings from `core.read.<tag>` (`core.read.jdbc.url`, …), or the write connector's when absent. With a single connector, `core.read.*` is ignored: the read-only build's SELECT-only guarantee comes from the database role, not from the library, which only routes the reads. Inside a `transaction { }` of the mutable database, the read-only one reads on the transaction's connection.
 
@@ -434,7 +436,7 @@ mut [Entity.]name[(params)] = { SQL; SQL; ... }
 | `(Entity, field: Type, ...)?` | Nullable composite | `(Dude, borrowing_date: LocalDateTime)?` |
 | `(field: Type, ...)` | Anonymous object | `(count: Int, total: Double)` |
 | `(field: Type, ...)?` | Nullable anonymous | `(count: Int, total: Double)?` |
-| `(...)*` | Sequence of objects | `(name: String, count: Int)*` |
+| `(...)*` | Flow of objects | `(name: String, count: Int)*` |
 
 Supported scalar types: `Int`, `Long`, `String`, `Boolean`, `Double`, `Float`, `LocalDate`, `LocalDateTime`, `LocalTime`
 
@@ -511,7 +513,7 @@ attr Book.stats: (title_length: Int, borrowed: Int) =
 // in Book: suspend fun stats(): Stats
 ```
 
-**Sequence (rowset):**
+**Flow (rowset):**
 ```kotlin
 attr topBorrowers: (dude_id: Long, borrow_count: Int)* =
   SELECT dude_id, COUNT(*) borrow_count
@@ -522,7 +524,7 @@ attr topBorrowers: (dude_id: Long, borrow_count: Int)* =
 
 // Generates:
 // class TopBorrowers { val dudeId: Long; val borrowCount: Int }
-// in BookshelfSchema: suspend fun topBorrowers(): Sequence<TopBorrowers>
+// in BookshelfSchema: suspend fun topBorrowers(): Flow<TopBorrowers>
 ```
 
 All generated functions are coroutine-based (`suspend`) and type-safe, providing compile-time checking of parameters and return types.
@@ -653,7 +655,7 @@ fun Application.configureRouting() {
                     h1 { +"My Bookshelf" }
                     ul {
                         runBlocking {
-                            for (book in Book) {
+                            Book.browse().collect { book ->
                                 val author = book.author()
                                 val borrower = book.currentBorrower()
                                 li {

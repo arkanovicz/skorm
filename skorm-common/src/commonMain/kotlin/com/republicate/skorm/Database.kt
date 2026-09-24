@@ -153,7 +153,6 @@ open class Entity protected constructor(val name: String, val schema: Schema, va
 
     open suspend fun fetch(vararg key: Any): Instance? = instanceAttributes.retrieve(fetchAttribute, *key)
     open suspend fun browse() = instanceAttributes.query<Instance>(browseAttribute)
-    open suspend operator fun iterator() = browse().iterator()
 
     // Other operations are not visible directly, they are proxied from MutableInstance
     internal suspend fun insert(instance: Instance): Long {

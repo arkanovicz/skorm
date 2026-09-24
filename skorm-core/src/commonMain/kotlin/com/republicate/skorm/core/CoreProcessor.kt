@@ -5,6 +5,11 @@ package com.republicate.skorm.core
 import com.republicate.kson.Json
 import com.republicate.skorm.*
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.CoroutineContext
 import kotlin.jvm.JvmOverloads
 
 private val logger = KotlinLogging.logger("core")
@@ -18,7 +23,14 @@ const val KIND_COLUMN = "kind"
  * A store's read-only and mutable databases share one processor: attributes are registered by path *and*
  * mutability, so both register the same reads and only the mutable one registers writes.
  */
-open class CoreProcessor @JvmOverloads constructor(protected open val connector: Connector, protected open val readConnector: Connector = connector): Processor {
+open class CoreProcessor @JvmOverloads constructor(
+    protected open val connector: Connector,
+    protected open val readConnector: Connector = connector,
+    /** where the connector's blocking calls run, so that the calling coroutine's thread never does */
+    val blockingContext: CoroutineContext = ioContext
+): Processor {
+
+    private suspend fun <T> blocking(block: () -> T): T = withContext(blockingContext) { block() }
 
     override val configTag = "core"
     override val config = Configuration()
@@ -137,59 +149,69 @@ open class CoreProcessor @JvmOverloads constructor(protected open val connector:
 
     override suspend fun eval(path: String, params: Map<String, Any?>, mutable: Boolean): Any? {
         val (schema, query) = getSingleQuery(path, mutable, params.keys)
-        val (names, it) = connectorFor(mutable).query(schema, query.stmt, *query.params.map { params[it] }.toTypedArray())
-        if (names.size != 1) throw SkormException("scalar attribute $path expects only one column")
-        // No result row -> return null (indistinguishable from row with NULL value for nullable scalars)
-        if (!it.hasNext()) return null
-        val row = it.next()
-        if (it.hasNext()) throw SkormException("scalar attribute $path has more than one result row")
-        return row[0]  // Return the scalar value, not the row array
-    }
-
-    override suspend fun retrieve(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Row? {
-        val (schema, query) = getSingleQuery(path, mutable, params.keys)
-        val (names, it, types) = connectorFor(mutable).query(schema, query.stmt, *query.params.map { params[it] }.toTypedArray())
-        if (!it.hasNext()) return null // CB TODO - non-null result should be specifiable
-        val rawValues = it.next()
-        if (it.hasNext()) throw SkormException("raw attribute $path has more than one result row") // CB TODO - could be relaxed by config
-        return when (factory) {
-            null -> Json.MutableObject().apply {
-                putAll(names, rawValues, types)
-            }
-            else -> factory.new(kindOf(names, rawValues)).also { result ->
-                when (result) {
-                    is Instance -> {
-                        result.putNamesValues(names, rawValues, types)
-                        result.setClean()
-                    }
-                    is Json.MutableObject -> result.putAll(names, rawValues, types)
-                }
+        val values = query.params.map { params[it] }.toTypedArray()
+        return blocking {
+            connectorFor(mutable).query(schema, query.stmt, *values).use { (names, it) ->
+                if (names.size != 1) throw SkormException("scalar attribute $path expects only one column")
+                // No result row -> null (indistinguishable from a row with a NULL value for nullable scalars)
+                if (!it.hasNext()) return@use null
+                val row = it.next()
+                if (it.hasNext()) throw SkormException("scalar attribute $path has more than one result row")
+                row[0]
             }
         }
     }
 
-    override suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Sequence<Row> {
+    override suspend fun retrieve(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Row? {
         val (schema, query) = getSingleQuery(path, mutable, params.keys)
-        val (names, it, types) = connectorFor(mutable).query(schema, query.stmt, *query.params.map {
+        val values = query.params.map { params[it] }.toTypedArray()
+        return blocking {
+            connectorFor(mutable).query(schema, query.stmt, *values).use { (names, it, types) ->
+                if (!it.hasNext()) return@use null // CB TODO - non-null result should be specifiable
+                val rawValues = it.next()
+                if (it.hasNext()) throw SkormException("raw attribute $path has more than one result row") // CB TODO - could be relaxed by config
+                buildRow(names, rawValues, types, factory)
+            }
+        }
+    }
+
+    private fun buildRow(names: Array<String>, rawValues: Array<Any?>, types: Array<String>, factory: RowFactory?): Row = when (factory) {
+        null -> Json.MutableObject().apply {
+            putAll(names, rawValues, types)
+        }
+        else -> factory.new(kindOf(names, rawValues)).also { result ->
+            when (result) {
+                is Instance -> {
+                    result.putNamesValues(names, rawValues, types)
+                    result.setClean()
+                }
+                is Json.MutableObject -> result.putAll(names, rawValues, types)
+            }
+        }
+    }
+
+    override suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Flow<Row> {
+        val (schema, query) = getSingleQuery(path, mutable, params.keys)
+        val values = query.params.map {
             params[it]
                 ?:
                 if (params.containsKey(it)) null
                 else throw SkormException("Missing parameter: $it")
-        }.toTypedArray())
-        return it.asSequence().map {
-            when (factory) {
-                null -> Json.MutableObject().apply {
-                    putAll(names, it, types)
+        }.toTypedArray()
+        val connector = connectorFor(mutable)
+        return flow {
+            val result = blocking { connector.query(schema, query.stmt, *values) }
+            try {
+                val (names, it, types) = result
+                while (true) {
+                    // one hop to the blocking context per page, the rows handed over here
+                    val page = blocking { buildList { while (size < ROW_PAGE && it.hasNext()) add(buildRow(names, it.next(), types, factory)) } }
+                    if (page.isEmpty()) break
+                    page.forEach { emit(it) }
                 }
-                else -> factory.new(kindOf(names, it)).also { result ->
-                    when (result) {
-                        is Instance -> {
-                            result.putNamesValues(names, it, types)
-                            result.setClean()
-                        }
-                        is Json.MutableObject -> result.putAll(names, it, types)
-                    }
-                }
+            } finally {
+                // exhausted, abandoned or cancelled: what backs the rows is released either way
+                withContext(NonCancellable + blockingContext) { result.close() }
             }
         }
     }
@@ -201,7 +223,7 @@ open class CoreProcessor @JvmOverloads constructor(protected open val connector:
             transaction(schema) {
                 with (this as CoreProcessorTransaction) {
                     for (query in queries) {
-                        totalChanged += connector.mutate(schema, query.stmt, *query.params.map { params[it] }.toTypedArray())
+                        totalChanged += blocking { connector.mutate(schema, query.stmt, *query.params.map { params[it] }.toTypedArray()) }
                     }
                 }
             }
@@ -213,12 +235,13 @@ open class CoreProcessor @JvmOverloads constructor(protected open val connector:
 //                    list.add(GeneratedKeyMarker.PARAM_KEY)
 //                }
 //            }.toTypedArray())
-            return connector.mutate(schema, query.stmt, *query.params.map { params[it] }.toTypedArray())
+            val values = query.params.map { params[it] }.toTypedArray()
+            return blocking { connector.mutate(schema, query.stmt, *values) }
         }
     }
 
     override suspend fun begin(schema: String): Transaction {
-        return CoreProcessorTransaction(connector.begin(schema), this)
+        return CoreProcessorTransaction(blocking { connector.begin(schema) }, this)
     }
 
     private fun getSingleQuery(path: String, mutable: Boolean, params: Collection<String>) = queries.getOrElse(Pair(path, mutable)) {
@@ -322,6 +345,11 @@ open class CoreProcessor @JvmOverloads constructor(protected open val connector:
         }
     }
 
+    companion object {
+        /** rows built per hop to the blocking context */
+        const val ROW_PAGE = 1000
+    }
+
     override fun close() {
         connector.close()
         if (readConnector !== connector) readConnector.close()
@@ -329,7 +357,7 @@ open class CoreProcessor @JvmOverloads constructor(protected open val connector:
 }
 
 /** Everything runs on the transaction's connection, reads of the read-only database included. */
-class CoreProcessorTransaction(txConnector: TransactionConnector, parent: CoreProcessor) : CoreProcessor(txConnector, txConnector), Transaction {
+class CoreProcessorTransaction(txConnector: TransactionConnector, parent: CoreProcessor) : CoreProcessor(txConnector, txConnector, parent.blockingContext), Transaction {
     init {
         // share the parent's registry, mappers and filters: only the connector differs
         queries = parent.queries

@@ -1,12 +1,16 @@
 package com.republicate.skorm
 
 import kotlin.jvm.JvmName
+import kotlin.jvm.JvmOverloads
 
-class QueryResult(
+/** A result set: [values] fetch rows on demand, [close] releases what backs them once the reader is done, exhausted or not. */
+class QueryResult @JvmOverloads constructor(
     val names: Array<String>,
     val values: Iterator<Array<Any?>>,
-    val types: Array<String> = emptyArray()
-) {
+    val types: Array<String> = emptyArray(),
+    private val closer: () -> Unit = {}
+) : AutoCloseable {
+    override fun close() = closer()
     operator fun component1() = names
     operator fun component2() = values
     operator fun component3() = types

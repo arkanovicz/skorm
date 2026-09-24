@@ -11,6 +11,7 @@ package com.republicate.skorm.bookshelf
 import com.republicate.kson.Json
 import kotlinx.datetime.*
 import com.republicate.skorm.*
+import kotlinx.coroutines.flow.*
 import kotlin.jvm.JvmName
 import com.republicate.skorm.bookshelf.ExampleDatabase.BookshelfSchema.Genre
 
@@ -55,9 +56,7 @@ open class ExampleDatabase(processor: Processor): Database("example", processor)
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Dude?
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<Dude>
-                @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<Dude>
+                override suspend fun browse() = super.browse() as Flow<Dude>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("dudeId", "serial", true, true))
@@ -77,9 +76,7 @@ open class ExampleDatabase(processor: Processor): Database("example", processor)
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Author?
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<Author>
-                @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<Author>
+                override suspend fun browse() = super.browse() as Flow<Author>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("authorId", "serial", true, true))
@@ -91,7 +88,7 @@ open class ExampleDatabase(processor: Processor): Database("example", processor)
             val name: String
                 get() = getString("name")!!
             // reverse foreign key
-            suspend fun books(): Sequence<ExampleDatabase.BookshelfSchema.Book> = query("books")
+            suspend fun books(): Flow<ExampleDatabase.BookshelfSchema.Book> = query("books")
             // attribute Author.countInGenre
             suspend fun `countInGenre`(genre: Genre) = eval<Int>("countInGenre", genre)
             // attribute Author.catalog
@@ -112,9 +109,7 @@ open class ExampleDatabase(processor: Processor): Database("example", processor)
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Book?
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<Book>
-                @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<Book>
+                override suspend fun browse() = super.browse() as Flow<Book>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("bookId", "serial", true, true))
@@ -139,7 +134,7 @@ open class ExampleDatabase(processor: Processor): Database("example", processor)
             // forward foreign key
             suspend fun author(): ExampleDatabase.BookshelfSchema.Author = retrieve("author")
             // left to right n-n join
-            suspend fun tags(): Sequence<ExampleDatabase.BookshelfSchema.Tag> = query("tags")
+            suspend fun tags(): Flow<ExampleDatabase.BookshelfSchema.Tag> = query("tags")
             // attribute Book.currentBorrower
             suspend fun `currentBorrower`() = retrieve<CurrentBorrower?>("currentBorrower") as CurrentBorrower?
             // attribute Book.stats
@@ -164,9 +159,7 @@ open class ExampleDatabase(processor: Processor): Database("example", processor)
             companion object: Entity("borrowing", ExampleDatabase.bookshelf) {
                 override fun new(): Borrowing = BorrowingImpl(this)
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<Borrowing>
-                @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<Borrowing>
+                override suspend fun browse() = super.browse() as Flow<Borrowing>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("borrowingDate", "date", false, false))
@@ -202,9 +195,7 @@ open class ExampleDatabase(processor: Processor): Database("example", processor)
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Tag?
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<Tag>
-                @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<Tag>
+                override suspend fun browse() = super.browse() as Flow<Tag>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("tagId", "serial", true, true))
@@ -216,7 +207,7 @@ open class ExampleDatabase(processor: Processor): Database("example", processor)
             val label: String
                 get() = getString("label")!!
             // right to left n-n join
-            suspend fun books(): Sequence<ExampleDatabase.BookshelfSchema.Book> = query("books")
+            suspend fun books(): Flow<ExampleDatabase.BookshelfSchema.Book> = query("books")
         }
         open class TagImpl(entity: Entity = Tag): InstanceImpl(entity), Tag {
             // the blocking twin of `books()`: what a reflection-driven caller reaches under that name
@@ -227,9 +218,7 @@ open class ExampleDatabase(processor: Processor): Database("example", processor)
             companion object: Entity("bookTag", ExampleDatabase.bookshelf) {
                 override fun new(): BookTag = BookTagImpl(this)
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<BookTag>
-                @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<BookTag>
+                override suspend fun browse() = super.browse() as Flow<BookTag>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("bookId", "int", false, false))
@@ -281,9 +270,7 @@ class MutableExampleDatabase(processor: Processor): ExampleDatabase(processor), 
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as MutableDude?
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<MutableDude>
-                @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<MutableDude>
+                override suspend fun browse() = super.browse() as Flow<MutableDude>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("dudeId", "serial", true, true))
@@ -302,9 +289,7 @@ class MutableExampleDatabase(processor: Processor): ExampleDatabase(processor), 
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as MutableAuthor?
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<MutableAuthor>
-                @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<MutableAuthor>
+                override suspend fun browse() = super.browse() as Flow<MutableAuthor>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("authorId", "serial", true, true))
@@ -315,7 +300,7 @@ class MutableExampleDatabase(processor: Processor): ExampleDatabase(processor), 
                 get() = getString("name")!!
                 set(v) { put("name", v) }
             // reverse foreign key
-            override suspend fun books(): Sequence<MutableExampleDatabase.MutableBookshelfSchema.MutableBook> = query("books")
+            override suspend fun books(): Flow<MutableExampleDatabase.MutableBookshelfSchema.MutableBook> = query("books")
         }
         open class MutableAuthorImpl(entity: Entity = MutableAuthor): MutableInstanceImpl(entity), MutableAuthor {
             // the blocking twin of `books()`: what a reflection-driven caller reaches under that name
@@ -332,9 +317,7 @@ class MutableExampleDatabase(processor: Processor): ExampleDatabase(processor), 
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as MutableBook?
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<MutableBook>
-                @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<MutableBook>
+                override suspend fun browse() = super.browse() as Flow<MutableBook>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("bookId", "serial", true, true))
@@ -361,7 +344,7 @@ class MutableExampleDatabase(processor: Processor): ExampleDatabase(processor), 
             // forward foreign key
             override suspend fun author(): MutableExampleDatabase.MutableBookshelfSchema.MutableAuthor = retrieve("author")
             // left to right n-n join
-            override suspend fun tags(): Sequence<MutableExampleDatabase.MutableBookshelfSchema.MutableTag> = query("tags")
+            override suspend fun tags(): Flow<MutableExampleDatabase.MutableBookshelfSchema.MutableTag> = query("tags")
             // attribute Book.lend
             suspend fun `lend`(dude_id: Long) = perform("lend", dude_id)
             // attribute Book.restitute
@@ -388,9 +371,7 @@ class MutableExampleDatabase(processor: Processor): ExampleDatabase(processor), 
             companion object: Entity("borrowing", MutableExampleDatabase.bookshelf), MutableEntity {
                 override fun new(): MutableBorrowing = MutableBorrowingImpl(this)
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<MutableBorrowing>
-                @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<MutableBorrowing>
+                override suspend fun browse() = super.browse() as Flow<MutableBorrowing>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("borrowingDate", "date", false, false))
@@ -430,9 +411,7 @@ class MutableExampleDatabase(processor: Processor): ExampleDatabase(processor), 
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as MutableTag?
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<MutableTag>
-                @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<MutableTag>
+                override suspend fun browse() = super.browse() as Flow<MutableTag>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("tagId", "serial", true, true))
@@ -443,7 +422,7 @@ class MutableExampleDatabase(processor: Processor): ExampleDatabase(processor), 
                 get() = getString("label")!!
                 set(v) { put("label", v) }
             // right to left n-n join
-            override suspend fun books(): Sequence<MutableExampleDatabase.MutableBookshelfSchema.MutableBook> = query("books")
+            override suspend fun books(): Flow<MutableExampleDatabase.MutableBookshelfSchema.MutableBook> = query("books")
         }
         open class MutableTagImpl(entity: Entity = MutableTag): MutableInstanceImpl(entity), MutableTag {
             // the blocking twin of `books()`: what a reflection-driven caller reaches under that name
@@ -454,9 +433,7 @@ class MutableExampleDatabase(processor: Processor): ExampleDatabase(processor), 
             companion object: Entity("bookTag", MutableExampleDatabase.bookshelf), MutableEntity {
                 override fun new(): MutableBookTag = MutableBookTagImpl(this)
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<MutableBookTag>
-                @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<MutableBookTag>
+                override suspend fun browse() = super.browse() as Flow<MutableBookTag>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("bookId", "int", false, false))

@@ -24,6 +24,8 @@ import io.ktor.utils.io.*
 import io.ktor.utils.io.charsets.*
 import io.ktor.utils.io.jvm.javaio.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.html.*
@@ -133,7 +135,7 @@ fun Application.configureRouting() {
                     ul {
                         runBlocking {
                             val dudes = Dude.browse().toList()
-                            for (book in Book) {
+                            Book.browse().collect { book ->
                                 val authorName = book.author().name
                                 val currentBorrower = book.currentBorrower()
                                 val stats = book.stats()

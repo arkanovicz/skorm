@@ -12,6 +12,7 @@ import com.republicate.kson.Json
 import kotlin.uuid.Uuid
 import kotlinx.datetime.*
 import com.republicate.skorm.*
+import kotlinx.coroutines.flow.*
 import kotlin.jvm.JvmName
 import shapes.model.ShapesDatabase.MainSchema.Level
 import shapes.model.ShapesDatabase.MainSchema.PersonKind
@@ -77,9 +78,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Person?
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<Person>
-                @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<Person>
+                override suspend fun browse() = super.browse() as Flow<Person>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("personId", "serial", true, true))
@@ -121,15 +120,15 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
             val kind: PersonKind
                 get() = getString("kind")!!.let { PersonKind.valueOf(it) }
             // reverse foreign key
-            suspend fun aFriendships(): Sequence<ShapesDatabase.MainSchema.Friendship> = query("aFriendships")
+            suspend fun aFriendships(): Flow<ShapesDatabase.MainSchema.Friendship> = query("aFriendships")
             // reverse foreign key
-            suspend fun bFriendships(): Sequence<ShapesDatabase.MainSchema.Friendship> = query("bFriendships")
+            suspend fun bFriendships(): Flow<ShapesDatabase.MainSchema.Friendship> = query("bFriendships")
             // reverse foreign key
-            suspend fun ownerAddresses(): Sequence<ShapesDatabase.MainSchema.Address> = query("ownerAddresses")
+            suspend fun ownerAddresses(): Flow<ShapesDatabase.MainSchema.Address> = query("ownerAddresses")
             // left to right n-n join
-            suspend fun addresses(): Sequence<ShapesDatabase.MainSchema.Address> = query("addresses")
+            suspend fun addresses(): Flow<ShapesDatabase.MainSchema.Address> = query("addresses")
             // reverse foreign key
-            suspend fun badges(): Sequence<ShapesDatabase.OtherSchema.Badge> = query("badges")
+            suspend fun badges(): Flow<ShapesDatabase.OtherSchema.Badge> = query("badges")
             // attribute Person.mainAddress
             suspend fun `mainAddress`() = retrieve<ShapesDatabase.MainSchema.Address?>("mainAddress")
             // attribute Person.counts
@@ -166,9 +165,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Country?
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<Country>
-                @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<Country>
+                override suspend fun browse() = super.browse() as Flow<Country>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("code", "char(2)", true, false))
@@ -180,7 +177,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
             val label: String
                 get() = getString("label")!!
             // reverse foreign key
-            suspend fun addresses(): Sequence<ShapesDatabase.MainSchema.Address> = query("addresses")
+            suspend fun addresses(): Flow<ShapesDatabase.MainSchema.Address> = query("addresses")
         }
         open class CountryImpl(entity: Entity = Country): InstanceImpl(entity), Country {
             // the blocking twin of `addresses()`: what a reflection-driven caller reaches under that name
@@ -193,9 +190,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Friendship?
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<Friendship>
-                @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<Friendship>
+                override suspend fun browse() = super.browse() as Flow<Friendship>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("aId", "int", true, false))
@@ -214,7 +209,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
             // forward foreign key
             suspend fun b(): ShapesDatabase.MainSchema.Person = retrieve("b")
             // reverse foreign key
-            suspend fun gifts(): Sequence<ShapesDatabase.MainSchema.Gift> = query("gifts")
+            suspend fun gifts(): Flow<ShapesDatabase.MainSchema.Gift> = query("gifts")
         }
         open class FriendshipImpl(entity: Entity = Friendship): InstanceImpl(entity), Friendship {
             // the blocking twin of `a()`: what a reflection-driven caller reaches under that name
@@ -231,9 +226,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
             companion object: Entity("gift", ShapesDatabase.main) {
                 override fun new(): Gift = GiftImpl(this)
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<Gift>
-                @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<Gift>
+                override suspend fun browse() = super.browse() as Flow<Gift>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("label", "varchar(20)", false, false))
@@ -261,9 +254,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Address?
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<Address>
-                @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<Address>
+                override suspend fun browse() = super.browse() as Flow<Address>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("addressId", "serial", true, true))
@@ -290,7 +281,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
             // forward foreign key
             suspend fun country(): ShapesDatabase.MainSchema.Country = retrieve("country")
             // right to left n-n join
-            suspend fun persons(): Sequence<ShapesDatabase.MainSchema.Person> = query("persons")
+            suspend fun persons(): Flow<ShapesDatabase.MainSchema.Person> = query("persons")
         }
         open class AddressImpl(entity: Entity = Address): InstanceImpl(entity), Address {
             // the blocking twin of `owner()`: what a reflection-driven caller reaches under that name
@@ -312,9 +303,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Vip?
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<Vip>
-                @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<Vip>
+                override suspend fun browse() = super.browse() as Flow<Vip>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("personId", "serial", true, true))
@@ -338,9 +327,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
             companion object: Entity("personAddress", ShapesDatabase.main) {
                 override fun new(): PersonAddress = PersonAddressImpl(this)
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<PersonAddress>
-                @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<PersonAddress>
+                override suspend fun browse() = super.browse() as Flow<PersonAddress>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("personId", "int", false, false))
@@ -376,9 +363,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
             companion object: Entity("badge", ShapesDatabase.other) {
                 override fun new(): Badge = BadgeImpl(this)
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<Badge>
-                @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<Badge>
+                override suspend fun browse() = super.browse() as Flow<Badge>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("label", "varchar(20)", false, false))
@@ -444,9 +429,7 @@ class MutableShapesDatabase(processor: Processor): ShapesDatabase(processor), Mu
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as MutablePerson?
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<MutablePerson>
-                @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<MutablePerson>
+                override suspend fun browse() = super.browse() as Flow<MutablePerson>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("personId", "serial", true, true))
@@ -494,15 +477,15 @@ class MutableShapesDatabase(processor: Processor): ShapesDatabase(processor), Mu
                 get() = getLocalDateTime("seen")
                 set(v) { put("seen", v) }
             // reverse foreign key
-            override suspend fun aFriendships(): Sequence<MutableShapesDatabase.MutableMainSchema.MutableFriendship> = query("aFriendships")
+            override suspend fun aFriendships(): Flow<MutableShapesDatabase.MutableMainSchema.MutableFriendship> = query("aFriendships")
             // reverse foreign key
-            override suspend fun bFriendships(): Sequence<MutableShapesDatabase.MutableMainSchema.MutableFriendship> = query("bFriendships")
+            override suspend fun bFriendships(): Flow<MutableShapesDatabase.MutableMainSchema.MutableFriendship> = query("bFriendships")
             // reverse foreign key
-            override suspend fun ownerAddresses(): Sequence<MutableShapesDatabase.MutableMainSchema.MutableAddress> = query("ownerAddresses")
+            override suspend fun ownerAddresses(): Flow<MutableShapesDatabase.MutableMainSchema.MutableAddress> = query("ownerAddresses")
             // left to right n-n join
-            override suspend fun addresses(): Sequence<MutableShapesDatabase.MutableMainSchema.MutableAddress> = query("addresses")
+            override suspend fun addresses(): Flow<MutableShapesDatabase.MutableMainSchema.MutableAddress> = query("addresses")
             // reverse foreign key
-            override suspend fun badges(): Sequence<MutableShapesDatabase.MutableOtherSchema.MutableBadge> = query("badges")
+            override suspend fun badges(): Flow<MutableShapesDatabase.MutableOtherSchema.MutableBadge> = query("badges")
             // attribute Person.mainAddress
             override suspend fun `mainAddress`() = retrieve<MutableShapesDatabase.MutableMainSchema.MutableAddress?>("mainAddress")
             // attribute Person.forget
@@ -539,9 +522,7 @@ class MutableShapesDatabase(processor: Processor): ShapesDatabase(processor), Mu
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as MutableCountry?
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<MutableCountry>
-                @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<MutableCountry>
+                override suspend fun browse() = super.browse() as Flow<MutableCountry>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("code", "char(2)", true, false))
@@ -552,7 +533,7 @@ class MutableShapesDatabase(processor: Processor): ShapesDatabase(processor), Mu
                 get() = getString("label")!!
                 set(v) { put("label", v) }
             // reverse foreign key
-            override suspend fun addresses(): Sequence<MutableShapesDatabase.MutableMainSchema.MutableAddress> = query("addresses")
+            override suspend fun addresses(): Flow<MutableShapesDatabase.MutableMainSchema.MutableAddress> = query("addresses")
         }
         open class MutableCountryImpl(entity: Entity = MutableCountry): MutableInstanceImpl(entity), MutableCountry {
             // the blocking twin of `addresses()`: what a reflection-driven caller reaches under that name
@@ -565,9 +546,7 @@ class MutableShapesDatabase(processor: Processor): ShapesDatabase(processor), Mu
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as MutableFriendship?
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<MutableFriendship>
-                @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<MutableFriendship>
+                override suspend fun browse() = super.browse() as Flow<MutableFriendship>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("aId", "int", true, false))
@@ -583,7 +562,7 @@ class MutableShapesDatabase(processor: Processor): ShapesDatabase(processor), Mu
             // forward foreign key
             override suspend fun b(): MutableShapesDatabase.MutableMainSchema.MutablePerson = retrieve("b")
             // reverse foreign key
-            override suspend fun gifts(): Sequence<MutableShapesDatabase.MutableMainSchema.MutableGift> = query("gifts")
+            override suspend fun gifts(): Flow<MutableShapesDatabase.MutableMainSchema.MutableGift> = query("gifts")
         }
         open class MutableFriendshipImpl(entity: Entity = MutableFriendship): MutableInstanceImpl(entity), MutableFriendship {
             // the blocking twin of `a()`: what a reflection-driven caller reaches under that name
@@ -600,9 +579,7 @@ class MutableShapesDatabase(processor: Processor): ShapesDatabase(processor), Mu
             companion object: Entity("gift", MutableShapesDatabase.main), MutableEntity {
                 override fun new(): MutableGift = MutableGiftImpl(this)
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<MutableGift>
-                @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<MutableGift>
+                override suspend fun browse() = super.browse() as Flow<MutableGift>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("label", "varchar(20)", false, false))
@@ -633,9 +610,7 @@ class MutableShapesDatabase(processor: Processor): ShapesDatabase(processor), Mu
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as MutableAddress?
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<MutableAddress>
-                @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<MutableAddress>
+                override suspend fun browse() = super.browse() as Flow<MutableAddress>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("addressId", "serial", true, true))
@@ -664,7 +639,7 @@ class MutableShapesDatabase(processor: Processor): ShapesDatabase(processor), Mu
             // forward foreign key
             override suspend fun country(): MutableShapesDatabase.MutableMainSchema.MutableCountry = retrieve("country")
             // right to left n-n join
-            override suspend fun persons(): Sequence<MutableShapesDatabase.MutableMainSchema.MutablePerson> = query("persons")
+            override suspend fun persons(): Flow<MutableShapesDatabase.MutableMainSchema.MutablePerson> = query("persons")
         }
         open class MutableAddressImpl(entity: Entity = MutableAddress): MutableInstanceImpl(entity), MutableAddress {
             // the blocking twin of `owner()`: what a reflection-driven caller reaches under that name
@@ -686,9 +661,7 @@ class MutableShapesDatabase(processor: Processor): ShapesDatabase(processor), Mu
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as MutableVip?
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<MutableVip>
-                @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<MutableVip>
+                override suspend fun browse() = super.browse() as Flow<MutableVip>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("personId", "serial", true, true))
@@ -714,9 +687,7 @@ class MutableShapesDatabase(processor: Processor): ShapesDatabase(processor), Mu
             companion object: Entity("personAddress", MutableShapesDatabase.main), MutableEntity {
                 override fun new(): MutablePersonAddress = MutablePersonAddressImpl(this)
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<MutablePersonAddress>
-                @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<MutablePersonAddress>
+                override suspend fun browse() = super.browse() as Flow<MutablePersonAddress>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("personId", "int", false, false))
@@ -740,9 +711,7 @@ class MutableShapesDatabase(processor: Processor): ShapesDatabase(processor), Mu
             companion object: Entity("badge", MutableShapesDatabase.other), MutableEntity {
                 override fun new(): MutableBadge = MutableBadgeImpl(this)
                 @Suppress("UNCHECKED_CAST")
-                override suspend fun browse() = super.browse() as Sequence<MutableBadge>
-                @Suppress("UNCHECKED_CAST")
-                override suspend operator fun iterator() = super.iterator() as Iterator<MutableBadge>
+                override suspend fun browse() = super.browse() as Flow<MutableBadge>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("label", "varchar(20)", false, false))

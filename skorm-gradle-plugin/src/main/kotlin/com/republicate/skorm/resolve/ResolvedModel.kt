@@ -119,8 +119,8 @@ class JoinAttribute(
 ) {
     /** the name as written in Kotlin: backticked when it is a keyword */
     val identifier get() = Collisions.identifier(name)
-    /** `Sequence<…Tag>`, `…Dude?` */
-    val returnType get() = if (multiple) "Sequence<$targetClass>" else if (nullable) "$targetClass?" else targetClass
+    /** `Flow<…Tag>`, `…Dude?` */
+    val returnType get() = if (multiple) "Flow<$targetClass>" else if (nullable) "$targetClass?" else targetClass
     val verb get() = if (multiple) "query" else "retrieve"
     val registration get() = if (multiple) "rowSetAttribute" else if (nullable) "nullableRowAttribute" else "rowAttribute"
 }

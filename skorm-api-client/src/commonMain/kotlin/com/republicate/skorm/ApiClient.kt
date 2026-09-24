@@ -3,6 +3,8 @@
 package com.republicate.skorm
 
 import com.republicate.kson.Json
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
@@ -133,8 +135,7 @@ class ApiClient(val baseUrl: String) : Processor {
         } ?: json
     }
 
-    @Suppress("UNCHECKED_CAST")
-    override suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Sequence<Row> {
+    override suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Flow<Row> {
         logger.info { "query $path $params ${factory?.let { "as $factory.name" } ?: ""}" }
         var restPath = path
         var restParams = params
@@ -147,23 +148,20 @@ class ApiClient(val baseUrl: String) : Processor {
                 }
             }
         }
-        val response = get(restPath, restParams)
-
-        // CB TODO - stream parsing of Sequence<Object> in Kson
-        // val sequence = response.body<Sequence<Json.Object>>()
-        logger.info {  "Reading response "}
-        val all = response.body<Json.Array>()
-        logger.info { "Got response $all" }
-        val sequence = all.asSequence() as Sequence<Json.Object>
-
-        return factory?.let { sequence.map { obj ->
-            factory.new(obj.getString("kind")).also {
-                when (it) {
-                    is Instance -> { it.putRawFields(obj); it.setClean() }
-                    is Json.MutableObject -> it.putAll(obj)
-                }
+        return flow {
+            val response = get(restPath, restParams)
+            // CB TODO - stream parsing of the array in Kson
+            val all = response.body<Json.Array>()
+            for (obj in all) {
+                obj as Json.Object
+                emit(factory?.new(obj.getString("kind"))?.also {
+                    when (it) {
+                        is Instance -> { it.putRawFields(obj); it.setClean() }
+                        is Json.MutableObject -> it.putAll(obj)
+                    }
+                } ?: obj)
             }
-        } } ?: sequence
+        }
     }
 
     override suspend fun perform(path: String, params: Map<String, Any?>): Long {

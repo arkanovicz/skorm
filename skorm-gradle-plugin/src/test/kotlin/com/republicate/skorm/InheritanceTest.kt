@@ -82,6 +82,7 @@ class InheritanceTest {
             import com.republicate.skorm.jdbc.JdbcConnector
             import inh.model.*
             import kotlinx.coroutines.runBlocking
+            import kotlinx.coroutines.flow.*
             import kotlinx.datetime.LocalDate
             import org.testcontainers.containers.PostgreSQLContainer
             import kotlin.test.Test

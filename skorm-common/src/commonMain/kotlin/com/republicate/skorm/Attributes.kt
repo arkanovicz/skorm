@@ -1,5 +1,7 @@
 package com.republicate.skorm
 
+import kotlinx.coroutines.flow.Flow
+
 import com.republicate.kson.Json
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
@@ -233,7 +235,7 @@ class RowAttribute<out T: Row>(name: String, parameters: Set<String>, factory: R
 
 class NullableRowAttribute<out T: Row>(name: String, parameters: Set<String>, factory: RowFactory): Attribute<T?>(name, parameters, rowFactory = factory)
 
-class RowSetAttribute<out T: Row>(name: String, parameters: Set<String>, factory: RowFactory): Attribute<Sequence<T>>(name, parameters, rowFactory = factory)
+class RowSetAttribute<out T: Row>(name: String, parameters: Set<String>, factory: RowFactory): Attribute<Flow<T>>(name, parameters, rowFactory = factory)
     
 class MutationAttribute(name: String, parameters: Set<String> = setOf(), useDirtyFields: Boolean = false): Attribute<Long>(name, parameters, useDirtyFields = useDirtyFields)
 
@@ -300,9 +302,9 @@ abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = 
         return attribute.handleResult(currentProcessor().retrieve(execPath, execParams, attribute.rowFactory, mutable))
     }
 
-    suspend inline fun <reified T: Row> query(attrName: String, vararg params: Any?) = query(findAttribute<Sequence<T>>(attrName), *params)
+    suspend inline fun <reified T: Row> query(attrName: String, vararg params: Any?) = query(findAttribute<Flow<T>>(attrName), *params)
 
-    suspend inline fun <reified T: Row> query(attribute: Attribute<Sequence<T>>, vararg params: Any?): Sequence<T> {
+    suspend inline fun <reified T: Row> query(attribute: Attribute<Flow<T>>, vararg params: Any?): Flow<T> {
         val (execPath, execParams) = prepare(attribute, *params)
         return attribute.handleResult(currentProcessor().query(execPath, execParams, attribute.rowFactory, mutable))
     }

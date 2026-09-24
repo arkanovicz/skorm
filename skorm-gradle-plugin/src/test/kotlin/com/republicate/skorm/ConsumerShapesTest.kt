@@ -73,6 +73,7 @@ class ConsumerShapesTest {
         // compiles only if the generated sources reached this source set; the mutable half only when generated
         dir.resolve("app/src/main/kotlin/Use.kt").writeText("""
             import tiny.model.*
+            import kotlinx.coroutines.flow.*
             suspend fun titles(author: TinyDatabase.TinySchema.Author): List<String> = author.books().map { it.title }.toList()
         """.trimIndent() + if (readOnly) "" else """
 

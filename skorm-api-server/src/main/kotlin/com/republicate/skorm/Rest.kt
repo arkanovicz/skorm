@@ -10,6 +10,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.util.*
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.flow.toCollection
 import kotlinx.datetime.*
 
 private val logger = KotlinLogging.logger("skorm.api")
@@ -132,7 +133,7 @@ fun Route.rest(entity: Entity) {
                     }
                     is RowSetAttribute<*> -> {
                         get(attribute.key) {
-                            call.respond(entity.instanceAttributes.query<Json.Object>(attribute.key, call.allParameters()))
+                            call.respond(entity.instanceAttributes.query<Json.Object>(attribute.key, call.allParameters()).toCollection(Json.MutableArray()))
                         }
                     }
                     is MutationAttribute -> {

@@ -1,6 +1,7 @@
 package com.republicate.skorm
 
 import com.republicate.kson.Json
+import kotlinx.coroutines.flow.Flow
 import kotlin.jvm.JvmField
 
 sealed interface Marker
@@ -41,7 +42,8 @@ interface Processor: Configurable, AutoCloseable {
     // attributes; [mutable] says the caller is a holder of the mutable database, whose reads run where its writes do
     suspend fun eval(path: String, params: Map<String, Any?>, mutable: Boolean = false): Any?
     suspend fun retrieve(path: String, params: Map<String, Any?>, factory: RowFactory? = null, mutable: Boolean = false): Row?
-    suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory? = null, mutable: Boolean = false): Sequence<Row>
+    /** The rows, fetched as the flow is collected: a cold flow, collected once, inside the transaction it was queried in. */
+    suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory? = null, mutable: Boolean = false): Flow<Row>
     suspend fun perform(path: String, params: Map<String, Any?>): Long
 
     // identifiers mapping
@@ -73,7 +75,7 @@ open class ReadOnlyProcessor(internal val delegate: Processor) : Processor by de
         if (mutable) refuse(path) else delegate.eval(path, params, false)
     override suspend fun retrieve(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Row? =
         if (mutable) refuse(path) else delegate.retrieve(path, params, factory, false)
-    override suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Sequence<Row> =
+    override suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Flow<Row> =
         if (mutable) refuse(path) else delegate.query(path, params, factory, false)
     override suspend fun perform(path: String, params: Map<String, Any?>): Long = refuse(path)
     override suspend fun begin(schema: String): Transaction = delegate.begin(schema).readOnly
@@ -89,7 +91,7 @@ class ReadOnlyTransaction(private val tx: Transaction) : ReadOnlyProcessor(tx), 
 /** The processor behind a read-only view — an extension, so that reflection on the view does not reach it. */
 val Processor.underlying: Processor get() = if (this is ReadOnlyProcessor) delegate else this
 
-suspend fun Processor.transaction(schema: String, block: Transaction.()->Unit) {
+suspend fun Processor.transaction(schema: String, block: suspend Transaction.() -> Unit) {
     val tx = begin(schema)
     try {
         block.invoke(tx)
