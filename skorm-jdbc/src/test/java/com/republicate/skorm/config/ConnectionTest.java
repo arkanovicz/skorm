@@ -7,8 +7,12 @@ import com.republicate.skorm.jdbc.ConnectionPool;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
+import java.sql.SQLException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ConnectionTest
 {
@@ -31,5 +35,31 @@ public class ConnectionTest
         ConnectionPool connectionPool = testConnectionPool();
         Connection connection = connectionPool.getConnection();
         assertEquals(true, connection.getAutoCommit());
+    }
+
+    @Test
+    public void testExhaustedPoolWaits() throws Exception
+    {
+        ConnectionFactory factory = new ConnectionFactory(new BasicDataSource("jdbc:h2:mem:exhausted"));
+        ConnectionPool connectionPool = new ConnectionPool(factory, true, 1, 300);
+        Connection connection = connectionPool.getConnection();
+        connection.enterBusyState();
+
+        long start = System.currentTimeMillis();
+        assertThrows(SQLException.class, connectionPool::getConnection);
+        long elapsed = System.currentTimeMillis() - start;
+        assertTrue(elapsed >= 300 && elapsed < 2000, "waited " + elapsed + " ms");
+
+        Thread releaser = new Thread(() -> {
+            try
+            {
+                Thread.sleep(100);
+            }
+            catch (InterruptedException ie) {}
+            connection.leaveBusyState();
+        });
+        releaser.start();
+        assertSame(connection, connectionPool.getConnection());
+        releaser.join();
     }
 }

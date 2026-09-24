@@ -69,6 +69,9 @@ public class Connection
     /** Busy state. */
     private int busy = 0;
 
+    /** Owning pool, if any. */
+    private ConnectionPool pool = null;
+
     /** Last use */
     private long lastUse = System.currentTimeMillis();
 
@@ -891,11 +894,25 @@ public class Connection
     /**
      * Leave busy state.
      */
-    public synchronized void leaveBusyState()
+    public void leaveBusyState()
     {
-        lastUse = System.currentTimeMillis();
-        busy--;
-        //Logger.trace("connection #"+toString()+": leaving busy state.");
+        boolean free;
+        synchronized (this)
+        {
+            lastUse = System.currentTimeMillis();
+            busy--;
+            free = busy == 0;
+        }
+        // outside the connection lock: the pool scans connections while holding its own
+        if (free && pool != null)
+        {
+            pool.release();
+        }
+    }
+
+    void setPool(ConnectionPool pool)
+    {
+        this.pool = pool;
     }
 
     /**

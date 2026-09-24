@@ -47,6 +47,9 @@ public class ConnectionPool
     /** Maximum number of connections (per schema). */
     private int max;
 
+    /** Maximum wait for a connection when all are busy, in milliseconds. */
+    private long timeout;
+
     /**
      * Constructor.
      * @param connectionFactory
@@ -77,9 +80,23 @@ public class ConnectionPool
      */
     public ConnectionPool(ConnectionFactory connectionFactory, boolean autocommit, int max) throws SQLException
     {
+        this(connectionFactory, autocommit, max, 30000);
+    }
+
+    /**
+     * Constructor.
+     * @param connectionFactory
+     * @param autocommit
+     * @param max
+     * @param timeout milliseconds to wait for a free connection once max is reached
+     * @throws SQLException
+     */
+    public ConnectionPool(ConnectionFactory connectionFactory, boolean autocommit, int max, long timeout) throws SQLException
+    {
         this.connectionFactory = connectionFactory;
         this.autocommit = autocommit;
         this.max = max;
+        this.timeout = timeout;
     }
 
     public Connection getConnection() throws SQLException
@@ -98,25 +115,40 @@ public class ConnectionPool
             schema = "";
         }
         List<Connection> connections = connectionsMap.computeIfAbsent(schema, (s) -> new ArrayList<>());
-        for(Iterator it = connections.iterator(); it.hasNext(); )
+        long deadline = System.currentTimeMillis() + timeout;
+        while (true)
         {
-            Connection c = (Connection)it.next();
-
-            if(c.isClosed())
+            for(Iterator it = connections.iterator(); it.hasNext(); )
             {
-                it.remove();
-            }
-            else if(!c.isBusy())
-            {
-                return c;
-            }
-        }
-        if(connections.size() == max)
-        {
-            logger.warn("Connection pool: max number of connections reached! ");
+                Connection c = (Connection)it.next();
 
-            // return a busy connection...
-            return connections.get(0);
+                if(c.isClosed())
+                {
+                    it.remove();
+                }
+                else if(!c.isBusy())
+                {
+                    return c;
+                }
+            }
+            if(connections.size() != max)
+            {
+                break;
+            }
+            long remaining = deadline - System.currentTimeMillis();
+            if (remaining <= 0)
+            {
+                throw new SQLException("connection pool: no connection available after " + timeout + " ms");
+            }
+            try
+            {
+                wait(remaining);
+            }
+            catch (InterruptedException ie)
+            {
+                Thread.currentThread().interrupt();
+                throw new SQLException("connection pool: interrupted while waiting for a connection", ie);
+            }
         }
 
         Connection newconn = createConnection();
@@ -143,7 +175,16 @@ public class ConnectionPool
         logger.info("Creating a new connection");
         Connection connection = connectionFactory.newConnection();
         connection.setAutoCommit(autocommit);
+        connection.setPool(this);
         return connection;
+    }
+
+    /**
+     * Wake up callers waiting for a connection.
+     */
+    synchronized void release()
+    {
+        notifyAll();
     }
 
     /**
