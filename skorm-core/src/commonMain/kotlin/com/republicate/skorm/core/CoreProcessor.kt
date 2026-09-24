@@ -200,9 +200,11 @@ open class CoreProcessor @JvmOverloads constructor(
         }.toTypedArray()
         val connector = connectorFor(mutable)
         return flow {
-            val result = blocking { connector.stream(schema, query.stmt, *values) }
+            // assigned inside the hop: a cancellation thrown by withContext after its block ran would lose the result
+            var result: QueryResult? = null
             try {
-                val (names, it, types) = result
+                withContext(blockingContext) { result = connector.stream(schema, query.stmt, *values) }
+                val (names, it, types) = result!!
                 while (true) {
                     // one hop to the blocking context per page, the rows handed over here
                     val page = blocking { buildList { while (size < ROW_PAGE && it.hasNext()) add(buildRow(names, it.next(), types, factory)) } }
@@ -211,7 +213,7 @@ open class CoreProcessor @JvmOverloads constructor(
                 }
             } finally {
                 // exhausted, abandoned or cancelled: what backs the rows is released either way
-                withContext(NonCancellable + blockingContext) { result.close() }
+                result?.let { r -> withContext(NonCancellable + blockingContext) { r.close() } }
             }
         }
     }

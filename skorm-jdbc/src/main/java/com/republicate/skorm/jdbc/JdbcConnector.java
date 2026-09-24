@@ -123,10 +123,17 @@ public class JdbcConnector implements Connector, Closeable
             try
             {
                 PooledStatement stmt = statementPool.prepareUpdate(schema, query, txConnection);
-                long changed = stmt.executeUpdate(params);
-                return params.length > 0 && params[params.length - 1] instanceof GeneratedKeyMarker
-                        ? stmt.getLastInsertID(((GeneratedKeyMarker) params[params.length - 1]).getColName())
-                        : changed;
+                try
+                {
+                    long changed = stmt.executeUpdate(params);
+                    return params.length > 0 && params[params.length - 1] instanceof GeneratedKeyMarker
+                            ? stmt.getLastInsertID(((GeneratedKeyMarker) params[params.length - 1]).getColName())
+                            : changed;
+                }
+                finally
+                {
+                    stmt.notifyOver();
+                }
             }
             catch (SQLException sqle)
             {
@@ -364,14 +371,16 @@ public class JdbcConnector implements Connector, Closeable
         {
             throw new SkormException("error running query " + shorten(query), sqle);
         }
+        PooledStatement stmt = null;
         try
         {
-            PooledStatement stmt = statementPool.prepareQuery(schema, query, connection);
+            stmt = statementPool.prepareQuery(schema, query, connection);
             stmt.setFetchSize(fetchSize);
             ResultSet rs = stmt.executeQuery(params);
+            PooledStatement opened = stmt;
             return buildQueryResult(rs, stmt, () -> {
-                stmt.notifyOver();
-                stmt.close();
+                opened.notifyOver();
+                opened.close();
                 try
                 {
                     connection.commit();
@@ -389,6 +398,7 @@ public class JdbcConnector implements Connector, Closeable
         }
         catch (SQLException sqle)
         {
+            if (stmt != null) stmt.close();
             try
             {
                 connection.rollback();
@@ -408,10 +418,18 @@ public class JdbcConnector implements Connector, Closeable
                 schema = config.getString("defaultSchema");
             }
             PooledStatement stmt = statementPool.prepareUpdate(schema, query);
-            long changed = stmt.executeUpdate(params);
-            return params.length > 0 && params[params.length - 1] instanceof GeneratedKeyMarker
-                    ? stmt.getLastInsertID(((GeneratedKeyMarker) params[params.length - 1]).getColName())
-                    : changed;
+            try
+            {
+                long changed = stmt.executeUpdate(params);
+                return params.length > 0 && params[params.length - 1] instanceof GeneratedKeyMarker
+                        ? stmt.getLastInsertID(((GeneratedKeyMarker) params[params.length - 1]).getColName())
+                        : changed;
+            }
+            finally
+            {
+                // back to the pool: without this every mutate prepared a fresh statement, kept for good
+                stmt.notifyOver();
+            }
         }
         catch (SQLException sqle)
         {
@@ -428,7 +446,7 @@ public class JdbcConnector implements Connector, Closeable
 
     private static QueryResult buildQueryResult(ResultSet rs, PooledStatement stmt) throws SQLException
     {
-        return buildQueryResult(rs, stmt, () -> kotlin.Unit.INSTANCE);
+        return buildQueryResult(rs, stmt, () -> { stmt.notifyOver(); return kotlin.Unit.INSTANCE; });
     }
 
     private static QueryResult buildQueryResult(ResultSet rs, PooledStatement stmt, kotlin.jvm.functions.Function0<kotlin.Unit> closer) throws SQLException

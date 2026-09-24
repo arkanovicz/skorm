@@ -14,6 +14,7 @@ All notable changes to Skorm are documented in this file.
 ### Fixed
 - **Model views read-only at runtime**: `schemas`, `entities`, `fields`, `attributes` were the backing `LinkedHashMap`s behind read-only Kotlin types; a reflective caller could `clear()` them. Wrapped, keys/values/entries/iterators included.
 - **Nested blocking twins** on a `blockingContext` thread other than the caller's lost the ambient transaction: the thread companion is now passed along with the transaction element.
+- **Statement leak on every mutation**: `JdbcConnector.mutate` never returned its shared statement to the pool, so each mutation prepared a new one and kept it; single-row reads that threw did the same. Both return the statement once done.
 - **Connection pool**: at `max` it handed out a *busy* connection (latent: `JdbcConnector` builds its pools without a `max`); it now waits for one to be released, up to a `timeout` (30 s by default, constructor argument like `max`), then throws. And connections leave the pool already marked busy, closing the gap in which two transactions starting together could be handed the same connection; the busy counter is lock-free, so releasing under the connection lock never waits on the pool.
 
 ## [0.21] - 2026-09-24

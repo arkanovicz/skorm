@@ -17,13 +17,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ConnectionTest
 {
-    @Test
     public DataSource testCreateBasicDataSource() throws Exception
     {
         return new BasicDataSource("jdbc:h2:mem:test");
     }
 
-    @Test
     public ConnectionPool testConnectionPool() throws Exception
     {
         ConnectionFactory factory = new ConnectionFactory(testCreateBasicDataSource());

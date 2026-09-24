@@ -10,7 +10,13 @@ class QueryResult @JvmOverloads constructor(
     val types: Array<String> = emptyArray(),
     private val closer: () -> Unit = {}
 ) : AutoCloseable {
-    override fun close() = closer()
+    private var closed = false
+    /** once: the closer releases a pooled connection, and releasing twice hands it to two readers */
+    override fun close() {
+        if (closed) return
+        closed = true
+        closer()
+    }
     operator fun component1() = names
     operator fun component2() = values
     operator fun component3() = types
