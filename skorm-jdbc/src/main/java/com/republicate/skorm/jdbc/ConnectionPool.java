@@ -105,7 +105,7 @@ public class ConnectionPool
     }
 
     /**
-     * Get a connection.
+     * Get a connection, in busy state: the caller must call leaveBusyState() once done with it.
      * @return a connection
      * @throws SQLException
      */
@@ -128,6 +128,7 @@ public class ConnectionPool
                 }
                 else if(!c.isBusy())
                 {
+                    c.enterBusyState();
                     return c;
                 }
             }
@@ -160,6 +161,7 @@ public class ConnectionPool
             }
             newconn.setSchema(schema);
         }
+        newconn.enterBusyState();
         connections.add(newconn);
         return newconn;
     }

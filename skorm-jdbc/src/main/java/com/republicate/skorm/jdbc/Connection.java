@@ -44,6 +44,7 @@ import java.sql.Struct;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Connection wrapper class. Allows the handling of a busy state
@@ -67,13 +68,13 @@ public class Connection
     private transient java.sql.Connection connection = null;
 
     /** Busy state. */
-    private int busy = 0;
+    private final AtomicInteger busy = new AtomicInteger();
 
     /** Owning pool, if any. */
     private ConnectionPool pool = null;
 
     /** Last use */
-    private long lastUse = System.currentTimeMillis();
+    private volatile long lastUse = System.currentTimeMillis();
 
     /** Closed state. */
     private boolean closed = false;
@@ -885,10 +886,9 @@ public class Connection
     /**
      * Enter busy state.
      */
-    public synchronized void enterBusyState()
+    public void enterBusyState()
     {
-        //Logger.trace("connection #"+toString()+": entering busy state.");
-        ++busy;
+        busy.incrementAndGet();
     }
 
     /**
@@ -896,15 +896,9 @@ public class Connection
      */
     public void leaveBusyState()
     {
-        boolean free;
-        synchronized (this)
-        {
-            lastUse = System.currentTimeMillis();
-            busy--;
-            free = busy == 0;
-        }
-        // outside the connection lock: the pool scans connections while holding its own
-        if (free && pool != null)
+        lastUse = System.currentTimeMillis();
+        // lock-free: callers may hold the connection lock, and the pool marks connections busy under its own
+        if (busy.decrementAndGet() == 0 && pool != null)
         {
             pool.release();
         }
@@ -921,7 +915,7 @@ public class Connection
      */
     public boolean isBusy()
     {
-        return busy > 0;
+        return busy.get() > 0;
     }
 
     /**

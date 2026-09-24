@@ -32,10 +32,8 @@ public class JdbcConnector implements Connector, Closeable
         {
             try
             {
+                // handed out busy: held exclusively until terminal commit/rollback
                 txConnection = txConnectionPool.getConnection(schema);
-                // hold the connection exclusively until terminal commit/rollback,
-                // so the pool cannot hand it to a concurrent transaction
-                txConnection.enterBusyState();
             }
             catch (SQLException sqle)
             {
@@ -249,7 +247,15 @@ public class JdbcConnector implements Connector, Closeable
     public MetaInfos getMetaInfos() throws SkormException {
         try
         {
-            return connectionPool.getConnection().getVendor();
+            Connection connection = connectionPool.getConnection();
+            try
+            {
+                return connection.getVendor();
+            }
+            finally
+            {
+                connection.leaveBusyState();
+            }
         }
         catch (SQLException sqle)
         {

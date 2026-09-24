@@ -10,6 +10,7 @@ import javax.sql.DataSource;
 import java.sql.SQLException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -43,7 +44,6 @@ public class ConnectionTest
         ConnectionFactory factory = new ConnectionFactory(new BasicDataSource("jdbc:h2:mem:exhausted"));
         ConnectionPool connectionPool = new ConnectionPool(factory, true, 1, 300);
         Connection connection = connectionPool.getConnection();
-        connection.enterBusyState();
 
         long start = System.currentTimeMillis();
         assertThrows(SQLException.class, connectionPool::getConnection);
@@ -61,5 +61,17 @@ public class ConnectionTest
         releaser.start();
         assertSame(connection, connectionPool.getConnection());
         releaser.join();
+    }
+
+    @Test
+    public void testHandedOutConnectionIsBusy() throws Exception
+    {
+        ConnectionFactory factory = new ConnectionFactory(new BasicDataSource("jdbc:h2:mem:handout"));
+        ConnectionPool connectionPool = new ConnectionPool(factory);
+        Connection first = connectionPool.getConnection();
+        assertTrue(first.isBusy());
+        assertNotSame(first, connectionPool.getConnection());
+        first.leaveBusyState();
+        assertSame(first, connectionPool.getConnection());
     }
 }

@@ -110,13 +110,24 @@ public class StatementPool implements Closeable
             connection = connectionPool.getConnection(schema);
         }
 
-        statement = new PooledStatement(connection,
-                update ?
-                    connection.prepareStatement(
-                            query, connection.getVendor().getLastInsertIdPolicy() == Vendor.LastInsertIdPolicy.GENERATED_KEYS ?
-                                    Statement.RETURN_GENERATED_KEYS :
-                                    Statement.NO_GENERATED_KEYS) :
-                    connection.prepareStatement(query, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY));
+        try
+        {
+            statement = new PooledStatement(connection,
+                    update ?
+                        connection.prepareStatement(
+                                query, connection.getVendor().getLastInsertIdPolicy() == Vendor.LastInsertIdPolicy.GENERATED_KEYS ?
+                                        Statement.RETURN_GENERATED_KEYS :
+                                        Statement.NO_GENERATED_KEYS) :
+                        connection.prepareStatement(query, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY));
+        }
+        finally
+        {
+            // a shared statement's connection is only held while executing
+            if (sharedStatement)
+            {
+                connection.leaveBusyState();
+            }
+        }
         if (sharedStatement)
         {
             availableStatements.add(statement);
