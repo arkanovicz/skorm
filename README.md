@@ -15,10 +15,10 @@ The nicest Kotlin multiplatform ORM around. Fully multiplatform. Coroutines-enab
 + **Attribute** - Custom queries and mutations (see [ksql syntax](#ksql-syntax)), with five variants:
 
      + ScalarAttribute, returning Any?
-     + RowAttribute, returning Instance?
-     + RowSetAttribute, returning Sequence<Instance>
+     + RowAttribute (and NullableRowAttribute), returning a row: an Instance, or a plain kson object
+     + RowSetAttribute, returning a Sequence of rows
      + MutationAttribute, returning Long (either the number of modified rows, or the generated serial value)
-     + TransactionAttribute, returning List<Long> (number of modified rows for each comprised mutation statement)
+     + TransactionAttribute, work in progress (a `mut` block of statements is a MutationAttribute, run in one transaction)
 
 *Four* main methods in the lifecycle of database objects instances (along with transaction handling):
 
@@ -51,7 +51,8 @@ Let's create a simple todo list application.
 database todo_app {
   schema todos {
     table task {
-      title string(200)
+      *task_id serial
+      title varchar(200)
       completed boolean = false
     }
   }
@@ -110,6 +111,7 @@ Options:
 - `destPackage` — package of the generated code.
 - `dialect` — `postgresql` or `hypersql`, required to emit the creation script.
 - `core` / `client` — unset, they follow the project's targets; set, they force.
+- `readOnly` — generate the read-only half alone (see below).
 - `outputDirectory` — defaults to `build/generated-src`.
 
 Generated code is laid out by *role*, not by source set, because one directory often feeds several
@@ -117,7 +119,7 @@ of them — `client` serves `jsMain`, `wasmJsMain` and `linuxX64Main` alike:
 
 ```
 build/generated-src/
-├── common/kotlin       entity classes, field interfaces, join and attribute accessors
+├── common/kotlin       row interfaces and their impl classes, navigations, attribute accessors
 ├── core/kotlin         server-side attribute registrations
 ├── core/resources      database creation script
 └── client/kotlin       REST client attribute registrations
@@ -166,12 +168,17 @@ and can set `readOnly` on the plugin, so that the mutable half is not even gener
 // Initialize database (JVM): the mutable one, since we insert below
 val database = MutableTodoAppDatabase(CoreProcessor(JdbcConnector()))
 database.configure(mapOf(
-    "jdbc" to mapOf(
-        "url" to "jdbc:h2:mem:todo",
-        "user" to "sa"
+    "core" to mapOf(
+        "jdbc" to mapOf(
+            "url" to "jdbc:h2:mem:todo",
+            "login" to "sa"
+        )
     )
 ))
 database.initialize()
+database.initJoins()
+database.initRuntimeModel()   // registers the ksql attributes, pendingCount and toggle
+// the tables must exist: run the generated create-script.sql first (the bookshelf example does it with a "create" mutation)
 
 // Create a task
 val task = MutableTask.new().apply {
@@ -204,13 +211,13 @@ val taskEntity = schema.entity("task")
 
 // CRUD operations
 val task = taskEntity.new() as MutableInstance
-task["title"] = "Learn skorm"
-task["completed"] = false
+task.put("title", "Learn skorm")      // the typed write; a row is not a MutableMap, so no task["title"] = …
+task.put("completed", false)
 task.insert()
 
-val fetched = taskEntity.fetch(task["taskId"]) as MutableInstance?
+val fetched = taskEntity.fetch(task["taskId"]!!) as MutableInstance?
 fetched?.let {
-    it["completed"] = true
+    it.put("completed", true)
     it.update()
 }
 
@@ -240,7 +247,7 @@ Nested blocks on the same database join the enclosing transaction (single commit
 Database *—— Schema *—— Entity *—— Instance
 ```
 
-*Five* main verbs to interact with attributes:
+*Four* main verbs to interact with attributes:
 
 + `eval(name, params...)` - returns a scalar value
 + `retrieve(name, params...)` - returns a single row (plus `Entity.fetch(params...)` to get an instance by ID)
@@ -255,46 +262,51 @@ Skorm automatically maps between database identifiers and Kotlin property names:
 database.configure(mapOf(
     "core" to mapOf(
         "mapping" to mapOf(
-            "read" to listOf("snakeToCamel"),   // DB columns: user_name → Kotlin: userName
-            "write" to listOf("camelToSnake")   // Kotlin: userName → DB columns: user_name
+            "read" to "snake_to_camel",   // DB columns: user_name → Kotlin: userName
+            "write" to "camel_to_snake"   // Kotlin: userName → DB columns: user_name
         )
     )
 ))
 ```
 
+A value is a comma-separated list of mappers, composed. Without `read`, it is `snake_to_camel`; without `write`, `camel_to_snake` then quoted in the database's own case.
+
 Built-in mappers:
-- `snakeToCamel` / `camelToSnake`
+- `snake_to_camel` / `camel_to_snake`
+- `snake_to_pascal` / `pascal_to_snake`
 - `lowercase` / `uppercase`
-- Custom mappers can be registered
+- Custom mappers can be registered (`IdentifiersMapping["name"] = { … }`)
 
 #### Values Filtering
 
-Transform values during read/write operations:
+Transform values as they are read, by SQL type:
 
 ```kotlin
+ValuesFiltering["trim"] = { it?.toString()?.trim() }   // stock filters: lowercase, uppercase, parseJson
 database.configure(mapOf(
     "core" to mapOf(
         "filter" to mapOf(
             "read" to mapOf(
-                "timestamp" to "epochToLocalDateTime"
-            ),
-            "write" to mapOf(
-                "timestamp" to "localDateTimeToEpoch"
+                "text" to "trim"
             )
         )
     )
 ))
 ```
 
+`json`/`jsonb` columns are parsed by default. `filter.write` is accepted but not applied yet.
+
 #### Connector Configuration
 
 **JDBC Connector:**
 ```kotlin
 database.configure(mapOf(
-    "jdbc" to mapOf(
-        "url" to "jdbc:postgresql://localhost:5432/mydb",
-        "user" to "dbuser",
-        "password" to "secret"
+    "core" to mapOf(            // the processor's settings
+        "jdbc" to mapOf(        // its connector's
+            "url" to "jdbc:postgresql://localhost:5432/mydb",
+            "login" to "dbuser",
+            "password" to "secret"
+        )
     )
 ))
 ```
@@ -326,24 +338,26 @@ database <name> {
 
 #### Field Types
 
-- **Strings**: `string`, `string(length)`, `text`
-- **Numbers**: `int`, `long`, `float`, `double`, `decimal(p,s)`
+- **Strings**: `varchar(length)`, `char(length)`, `text`
+- **Numbers**: `tinyint`, `smallint`, `int`, `bigint`, `long`, `float`, `double`, `numeric(p,s)`, `money` (the last two read as `Double` for now)
 - **Booleans**: `boolean`
-- **Dates**: `date`, `time`, `datetime`, `timestamp`
-- **Special**: `serial` (auto-increment), `uuid`, `json`
-- **Enums**: `enum('value1', 'value2', ...)`
+- **Dates**: `date`, `time`, `timestamp`, `timestamptz`
+- **Special**: `serial`, `bigserial` (auto-increment), `uuid`, `json`, `blob`
+- **Enums**: `enum('value1', 'value2', ...)`, or the name of a schema-level `enum level(low, high)`
 
 #### Field Modifiers
 
+- `*` - part of the primary key (prefix)
+- `!` - unique constraint (prefix)
 - `?` - nullable field
-- `!` - unique constraint
 - `= <value>` - default value
 
 Example:
 ```
 table user {
-  !email string(255)              // unique, non-null
-  name string(100)?               // nullable
+  *user_id serial                 // primary key
+  !email varchar(255)             // unique, non-null
+  name varchar(100)?              // nullable
   age int = 18                    // default value
   status enum('active', 'inactive') = 'active'
   created_at timestamp = now()
@@ -352,13 +366,14 @@ table user {
 
 #### Primary Keys
 
-Primary keys are auto-generated as `<table_name>_id` with type `serial`:
+Declare them with `*`. A table that a link references without declaring one gets an implicit
+`<table_name>_id serial` key — deprecated, kddl warns about it:
 
 ```
 table book {
-  title string
+  *book_id serial
+  title varchar(100)
 }
-// Generates: book_id serial PRIMARY KEY
 ```
 
 #### Relationships
@@ -387,7 +402,7 @@ The kddl compiler generates:
 1. SQL DDL scripts for database creation
 2. Kotlin row interfaces with typed properties, read-only and mutable
 3. Navigation methods for the relationships above, as members of the generated interfaces — each with a
-   blocking twin (`book.tagsBlocking()`, reachable by reflection as `tags()`) for callers that cannot suspend
+   blocking twin on the impl class (`BookImpl.tagsBlocking()`, reachable by reflection as `tags()`) for callers that cannot suspend
 
 For complete kddl documentation, see the [kddl project](https://github.com/arkanovicz/kddl).
 
@@ -398,14 +413,15 @@ Beyond the basic CRUD operations, skorm allows you to define custom queries and 
 #### Declaration Syntax
 
 ```
-attr [Entity.]name: ReturnType = SQL
+attr [Entity.]name[(params)]: ReturnType = SQL
 mut [Entity.]name[(params)] = SQL
+mut [Entity.]name[(params)] = { SQL; SQL; ... }
 ```
 
 - `attr` - defines a query attribute (SELECT)
 - `mut` - defines a mutation attribute (INSERT/UPDATE/DELETE)
-- Schema-level: `attr name` - function on schema
-- Entity-level: `attr Entity.name` - function on entity instance
+- Schema-level: `attr name` - member function of the schema class
+- Entity-level: `attr Entity.name` - member function of the row interface (a `mut`: of the mutable one)
 
 #### Return Types
 
@@ -426,7 +442,7 @@ Supported scalar types: `Int`, `Long`, `String`, `Boolean`, `Double`, `Float`, `
 SQL parameters are enclosed in curly braces:
 
 ```kotlin
-attr getUserByEmail: User? =
+attr getUserByEmail(email: String): User? =
   SELECT * FROM users WHERE email = {email};
 ```
 
@@ -440,7 +456,7 @@ attr Book.currentBorrower: Dude? =
     AND returned_date IS NULL;
 ```
 
-Mutation parameters are declared in the signature:
+Any other parameter is declared in the signature, for attributes and mutations alike:
 
 ```kotlin
 mut Book.lend(dude_id: Long) =
@@ -455,7 +471,7 @@ mut Book.lend(dude_id: Long) =
 attr booksCount: Int =
   SELECT count(*) FROM book;
 
-// Generates: suspend fun BookshelfSchema.booksCount(): Int
+// Generates, in BookshelfSchema: suspend fun booksCount(): Int
 ```
 
 **Entity-level composite object:**
@@ -467,8 +483,8 @@ attr Book.currentBorrower: (Dude, borrowing_date: LocalDateTime)? =
     AND restitution_date IS NULL;
 
 // Generates:
-// class CurrentBorrower: Dude { val borrowingDate: LocalDateTime }
-// suspend fun Book.currentBorrower(): CurrentBorrower?
+// class CurrentBorrower : DudeImpl { val borrowingDate: LocalDateTime }
+// in Book: suspend fun currentBorrower(): CurrentBorrower?
 ```
 
 **Mutation with parameters:**
@@ -477,7 +493,7 @@ mut Book.lend(dude_id: Long) =
   INSERT INTO borrowing (dude_id, book_id, borrowing_date)
     VALUES ({dude_id}, {book_id}, now());
 
-// Generates: suspend fun Book.lend(dude_id: Long): Long
+// Generates, in MutableBook: suspend fun lend(dude_id: Long): Long
 ```
 
 **Anonymous object:**
@@ -491,7 +507,7 @@ attr Book.stats: (title_length: Int, borrowed: Int) =
 
 // Generates:
 // class Stats { val titleLength: Int; val borrowed: Int }
-// suspend fun Book.stats(): Stats
+// in Book: suspend fun stats(): Stats
 ```
 
 **Sequence (rowset):**
@@ -505,7 +521,7 @@ attr topBorrowers: (dude_id: Long, borrow_count: Int)* =
 
 // Generates:
 // class TopBorrowers { val dudeId: Long; val borrowCount: Int }
-// suspend fun BookshelfSchema.topBorrowers(): Sequence<TopBorrowers>
+// in BookshelfSchema: suspend fun topBorrowers(): Sequence<TopBorrowers>
 ```
 
 All generated functions are coroutine-based (`suspend`) and type-safe, providing compile-time checking of parameters and return types.
@@ -520,14 +536,15 @@ Let's build a complete bookshelf application that tracks books and borrowings, d
 database example {
   schema bookshelf {
 
-    table dude { name string }
+    table dude { *dude_id serial  name varchar(100) }
 
-    table author { name string }
+    table author { *author_id serial  name varchar(100) }
 
     table book {
-      title string
+      *book_id serial
+      title varchar(100)
       genre enum('essay', 'literature', 'art')
-      language string(2)
+      language char(2)?
     }
 
     table borrowing {
@@ -535,17 +552,17 @@ database example {
       restitution_date date?
     }
 
-    author *-* book
-    book --> author
-    borrowing -> book, dude
+    book *-- author
+    borrowing -> book
+    borrowing -> dude
   }
 }
 ```
 
 This generates:
 - SQL creation script
-- Entity classes: `Dude`, `Author`, `Book`, `Borrowing`
-- Relationship methods: `book.author()`, `author.books()`, `book.borrowings()`, etc.
+- Row interfaces: `Dude`, `Author`, `Book`, `Borrowing`, and their `Mutable` twins
+- Relationship methods: `book.author()`, `author.books()`, `borrowing.book()`, `borrowing.dude()`
 
 ### Custom Queries (`bookshelf.ksql`)
 
@@ -558,7 +575,7 @@ database example {
       SELECT count(*) FROM book;
 
     // Entity-level attribute returning a composite object
-    attr Book.currentBorrower: (Dude, borrowing_date: LocalDateTime)? =
+    attr Book.currentBorrower: (Dude, borrowing_date: LocalDate)? =
       SELECT dude.*, borrowing_date FROM bookshelf.borrowing
         JOIN dude USING (dude_id)
         WHERE book_id = {book_id}
@@ -618,6 +635,7 @@ fun Application.configureDatabase() {
         val book = MutableBook.new().apply {
             title = "Foundation"
             authorId = author.authorId
+            genre = Genre.essay
             insert()
         }
 
@@ -670,8 +688,8 @@ fun Application.configureRouting() {
 import com.republicate.skorm.ApiClient
 import kotlinx.browser.window
 
-// Same database definition, different processor — and read-only, this client only reads
-val database = ExampleDatabase(ApiClient("${window.location.origin}/api"))
+// Same database definition, different processor — mutable, since this client lends
+val database = MutableExampleDatabase(ApiClient("${window.location.origin}/api"))
 
 fun main() {
     window.onload = {
@@ -684,7 +702,7 @@ fun main() {
             event.preventDefault()
             GlobalScope.launch {
                 val bookId = form.getAttribute("data-book_id")
-                val book = Book.fetch(bookId) ?: error("Book not found")
+                val book = MutableBook.fetch(bookId) ?: error("Book not found")
                 val dudeId = selectElement.value.toLong()
 
                 book.lend(dudeId)  // Calls REST API transparently
@@ -700,8 +718,8 @@ fun main() {
 The same business logic code works on both JVM and JS:
 
 ```kotlin
-// This code is identical on server and client:
-val book = Book.fetch(bookId)
+// This code is identical on server and client (lend and restitute are on the mutable row):
+val book = MutableBook.fetch(bookId)
 book?.let {
     val borrower = it.currentBorrower()
     it.lend(dudeId)
