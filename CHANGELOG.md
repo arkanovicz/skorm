@@ -2,7 +2,7 @@
 
 All notable changes to Skorm are documented in this file.
 
-## [0.23] - unreleased
+## [0.23] - 2026-10-08
 
 ### Changed
 - **Scalar flows**: `attr cities: String*` yields a `Flow<String>`, the column's values themselves, through a fifth verb, `harvest` (`Processor.harvest`, `AttributeHolder.harvest<T>`, registered as `scalarSetAttribute<T>`); over REST, a JSON array of values. `Int?*` is a flow of nullable values; `?*` on rows is refused. The parser accepted the declaration and generated an accessor that did not compile
