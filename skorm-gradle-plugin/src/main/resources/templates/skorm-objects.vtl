@@ -67,7 +67,7 @@ import ${package}.${resolved.databaseClass}.${schema.className}.${enum.name}
 #foreach ($attr in $entity.attributes)
 #if($attr.verb != "perform")
             @JvmName("$attr.name")
-            fun ${attr.name}Blocking(#typedArguments($attr.arguments)) = blocking { `${attr.name}`(#values($attr.arguments))#if($attr.verb == "query").toList()#end }
+            fun ${attr.name}Blocking(#typedArguments($attr.arguments)) = blocking { `${attr.name}`(#values($attr.arguments))#if($attr.verb == "query" || $attr.verb == "harvest").toList()#end }
 #end
 #end
 #end
@@ -188,7 +188,7 @@ open class ${half.databaseClass}(processor: Processor): Database("$half.name", p
 #end
 #if(!$half.mutable && $attr.verb != "perform")
         @JvmName("$attr.name")
-        fun ${attr.name}Blocking(#typedArguments($attr.arguments)) = blocking { `${attr.name}`(#values($attr.arguments))#if($attr.verb == "query").toList()#end }
+        fun ${attr.name}Blocking(#typedArguments($attr.arguments)) = blocking { `${attr.name}`(#values($attr.arguments))#if($attr.verb == "query" || $attr.verb == "harvest").toList()#end }
 #end
 #end
     }

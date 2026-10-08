@@ -72,6 +72,6 @@ internal actual fun ShapesDatabase.registerAttributes() {
         SELECT seen FROM person WHERE person_id = {person_id};""".trimIndent(), ::LastSeen)
 
     // attribute Person.cities
-    ShapesDatabase.main.entity("person").instanceAttributes.rowSetAttribute<Json.MutableObject>("cities", """
+    ShapesDatabase.main.entity("person").instanceAttributes.scalarSetAttribute<String>("cities", """
         SELECT city FROM address WHERE owner = {person_id};""".trimIndent())
 }

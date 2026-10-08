@@ -169,4 +169,5 @@ open class Entity protected constructor(val name: String, val schema: Schema, va
     /*internal*/ suspend inline fun <reified T: Any?> eval(attrName: String, vararg params: Any?) = instanceAttributes.eval<T>(attrName, *params)
     /*internal*/ suspend inline fun <reified T: Row?> retrieve(attrName: String, vararg params: Any?) = instanceAttributes.retrieve<T>(attrName, *params)
     /*internal*/ suspend inline fun <reified T: Row> query(attrName: String, vararg params: Any?) = instanceAttributes.query<T>(attrName, *params)
+    /*internal*/ suspend inline fun <reified T> harvest(attrName: String, vararg params: Any?) = instanceAttributes.harvest<T>(attrName, *params)
 }

@@ -38,6 +38,10 @@ internal actual fun ExampleDatabase.registerAttributes() {
         SELECT count(*) FROM bookshelf.book
         WHERE author_id = {author_id} AND genre = {genre};""".trimIndent())
 
+    // attribute Author.titles
+    ExampleDatabase.bookshelf.entity("author").instanceAttributes.scalarSetAttribute<String>("titles", """
+        SELECT title FROM bookshelf.book WHERE author_id = {author_id} ORDER BY title;""".trimIndent())
+
     // attribute Author.catalog
     ExampleDatabase.bookshelf.entity("author").instanceAttributes.rowSetAttribute<Catalog>("catalog", """
         SELECT book.title, COUNT(borrowing.book_id) borrowings
@@ -111,6 +115,10 @@ INSERT INTO book (title, author_id, genre)
     MutableExampleDatabase.bookshelf.entity("author").instanceAttributes.scalarAttribute<Int>("countInGenre", """
         SELECT count(*) FROM bookshelf.book
         WHERE author_id = {author_id} AND genre = {genre};""".trimIndent())
+
+    // attribute Author.titles
+    MutableExampleDatabase.bookshelf.entity("author").instanceAttributes.scalarSetAttribute<String>("titles", """
+        SELECT title FROM bookshelf.book WHERE author_id = {author_id} ORDER BY title;""".trimIndent())
 
     // attribute Author.catalog
     MutableExampleDatabase.bookshelf.entity("author").instanceAttributes.rowSetAttribute<Catalog>("catalog", """

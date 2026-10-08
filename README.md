@@ -17,6 +17,7 @@ The nicest Kotlin multiplatform ORM around. Fully multiplatform. Coroutines-enab
      + ScalarAttribute, returning Any?
      + RowAttribute (and NullableRowAttribute), returning a row: an Instance, or a plain kson object
      + RowSetAttribute, returning a Flow of rows
+     + ScalarSetAttribute, returning a Flow of a column's values
      + MutationAttribute, returning Long (either the number of modified rows, or the generated serial value)
      + TransactionAttribute, work in progress (a `mut` block of statements is a MutationAttribute, run in one transaction)
 
@@ -248,9 +249,10 @@ Nested blocks on the same database join the enclosing transaction (single commit
 Database *—— Schema *—— Entity *—— Instance
 ```
 
-*Four* main verbs to interact with attributes:
+*Five* main verbs to interact with attributes:
 
 + `eval(name, params...)` - returns a scalar value
++ `harvest(name, params...)` - returns a flow of scalar values, the one column of every row
 + `retrieve(name, params...)` - returns a single row (plus `Entity.fetch(params...)` to get an instance by ID)
 + `query(name, params...)` - returns a rowset
 + `perform(name, params...)` - for mutations, on the mutable objects only; a `mut` declared as a block of statements (`= { …; …; }`) runs them in one transaction
@@ -432,6 +434,7 @@ mut [Entity.]name[(params)] = { SQL; SQL; ... }
 |--------|-------------|---------|
 | `Type` | Non-nullable scalar | `Int`, `String`, `LocalDate` |
 | `Type?` | Nullable scalar | `Int?`, `String?` |
+| `Type*` | Flow of scalars, a column's values | `String*`, `LocalDate*` |
 | `(Entity, field: Type, ...)` | Composite object extending entity | `(Dude, borrowing_date: LocalDateTime)` |
 | `(Entity, field: Type, ...)?` | Nullable composite | `(Dude, borrowing_date: LocalDateTime)?` |
 | `(field: Type, ...)` | Anonymous object | `(count: Int, total: Double)` |

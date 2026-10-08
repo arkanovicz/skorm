@@ -31,6 +31,11 @@ inline fun <reified T: Row> AttributeHolder.rowSetAttribute(name: String, query:
     return rowSetAttribute(name, queryDef.parameters(), factory)
 }
 
+inline fun <reified T> AttributeHolder.scalarSetAttribute(name: String, query: String): ScalarSetAttribute<T> {
+    val queryDef = parseAndDefine(name, query)
+    return scalarSetAttribute<T>(name, queryDef.parameters())
+}
+
 fun AttributeHolder.mutationAttribute(name: String, query: String): MutationAttribute {
     val coreProcessor = processor.underlying as CoreProcessor
     val queryDef = AttributeDefinition.parse(query, schema?.name ?: "", coreProcessor.readMapper)

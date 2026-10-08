@@ -5,6 +5,7 @@ All notable changes to Skorm are documented in this file.
 ## [0.23] - unreleased
 
 ### Changed
+- **Scalar flows**: `attr cities: String*` yields a `Flow<String>`, the column's values themselves, through a fifth verb, `harvest` (`Processor.harvest`, `AttributeHolder.harvest<T>`, registered as `scalarSetAttribute<T>`); over REST, a JSON array of values. The parser accepted the declaration and generated an accessor that did not compile
 - **Composite fields may be nullable**: `(name: String, born: LocalDate?)` reads `born` as `LocalDate?`. A nullable column in a composite used to hit the generated `!!` at access time. A composite may also have a single field, `(seen: LocalDateTime?)`, which the grammar refused
 - kddl 0.30: `clob` reaches the model as `text`, reverse engineering and KDDL output fixes; nothing on skorm's path
 

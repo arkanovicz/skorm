@@ -138,7 +138,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
             // attribute Person.lastSeen
             suspend fun `lastSeen`() = retrieve<LastSeen>("lastSeen") as LastSeen
             // attribute Person.cities
-            suspend fun `cities`() = query<String>("cities")
+            suspend fun `cities`() = harvest<String>("cities")
         }
         open class PersonImpl(entity: Entity = Person): InstanceImpl(entity), Person {
             // the blocking twin of `aFriendships()`: what a reflection-driven caller reaches under that name

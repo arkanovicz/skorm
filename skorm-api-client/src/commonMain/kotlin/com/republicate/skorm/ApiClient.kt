@@ -164,6 +164,14 @@ class ApiClient(val baseUrl: String) : Processor {
         }
     }
 
+    override suspend fun harvest(path: String, params: Map<String, Any?>, mutable: Boolean): Flow<Any?> {
+        logger.info { "harvest $path $params" }
+        return flow {
+            val response = get(path, params)
+            for (value in response.body<Json.Array>()) emit(value)
+        }
+    }
+
     override suspend fun perform(path: String, params: Map<String, Any?>): Long {
         logger.info { "perform $path $params" }
         val response = when(path.split("/").last()) {

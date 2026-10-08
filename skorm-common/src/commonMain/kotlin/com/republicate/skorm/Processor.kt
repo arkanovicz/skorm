@@ -44,6 +44,8 @@ interface Processor: Configurable, AutoCloseable {
     suspend fun retrieve(path: String, params: Map<String, Any?>, factory: RowFactory? = null, mutable: Boolean = false): Row?
     /** The rows, fetched as the flow is collected: a cold flow, collected once, inside the transaction it was queried in. */
     suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory? = null, mutable: Boolean = false): Flow<Row>
+    /** The values of a one-column result, fetched as the flow is collected, like [query]'s rows. */
+    suspend fun harvest(path: String, params: Map<String, Any?>, mutable: Boolean = false): Flow<Any?>
     suspend fun perform(path: String, params: Map<String, Any?>): Long
 
     // identifiers mapping
@@ -77,6 +79,8 @@ open class ReadOnlyProcessor(internal val delegate: Processor) : Processor by de
         if (mutable) refuse(path) else delegate.retrieve(path, params, factory, false)
     override suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Flow<Row> =
         if (mutable) refuse(path) else delegate.query(path, params, factory, false)
+    override suspend fun harvest(path: String, params: Map<String, Any?>, mutable: Boolean): Flow<Any?> =
+        if (mutable) refuse(path) else delegate.harvest(path, params, false)
     override suspend fun perform(path: String, params: Map<String, Any?>): Long = refuse(path)
     override suspend fun begin(schema: String): Transaction = delegate.begin(schema).readOnly
     private fun refuse(path: String): Nothing = throw SkormException("read-only processor: cannot write $path")

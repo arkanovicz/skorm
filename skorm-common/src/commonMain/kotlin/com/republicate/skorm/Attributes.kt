@@ -1,6 +1,7 @@
 package com.republicate.skorm
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 import com.republicate.kson.Json
 import kotlinx.datetime.LocalDate
@@ -236,6 +237,12 @@ class RowAttribute<out T: Row>(name: String, parameters: Set<String>, factory: R
 class NullableRowAttribute<out T: Row>(name: String, parameters: Set<String>, factory: RowFactory): Attribute<T?>(name, parameters, rowFactory = factory)
 
 class RowSetAttribute<out T: Row>(name: String, parameters: Set<String>, factory: RowFactory): Attribute<Flow<T>>(name, parameters, rowFactory = factory)
+
+/** A column's values, the `*` of a scalar attribute: each value converted as [element] converts its one */
+class ScalarSetAttribute<T>(name: String, parameters: Set<String>, val element: ScalarAttribute<T>): Attribute<Flow<T>>(name, parameters) {
+    @Suppress("UNCHECKED_CAST")
+    override fun handleResult(result: Any?): Flow<T> = (result as Flow<Any?>).map { element.handleResult(it) }
+}
     
 class MutationAttribute(name: String, parameters: Set<String> = setOf(), useDirtyFields: Boolean = false): Attribute<Long>(name, parameters, useDirtyFields = useDirtyFields)
 
@@ -309,6 +316,13 @@ abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = 
         return attribute.handleResult(currentProcessor().query(execPath, execParams, attribute.rowFactory, mutable))
     }
 
+    suspend inline fun <reified T> harvest(attrName: String, vararg params: Any?) = harvest(findAttribute<Flow<T>>(attrName), *params)
+
+    suspend inline fun <reified T> harvest(attribute: Attribute<Flow<T>>, vararg params: Any?): Flow<T> {
+        val (execPath, execParams) = prepare(attribute, *params)
+        return attribute.handleResult(currentProcessor().harvest(execPath, execParams, mutable))
+    }
+
     /** the execution of a mutation, public through [MutableAttributeHolder], [MutableEntity] and [MutableInstance] */
     internal suspend fun mutate(attribute: Attribute<Long>, vararg params: Any?): Long {
         if (!mutable) throw SkormException("$path is read-only: cannot perform ${attribute.name}")
@@ -321,8 +335,15 @@ abstract class AttributeHolder(val name: String, val parent: AttributeHolder? = 
 //        findAttribute<List<Int>>(attrName).execute(*params)
 }
 
+inline fun <reified T> AttributeHolder.scalarAttribute(name: String, params: Set<String>): ScalarAttribute<T> =
+    scalarAttributeOf<T>(name, params).also { addAttribute(it) }
+
+inline fun <reified T> AttributeHolder.scalarSetAttribute(name: String, params: Set<String>): ScalarSetAttribute<T> =
+    ScalarSetAttribute(name, params, scalarAttributeOf<T>(name, params)).also { addAttribute(it) }
+
+/** The scalar attribute converting a `T`, built but not registered */
 @Suppress("UNCHECKED_CAST")
-inline fun <reified T> AttributeHolder.scalarAttribute(name: String, params: Set<String>): ScalarAttribute<T> {
+inline fun <reified T> scalarAttributeOf(name: String, params: Set<String>): ScalarAttribute<T> {
     return (if (null is T) when (T::class) {
         String::class -> NullableStringAttribute(name, params) as ScalarAttribute<T>
         Char::class -> NullableCharAttribute(name, params) as ScalarAttribute<T>
@@ -357,9 +378,7 @@ inline fun <reified T> AttributeHolder.scalarAttribute(name: String, params: Set
         // not supported yet
         // else -> throw SkormException("unhandled type: ${T::class.qualifiedName}")
         else -> throw SkormException("unhandled type: ${T::class.simpleName}")
-    }).also {
-        addAttribute(it)
-    }
+    })
 }
 
 

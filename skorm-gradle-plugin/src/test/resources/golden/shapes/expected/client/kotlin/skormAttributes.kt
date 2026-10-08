@@ -63,7 +63,7 @@ internal actual fun ShapesDatabase.registerAttributes() {
     ShapesDatabase.main.entity("person").instanceAttributes.rowAttribute<LastSeen>("lastSeen", setOf("person_id"), ::LastSeen)
 
     // attribute Person.cities
-    ShapesDatabase.main.entity("person").instanceAttributes.scalarAttribute<String>("cities", setOf("person_id"))
+    ShapesDatabase.main.entity("person").instanceAttributes.scalarSetAttribute<String>("cities", setOf("person_id"))
     if (!MutableShapesDatabase.isInstantiated()) return
     // forward foreign key attribute
     MutableShapesDatabase.main.entity("friendship").instanceAttributes.rowAttribute<MutableShapesDatabase.MutableMainSchema.MutablePerson>("a", setOf("a_id"), MutableShapesDatabase.MutableMainSchema.MutablePerson)
@@ -124,5 +124,5 @@ internal actual fun ShapesDatabase.registerAttributes() {
     MutableShapesDatabase.main.entity("person").instanceAttributes.rowAttribute<LastSeen>("lastSeen", setOf("person_id"), ::LastSeen)
 
     // attribute Person.cities
-    MutableShapesDatabase.main.entity("person").instanceAttributes.scalarAttribute<String>("cities", setOf("person_id"))
+    MutableShapesDatabase.main.entity("person").instanceAttributes.scalarSetAttribute<String>("cities", setOf("person_id"))
 }

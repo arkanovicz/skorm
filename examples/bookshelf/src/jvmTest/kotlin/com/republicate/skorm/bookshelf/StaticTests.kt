@@ -74,6 +74,11 @@ class StaticTests {
                 assertEquals(1, author.countInGenre(Genre.essay))
                 assertEquals(0, author.countInGenre(Genre.poetry))
 
+                // a scalar flow harvests the column's values themselves
+                val titles = author.titles().toList()
+                assertTrue(titles.isNotEmpty())
+                assertEquals(author.books().map { it.title }.toList().sorted(), titles)
+
                 // a nullable forward FK yields null rather than failing the cast
                 assertNull(theBook.donor())
                 assertNotNull(theBook.author())

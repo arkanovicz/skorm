@@ -35,7 +35,7 @@ database shapes {
     attr Person.lastSeen: (seen: LocalDateTime?) =
       SELECT seen FROM person WHERE person_id = {person_id};
 
-    // known to generate uncompilable code (a scalar rowset, see the TODOs)
+    // a scalar flow: the column's values themselves, harvested
     attr Person.cities: String* =
       SELECT city FROM address WHERE owner = {person_id};
   }

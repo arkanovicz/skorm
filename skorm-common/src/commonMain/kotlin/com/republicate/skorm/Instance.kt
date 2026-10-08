@@ -59,6 +59,7 @@ interface Instance : Map<String, Any?> {
 suspend inline fun <reified T: Any?> Instance.eval(attrName: String, vararg params: Any?) = entity.eval<T>(attrName, this, *params)
 suspend inline fun <reified T: Row?> Instance.retrieve(attrName: String, vararg params: Any?) = entity.retrieve<T>(attrName, this, *params)
 suspend inline fun <reified T: Row> Instance.query(attrName: String, vararg params: Any?) = entity.query<T>(attrName, this, *params)
+suspend inline fun <reified T> Instance.harvest(attrName: String, vararg params: Any?) = entity.harvest<T>(attrName, this, *params)
 
 private fun Instance.rawFieldName(key: String) = entity.instanceAttributes.processor.downstreamMapping(key)
 private fun Instance.rawFieldValue(field: Field, value: Any?) = entity.instanceAttributes.processor.downstreamFilter(field.type, value)

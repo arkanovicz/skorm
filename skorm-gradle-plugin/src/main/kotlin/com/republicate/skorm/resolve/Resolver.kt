@@ -276,9 +276,10 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
                     isEntity -> generics = "<${names.entityClass(schema, type!!.name)}$q>"
                     else -> generics = "<${type!!.name}$q>"
                 }
+                val rows = composite != null || isEntity || isJsonObject
                 when {
-                    item.multiple -> "query"
-                    composite != null || isEntity || isJsonObject -> "retrieve"
+                    item.multiple -> if (rows) "query" else "harvest"
+                    rows -> "retrieve"
                     else -> "eval"
                 }
             }
@@ -296,7 +297,8 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
         val core = when {
             item.action -> "mutationAttribute"
             itemClass != null -> rows(itemClass)
-            item.multiple -> "rowSetAttribute<Json.MutableObject>"
+            isJsonObject && item.multiple -> "rowSetAttribute<Json.MutableObject>"
+            item.multiple -> "scalarSetAttribute<${type!!.name}>"
             isJsonObject -> if (item.nullable) "nullableRowAttribute<Json.MutableObject>" else "rowAttribute<Json.MutableObject>"
             else -> "scalarAttribute<${type!!.name}$q>"
         }
@@ -305,7 +307,8 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
             composite != null -> rows(itemClass!!)
             isEntity && item.multiple -> "rowSetAttribute<$itemClass>"
             isEntity -> if (item.nullable) "nullableInstanceAttribute<$itemClass>" else "instanceAttribute<$itemClass>"
-            item.multiple -> "scalarAttribute<${type!!.name}>"
+            isJsonObject && item.multiple -> "rowSetAttribute<Json.MutableObject>"
+            item.multiple -> "scalarSetAttribute<${type!!.name}>"
             isJsonObject -> "scalarAttribute<Json.Object$q>"
             else -> "scalarAttribute<${type!!.name}$q>"
         }

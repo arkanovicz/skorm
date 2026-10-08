@@ -136,6 +136,11 @@ fun Route.rest(entity: Entity) {
                             call.respond(entity.instanceAttributes.query<Json.Object>(attribute.key, call.allParameters()).toCollection(Json.MutableArray()))
                         }
                     }
+                    is ScalarSetAttribute<*> -> {
+                        get(attribute.key) {
+                            call.respond(entity.instanceAttributes.harvest<Any?>(attribute.key, call.allParameters()).toCollection(Json.MutableArray()))
+                        }
+                    }
                     is MutationAttribute -> {
                         post(attribute.key) {
                             logger.info { "@@@ content type = ${call.request.contentType().contentType}" }

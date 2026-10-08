@@ -31,6 +31,9 @@ internal actual fun ExampleDatabase.registerAttributes() {
     // attribute Author.countInGenre
     ExampleDatabase.bookshelf.entity("author").instanceAttributes.scalarAttribute<Int>("countInGenre", setOf("author_id","genre"))
 
+    // attribute Author.titles
+    ExampleDatabase.bookshelf.entity("author").instanceAttributes.scalarSetAttribute<String>("titles", setOf("author_id"))
+
     // attribute Author.catalog
     ExampleDatabase.bookshelf.entity("author").instanceAttributes.rowSetAttribute<Catalog>("catalog", setOf("author_id"), ::Catalog)
 
@@ -75,6 +78,9 @@ internal actual fun ExampleDatabase.registerAttributes() {
 
     // attribute Author.countInGenre
     MutableExampleDatabase.bookshelf.entity("author").instanceAttributes.scalarAttribute<Int>("countInGenre", setOf("author_id","genre"))
+
+    // attribute Author.titles
+    MutableExampleDatabase.bookshelf.entity("author").instanceAttributes.scalarSetAttribute<String>("titles", setOf("author_id"))
 
     // attribute Author.catalog
     MutableExampleDatabase.bookshelf.entity("author").instanceAttributes.rowSetAttribute<Catalog>("catalog", setOf("author_id"), ::Catalog)

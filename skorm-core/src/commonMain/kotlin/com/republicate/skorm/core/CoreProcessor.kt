@@ -190,7 +190,14 @@ open class CoreProcessor @JvmOverloads constructor(
         }
     }
 
-    override suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Flow<Row> {
+    override suspend fun query(path: String, params: Map<String, Any?>, factory: RowFactory?, mutable: Boolean): Flow<Row> =
+        stream(path, params, mutable) { names, rawValues, types -> buildRow(names, rawValues, types, factory) }
+
+    override suspend fun harvest(path: String, params: Map<String, Any?>, mutable: Boolean): Flow<Any?> =
+        stream(path, params, mutable, open = { names -> if (names.size != 1) throw SkormException("scalar set attribute $path expects only one column") }) { _, rawValues, _ -> rawValues[0] }
+
+    /** The streamed read behind [query] and [harvest]: one item per row, [open] seeing the column names first. */
+    private suspend fun <T> stream(path: String, params: Map<String, Any?>, mutable: Boolean, open: (Array<String>) -> Unit = {}, item: (Array<String>, Array<Any?>, Array<String>) -> T): Flow<T> {
         val (schema, query) = getSingleQuery(path, mutable, params.keys)
         val values = query.params.map {
             params[it]
@@ -205,9 +212,10 @@ open class CoreProcessor @JvmOverloads constructor(
             try {
                 withContext(blockingContext) { result = connector.stream(schema, query.stmt, *values) }
                 val (names, it, types) = result!!
+                open(names)
                 while (true) {
                     // one hop to the blocking context per page, the rows handed over here
-                    val page = blocking { buildList { while (size < ROW_PAGE && it.hasNext()) add(buildRow(names, it.next(), types, factory)) } }
+                    val page = blocking { buildList { while (size < ROW_PAGE && it.hasNext()) add(item(names, it.next(), types)) } }
                     if (page.isEmpty()) break
                     page.forEach { emit(it) }
                 }

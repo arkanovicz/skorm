@@ -63,5 +63,5 @@ internal actual fun ShapesDatabase.registerAttributes() {
     ShapesDatabase.main.entity("person").instanceAttributes.rowAttribute<LastSeen>("lastSeen", setOf("person_id"), ::LastSeen)
 
     // attribute Person.cities
-    ShapesDatabase.main.entity("person").instanceAttributes.scalarAttribute<String>("cities", setOf("person_id"))
+    ShapesDatabase.main.entity("person").instanceAttributes.scalarSetAttribute<String>("cities", setOf("person_id"))
 }

@@ -91,6 +91,8 @@ open class ExampleDatabase(processor: Processor): Database("example", processor)
             suspend fun books(): Flow<ExampleDatabase.BookshelfSchema.Book> = query("books")
             // attribute Author.countInGenre
             suspend fun `countInGenre`(genre: Genre) = eval<Int>("countInGenre", genre)
+            // attribute Author.titles
+            suspend fun `titles`() = harvest<String>("titles")
             // attribute Author.catalog
             suspend fun `catalog`() = query<Catalog>("catalog")
         }
@@ -100,6 +102,8 @@ open class ExampleDatabase(processor: Processor): Database("example", processor)
             fun booksBlocking(): List<ExampleDatabase.BookshelfSchema.Book> = blocking { books().toList() }
             @JvmName("countInGenre")
             fun countInGenreBlocking(genre: Genre) = blocking { `countInGenre`(genre) }
+            @JvmName("titles")
+            fun titlesBlocking() = blocking { `titles`().toList() }
             @JvmName("catalog")
             fun catalogBlocking() = blocking { `catalog`().toList() }
         }
@@ -312,6 +316,8 @@ class MutableExampleDatabase(processor: Processor): ExampleDatabase(processor), 
             fun booksBlocking(): List<MutableExampleDatabase.MutableBookshelfSchema.MutableBook> = blocking { books().toList() }
             @JvmName("countInGenre")
             fun countInGenreBlocking(genre: Genre) = blocking { `countInGenre`(genre) }
+            @JvmName("titles")
+            fun titlesBlocking() = blocking { `titles`().toList() }
             @JvmName("catalog")
             fun catalogBlocking() = blocking { `catalog`().toList() }
         }

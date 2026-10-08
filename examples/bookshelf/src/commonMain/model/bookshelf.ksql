@@ -35,6 +35,10 @@ database example {
       SELECT count(*) FROM bookshelf.book
         WHERE author_id = {author_id} AND genre = {genre};
 
+    // a scalar flow: the titles themselves, not rows holding them
+    attr Author.titles: String* =
+      SELECT title FROM bookshelf.book WHERE author_id = {author_id} ORDER BY title;
+
     attr Author.catalog: (title: String, borrowings: Int)* =
       SELECT book.title, COUNT(borrowing.book_id) borrowings
         FROM bookshelf.book

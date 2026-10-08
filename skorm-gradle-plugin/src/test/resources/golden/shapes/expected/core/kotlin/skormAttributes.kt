@@ -72,7 +72,7 @@ internal actual fun ShapesDatabase.registerAttributes() {
         SELECT seen FROM person WHERE person_id = {person_id};""".trimIndent(), ::LastSeen)
 
     // attribute Person.cities
-    ShapesDatabase.main.entity("person").instanceAttributes.rowSetAttribute<Json.MutableObject>("cities", """
+    ShapesDatabase.main.entity("person").instanceAttributes.scalarSetAttribute<String>("cities", """
         SELECT city FROM address WHERE owner = {person_id};""".trimIndent())
     if (!MutableShapesDatabase.isInstantiated()) return
     // forward foreign key attribute
@@ -145,6 +145,6 @@ DELETE FROM person WHERE person_id = {person_id};""".trimIndent())
         SELECT seen FROM person WHERE person_id = {person_id};""".trimIndent(), ::LastSeen)
 
     // attribute Person.cities
-    MutableShapesDatabase.main.entity("person").instanceAttributes.rowSetAttribute<Json.MutableObject>("cities", """
+    MutableShapesDatabase.main.entity("person").instanceAttributes.scalarSetAttribute<String>("cities", """
         SELECT city FROM address WHERE owner = {person_id};""".trimIndent())
 }
