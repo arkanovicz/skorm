@@ -46,6 +46,12 @@ internal actual fun ExampleDatabase.registerAttributes() {
         WHERE book.author_id = {author_id}
         GROUP BY book.book_id, book.title;""".trimIndent(), ::Catalog)
 
+    // attribute Book.lastBorrowing
+    ExampleDatabase.bookshelf.entity("book").instanceAttributes.nullableRowAttribute<LastBorrowing>("lastBorrowing", """
+        SELECT borrowing_date, restitution_date FROM borrowing
+        WHERE book_id = {book_id}
+        ORDER BY borrowing_date DESC LIMIT 1;""".trimIndent(), ::LastBorrowing)
+
     // attribute Book.stats
     ExampleDatabase.bookshelf.entity("book").instanceAttributes.rowAttribute<Stats>("stats", """
         SELECT
@@ -113,6 +119,12 @@ INSERT INTO book (title, author_id, genre)
         LEFT JOIN bookshelf.borrowing USING (book_id)
         WHERE book.author_id = {author_id}
         GROUP BY book.book_id, book.title;""".trimIndent(), ::Catalog)
+
+    // attribute Book.lastBorrowing
+    MutableExampleDatabase.bookshelf.entity("book").instanceAttributes.nullableRowAttribute<LastBorrowing>("lastBorrowing", """
+        SELECT borrowing_date, restitution_date FROM borrowing
+        WHERE book_id = {book_id}
+        ORDER BY borrowing_date DESC LIMIT 1;""".trimIndent(), ::LastBorrowing)
 
     // attribute Book.stats
     MutableExampleDatabase.bookshelf.entity("book").instanceAttributes.rowAttribute<Stats>("stats", """

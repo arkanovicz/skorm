@@ -51,5 +51,5 @@ class RMCompositeType(name: String): RMType(name) {
 }
 
 
-class RMField(val name: String, val type: String)
+class RMField(val name: String, val type: String, val nullable: Boolean)
 

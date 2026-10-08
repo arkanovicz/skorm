@@ -42,6 +42,12 @@ database example {
         WHERE book.author_id = {author_id}
         GROUP BY book.book_id, book.title;
 
+    // a nullable composite field: restitution_date is NULL while the book is out
+    attr Book.lastBorrowing: (borrowing_date: LocalDate, restitution_date: LocalDate?)? =
+      SELECT borrowing_date, restitution_date FROM borrowing
+        WHERE book_id = {book_id}
+        ORDER BY borrowing_date DESC LIMIT 1;
+
     attr Book.stats: (title_length: Int, borrowed: Int) =
       SELECT
              CHARACTER_LENGTH(title) title_length,

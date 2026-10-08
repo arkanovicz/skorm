@@ -130,6 +130,10 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
             suspend fun `mainAddress`() = retrieve<ShapesDatabase.MainSchema.Address?>("mainAddress")
             // attribute Person.counts
             suspend fun `counts`() = retrieve<Counts>("counts") as Counts
+            // attribute Person.profile
+            suspend fun `profile`() = retrieve<Profile>("profile") as Profile
+            // attribute Person.lastSeen
+            suspend fun `lastSeen`() = retrieve<LastSeen>("lastSeen") as LastSeen
             // attribute Person.cities
             suspend fun `cities`() = query<String>("cities")
         }
@@ -153,6 +157,10 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
             fun mainAddressBlocking() = blocking { `mainAddress`() }
             @JvmName("counts")
             fun countsBlocking() = blocking { `counts`() }
+            @JvmName("profile")
+            fun profileBlocking() = blocking { `profile`() }
+            @JvmName("lastSeen")
+            fun lastSeenBlocking() = blocking { `lastSeen`() }
             @JvmName("cities")
             fun citiesBlocking() = blocking { `cities`().toList() }
         }

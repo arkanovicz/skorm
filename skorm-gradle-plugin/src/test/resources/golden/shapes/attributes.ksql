@@ -27,6 +27,14 @@ database shapes {
       SELECT (SELECT count(*) FROM address WHERE owner = {person_id}) addresses,
              (SELECT count(*) FROM friendship WHERE a_id = {person_id}) friends;
 
+    // a nullable composite field reads as nullable, its siblings stay non-null
+    attr Person.profile: (name: String, born: LocalDate?) =
+      SELECT name, born FROM person WHERE person_id = {person_id};
+
+    // a composite of one field: a row with one named value, unlike a scalar flow
+    attr Person.lastSeen: (seen: LocalDateTime?) =
+      SELECT seen FROM person WHERE person_id = {person_id};
+
     // known to generate uncompilable code (a scalar rowset, see the TODOs)
     attr Person.cities: String* =
       SELECT city FROM address WHERE owner = {person_id};

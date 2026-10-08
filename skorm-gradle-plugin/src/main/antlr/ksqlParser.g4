@@ -44,7 +44,12 @@ out_entity: LABEL ;
 
 complex_type: complex_type_spec | LP complex_type_spec RP ;
 
-complex_type_spec: ( entity=LABEL | field=LABEL FS simple_type ) ( CM field=LABEL FS simple_type )+ ;
+complex_type_spec:
+  entity=LABEL ( CM composite_field )+
+| composite_field ( CM composite_field )*
+;
+
+composite_field: name=LABEL FS simple_type ( optional=QM )? ;
 
 qualifier: ( optional=QM | mmultiple=ST ) ;
 

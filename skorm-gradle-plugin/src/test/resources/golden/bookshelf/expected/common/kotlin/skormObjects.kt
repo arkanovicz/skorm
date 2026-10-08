@@ -137,6 +137,8 @@ open class ExampleDatabase(processor: Processor): Database("example", processor)
             suspend fun tags(): Flow<ExampleDatabase.BookshelfSchema.Tag> = query("tags")
             // attribute Book.currentBorrower
             suspend fun `currentBorrower`() = retrieve<CurrentBorrower?>("currentBorrower") as CurrentBorrower?
+            // attribute Book.lastBorrowing
+            suspend fun `lastBorrowing`() = retrieve<LastBorrowing?>("lastBorrowing") as LastBorrowing?
             // attribute Book.stats
             suspend fun `stats`() = retrieve<Stats>("stats") as Stats
         }
@@ -152,6 +154,8 @@ open class ExampleDatabase(processor: Processor): Database("example", processor)
             fun tagsBlocking(): List<ExampleDatabase.BookshelfSchema.Tag> = blocking { tags().toList() }
             @JvmName("currentBorrower")
             fun currentBorrowerBlocking() = blocking { `currentBorrower`() }
+            @JvmName("lastBorrowing")
+            fun lastBorrowingBlocking() = blocking { `lastBorrowing`() }
             @JvmName("stats")
             fun statsBlocking() = blocking { `stats`() }
         }
@@ -364,6 +368,8 @@ class MutableExampleDatabase(processor: Processor): ExampleDatabase(processor), 
             fun tagsBlocking(): List<MutableExampleDatabase.MutableBookshelfSchema.MutableTag> = blocking { tags().toList() }
             @JvmName("currentBorrower")
             fun currentBorrowerBlocking() = blocking { `currentBorrower`() }
+            @JvmName("lastBorrowing")
+            fun lastBorrowingBlocking() = blocking { `lastBorrowing`() }
             @JvmName("stats")
             fun statsBlocking() = blocking { `stats`() }
         }

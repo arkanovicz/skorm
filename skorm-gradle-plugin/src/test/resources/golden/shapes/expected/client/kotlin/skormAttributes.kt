@@ -56,6 +56,12 @@ internal actual fun ShapesDatabase.registerAttributes() {
     // attribute Person.counts
     ShapesDatabase.main.entity("person").instanceAttributes.rowAttribute<Counts>("counts", setOf("person_id"), ::Counts)
 
+    // attribute Person.profile
+    ShapesDatabase.main.entity("person").instanceAttributes.rowAttribute<Profile>("profile", setOf("person_id"), ::Profile)
+
+    // attribute Person.lastSeen
+    ShapesDatabase.main.entity("person").instanceAttributes.rowAttribute<LastSeen>("lastSeen", setOf("person_id"), ::LastSeen)
+
     // attribute Person.cities
     ShapesDatabase.main.entity("person").instanceAttributes.scalarAttribute<String>("cities", setOf("person_id"))
     if (!MutableShapesDatabase.isInstantiated()) return
@@ -110,6 +116,12 @@ internal actual fun ShapesDatabase.registerAttributes() {
 
     // attribute Person.counts
     MutableShapesDatabase.main.entity("person").instanceAttributes.rowAttribute<Counts>("counts", setOf("person_id"), ::Counts)
+
+    // attribute Person.profile
+    MutableShapesDatabase.main.entity("person").instanceAttributes.rowAttribute<Profile>("profile", setOf("person_id"), ::Profile)
+
+    // attribute Person.lastSeen
+    MutableShapesDatabase.main.entity("person").instanceAttributes.rowAttribute<LastSeen>("lastSeen", setOf("person_id"), ::LastSeen)
 
     // attribute Person.cities
     MutableShapesDatabase.main.entity("person").instanceAttributes.scalarAttribute<String>("cities", setOf("person_id"))

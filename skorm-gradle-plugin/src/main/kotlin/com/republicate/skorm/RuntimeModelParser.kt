@@ -53,10 +53,7 @@ private fun digestAST(databaseContext: ksqlParser.DatabaseContext): RMDatabase {
                     val composite = type.complex_type()?.complex_type_spec() ?: nullerr()
                     item.type = RMCompositeType(name.withCapital()).also { itemType ->
                         itemType.parent = composite.entity?.text
-                        var fieldNames = composite.LABEL()
-                        if (itemType.parent != null) fieldNames = fieldNames.subList(1, fieldNames.size)
-                        val fieldTypes = composite.simple_type()
-                        fieldNames.zip(fieldTypes).map { RMField(it.first.text, it.second.text) }.toCollection(itemType.fields)
+                        composite.composite_field().mapTo(itemType.fields) { RMField(it.name!!.text!!, it.simple_type().text, it.optional != null) }
                     }
                 }
             }

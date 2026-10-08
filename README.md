@@ -438,6 +438,8 @@ mut [Entity.]name[(params)] = { SQL; SQL; ... }
 | `(field: Type, ...)?` | Nullable anonymous | `(count: Int, total: Double)?` |
 | `(...)*` | Flow of objects | `(name: String, count: Int)*` |
 
+A composite field takes a `?` of its own: `(name: String, born: LocalDate?)` reads `born` as `LocalDate?`, its siblings stay non-null. A composite may have a single field, `(seen: LocalDateTime?)`: a row with one named value.
+
 Supported scalar types: `Int`, `Long`, `String`, `Boolean`, `Double`, `Float`, `LocalDate`, `LocalDateTime`, `LocalTime`
 
 #### Parameters

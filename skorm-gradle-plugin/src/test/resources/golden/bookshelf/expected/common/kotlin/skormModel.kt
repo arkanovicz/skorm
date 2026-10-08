@@ -15,6 +15,13 @@ open class Catalog(): Json.MutableObject() {
         get() = getInt("borrowings")!!
 }
 
+open class LastBorrowing(): Json.MutableObject() {
+    val borrowingDate: LocalDate
+        get() = getLocalDate("borrowingDate")!!
+    val restitutionDate: LocalDate?
+        get() = getLocalDate("restitutionDate")
+}
+
 open class Stats(): Json.MutableObject() {
     val titleLength: Int
         get() = getInt("titleLength")!!

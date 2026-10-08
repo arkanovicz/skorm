@@ -34,6 +34,9 @@ internal actual fun ExampleDatabase.registerAttributes() {
     // attribute Author.catalog
     ExampleDatabase.bookshelf.entity("author").instanceAttributes.rowSetAttribute<Catalog>("catalog", setOf("author_id"), ::Catalog)
 
+    // attribute Book.lastBorrowing
+    ExampleDatabase.bookshelf.entity("book").instanceAttributes.nullableRowAttribute<LastBorrowing>("lastBorrowing", setOf("book_id"), ::LastBorrowing)
+
     // attribute Book.stats
     ExampleDatabase.bookshelf.entity("book").instanceAttributes.rowAttribute<Stats>("stats", setOf("book_id"), ::Stats)
     if (!MutableExampleDatabase.isInstantiated()) return
@@ -75,6 +78,9 @@ internal actual fun ExampleDatabase.registerAttributes() {
 
     // attribute Author.catalog
     MutableExampleDatabase.bookshelf.entity("author").instanceAttributes.rowSetAttribute<Catalog>("catalog", setOf("author_id"), ::Catalog)
+
+    // attribute Book.lastBorrowing
+    MutableExampleDatabase.bookshelf.entity("book").instanceAttributes.nullableRowAttribute<LastBorrowing>("lastBorrowing", setOf("book_id"), ::LastBorrowing)
 
     // attribute Book.stats
     MutableExampleDatabase.bookshelf.entity("book").instanceAttributes.rowAttribute<Stats>("stats", setOf("book_id"), ::Stats)

@@ -5,6 +5,7 @@ All notable changes to Skorm are documented in this file.
 ## [0.23] - unreleased
 
 ### Changed
+- **Composite fields may be nullable**: `(name: String, born: LocalDate?)` reads `born` as `LocalDate?`. A nullable column in a composite used to hit the generated `!!` at access time. A composite may also have a single field, `(seen: LocalDateTime?)`, which the grammar refused
 - kddl 0.30: `clob` reaches the model as `text`, reverse engineering and KDDL output fixes; nothing on skorm's path
 
 ## [0.22] - 2026-09-24

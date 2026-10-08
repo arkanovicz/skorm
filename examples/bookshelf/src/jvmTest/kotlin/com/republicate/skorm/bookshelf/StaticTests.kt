@@ -56,10 +56,17 @@ class StaticTests {
                 assertEquals("Alice", borrower.name)
                 assertNotNull(borrower.borrowingDate)
 
+                // a nullable composite field is null, its non-null sibling set
+                val out = theBook.lastBorrowing()
+                assertNotNull(out)
+                assertNotNull(out.borrowingDate)
+                assertNull(out.restitutionDate)
+
                 // multi-param mut binds {dude_id}/{returned_on} by name despite reversed order
                 val changed = theBook.returnFrom(alice.dudeId.toLong(), LocalDate(2026, 6, 10))
                 assertEquals(1L, changed)
                 assertNull(theBook.currentBorrower())
+                assertEquals(LocalDate(2026, 6, 10), theBook.lastBorrowing()?.restitutionDate)
 
                 // enum field round-trips, and an enum-typed query param filters correctly
                 val author = Author.browse().first()

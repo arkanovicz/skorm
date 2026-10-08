@@ -10,3 +10,15 @@ open class Counts(): Json.MutableObject() {
         get() = getInt("friends")!!
 }
 
+open class Profile(): Json.MutableObject() {
+    val name: String
+        get() = getString("name")!!
+    val born: LocalDate?
+        get() = getLocalDate("born")
+}
+
+open class LastSeen(): Json.MutableObject() {
+    val seen: LocalDateTime?
+        get() = getLocalDateTime("seen")
+}
+

@@ -255,8 +255,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
             CompositeClass(
                 className = kotlin.pascal(item.name),
                 parentClass = c.parent?.let { "${names.readOnly.schemaClass(schema)}.${kotlin.pascal(it)}Impl" } ?: "Json.MutableObject",
-                // FAITHFUL: a composite field is never nullable (the runtime model carries no such flag)
-                fields = c.fields.map { CompositeField(kotlin.camel(it.name), it.type, false) }
+                fields = c.fields.map { CompositeField(kotlin.camel(it.name), it.type, it.nullable) }
             )
         }
         val isEntity = (type as? RMSimpleType)?.isEntity == true
@@ -279,8 +278,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
                 }
                 when {
                     item.multiple -> "query"
-                    composite != null && ((type as RMCompositeType).parent != null || type.fields.size > 1)
-                        || isEntity || isJsonObject -> "retrieve"
+                    composite != null || isEntity || isJsonObject -> "retrieve"
                     else -> "eval"
                 }
             }

@@ -63,6 +63,14 @@ internal actual fun ShapesDatabase.registerAttributes() {
         SELECT (SELECT count(*) FROM address WHERE owner = {person_id}) addresses,
              (SELECT count(*) FROM friendship WHERE a_id = {person_id}) friends;""".trimIndent(), ::Counts)
 
+    // attribute Person.profile
+    ShapesDatabase.main.entity("person").instanceAttributes.rowAttribute<Profile>("profile", """
+        SELECT name, born FROM person WHERE person_id = {person_id};""".trimIndent(), ::Profile)
+
+    // attribute Person.lastSeen
+    ShapesDatabase.main.entity("person").instanceAttributes.rowAttribute<LastSeen>("lastSeen", """
+        SELECT seen FROM person WHERE person_id = {person_id};""".trimIndent(), ::LastSeen)
+
     // attribute Person.cities
     ShapesDatabase.main.entity("person").instanceAttributes.rowSetAttribute<Json.MutableObject>("cities", """
         SELECT city FROM address WHERE owner = {person_id};""".trimIndent())
