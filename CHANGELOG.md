@@ -2,6 +2,11 @@
 
 All notable changes to Skorm are documented in this file.
 
+## [0.23] - unreleased
+
+### Changed
+- kddl 0.30: `clob` reaches the model as `text`, reverse engineering and KDDL output fixes; nothing on skorm's path
+
 ## [0.22] - 2026-09-24
 
 ### Changed
