@@ -58,11 +58,8 @@ private fun digestAST(databaseContext: ksqlParser.DatabaseContext): RMDatabase {
                 }
             }
             val qualif = itemContext.qualifier()
-            when {
-                qualif == null -> {}
-                qualif.QM() != null -> item.nullable = true
-                qualif.ST() != null -> item.multiple = true
-            }
+            item.nullable = qualif?.QM() != null
+            item.multiple = qualif?.ST() != null
             // a block's statements, without its braces: to the query parser `{` opens a parameter
             item.sql = itemContext.sql_spec().query?.text?.trim()
                 ?: itemContext.sql_spec().queries?.sql()?.joinToString("\n") { it.text.trim() + ";" }

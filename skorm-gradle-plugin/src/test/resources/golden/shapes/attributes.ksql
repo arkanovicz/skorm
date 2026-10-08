@@ -38,5 +38,9 @@ database shapes {
     // a scalar flow: the column's values themselves, harvested
     attr Person.cities: String* =
       SELECT city FROM address WHERE owner = {person_id};
+
+    // a scalar flow of nullable values
+    attr tinies: Int?* =
+      SELECT tiny FROM person;
   }
 }

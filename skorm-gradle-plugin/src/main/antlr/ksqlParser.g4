@@ -51,7 +51,7 @@ complex_type_spec:
 
 composite_field: name=LABEL FS simple_type ( optional=QM )? ;
 
-qualifier: ( optional=QM | mmultiple=ST ) ;
+qualifier: optional=QM ( mmultiple=ST )? | mmultiple=ST ;
 
 single_query: sql SC ;
 multiple_queries: LC ( sql SC )* RC ;

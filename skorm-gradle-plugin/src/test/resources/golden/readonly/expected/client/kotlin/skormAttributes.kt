@@ -64,4 +64,7 @@ internal actual fun ShapesDatabase.registerAttributes() {
 
     // attribute Person.cities
     ShapesDatabase.main.entity("person").instanceAttributes.scalarSetAttribute<String>("cities", setOf("person_id"))
+
+    // attribute main.tinies
+    ShapesDatabase.main.scalarSetAttribute<Int?>("tinies", setOf())
 }

@@ -365,6 +365,10 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
         suspend fun `everybody`() = query<ShapesDatabase.MainSchema.Person>("everybody")
         @JvmName("everybody")
         fun everybodyBlocking() = blocking { `everybody`().toList() }
+        // attribute main.tinies
+        suspend fun `tinies`() = harvest<Int?>("tinies")
+        @JvmName("tinies")
+        fun tiniesBlocking() = blocking { `tinies`().toList() }
     }
     open class OtherSchema(db: Database): Schema("other", db) {
         interface Badge : Instance {

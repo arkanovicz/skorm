@@ -74,4 +74,8 @@ internal actual fun ShapesDatabase.registerAttributes() {
     // attribute Person.cities
     ShapesDatabase.main.entity("person").instanceAttributes.scalarSetAttribute<String>("cities", """
         SELECT city FROM address WHERE owner = {person_id};""".trimIndent())
+
+    // attribute main.tinies
+    ShapesDatabase.main.scalarSetAttribute<Int?>("tinies", """
+        SELECT tiny FROM person;""".trimIndent())
 }

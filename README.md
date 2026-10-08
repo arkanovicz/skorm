@@ -435,6 +435,7 @@ mut [Entity.]name[(params)] = { SQL; SQL; ... }
 | `Type` | Non-nullable scalar | `Int`, `String`, `LocalDate` |
 | `Type?` | Nullable scalar | `Int?`, `String?` |
 | `Type*` | Flow of scalars, a column's values | `String*`, `LocalDate*` |
+| `Type?*` | Flow of nullable scalars | `Int?*` |
 | `(Entity, field: Type, ...)` | Composite object extending entity | `(Dude, borrowing_date: LocalDateTime)` |
 | `(Entity, field: Type, ...)?` | Nullable composite | `(Dude, borrowing_date: LocalDateTime)?` |
 | `(field: Type, ...)` | Anonymous object | `(count: Int, total: Double)` |

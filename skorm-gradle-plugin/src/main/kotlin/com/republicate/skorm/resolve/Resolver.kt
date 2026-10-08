@@ -277,6 +277,8 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
                     else -> generics = "<${type!!.name}$q>"
                 }
                 val rows = composite != null || isEntity || isJsonObject
+                // a row is never null in a flow: `?*` only means something for the values of a column
+                if (rows && item.nullable && item.multiple) throw SkormException("attribute ${item.name}: ?* qualifies a scalar, not rows")
                 when {
                     item.multiple -> if (rows) "query" else "harvest"
                     rows -> "retrieve"
@@ -298,7 +300,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
             item.action -> "mutationAttribute"
             itemClass != null -> rows(itemClass)
             isJsonObject && item.multiple -> "rowSetAttribute<Json.MutableObject>"
-            item.multiple -> "scalarSetAttribute<${type!!.name}>"
+            item.multiple -> "scalarSetAttribute<${type!!.name}$q>"
             isJsonObject -> if (item.nullable) "nullableRowAttribute<Json.MutableObject>" else "rowAttribute<Json.MutableObject>"
             else -> "scalarAttribute<${type!!.name}$q>"
         }
@@ -308,7 +310,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
             isEntity && item.multiple -> "rowSetAttribute<$itemClass>"
             isEntity -> if (item.nullable) "nullableInstanceAttribute<$itemClass>" else "instanceAttribute<$itemClass>"
             isJsonObject && item.multiple -> "rowSetAttribute<Json.MutableObject>"
-            item.multiple -> "scalarSetAttribute<${type!!.name}>"
+            item.multiple -> "scalarSetAttribute<${type!!.name}$q>"
             isJsonObject -> "scalarAttribute<Json.Object$q>"
             else -> "scalarAttribute<${type!!.name}$q>"
         }

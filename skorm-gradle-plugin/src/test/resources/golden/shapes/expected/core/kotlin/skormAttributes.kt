@@ -74,6 +74,10 @@ internal actual fun ShapesDatabase.registerAttributes() {
     // attribute Person.cities
     ShapesDatabase.main.entity("person").instanceAttributes.scalarSetAttribute<String>("cities", """
         SELECT city FROM address WHERE owner = {person_id};""".trimIndent())
+
+    // attribute main.tinies
+    ShapesDatabase.main.scalarSetAttribute<Int?>("tinies", """
+        SELECT tiny FROM person;""".trimIndent())
     if (!MutableShapesDatabase.isInstantiated()) return
     // forward foreign key attribute
     MutableShapesDatabase.main.entity("friendship").instanceAttributes.rowAttribute<MutableShapesDatabase.MutableMainSchema.MutablePerson>("a", "SELECT * FROM main.person LEFT JOIN main.base_vip USING (person_id) WHERE person.person_id = {a_id};", MutableShapesDatabase.MutableMainSchema.MutablePerson)
@@ -147,4 +151,8 @@ DELETE FROM person WHERE person_id = {person_id};""".trimIndent())
     // attribute Person.cities
     MutableShapesDatabase.main.entity("person").instanceAttributes.scalarSetAttribute<String>("cities", """
         SELECT city FROM address WHERE owner = {person_id};""".trimIndent())
+
+    // attribute main.tinies
+    MutableShapesDatabase.main.scalarSetAttribute<Int?>("tinies", """
+        SELECT tiny FROM person;""".trimIndent())
 }
