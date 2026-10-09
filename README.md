@@ -736,3 +736,7 @@ book?.let {
 **On JS:** `ApiClient` → HTTP → REST API → `CoreProcessor` → JDBC → Database
 
 The `Processor` abstraction makes your code platform-agnostic!
+
+## Disclaimer
+
+Versions 0.7 and upwards have been co-autored with AI agents.
