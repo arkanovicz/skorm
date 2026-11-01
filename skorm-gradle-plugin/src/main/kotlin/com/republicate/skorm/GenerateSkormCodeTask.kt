@@ -27,6 +27,7 @@ import java.io.File
  *   <out>/core/resources   database creation script
  *   <out>/client/kotlin    REST client attribute registrations, called from initialize()
  */
+@CacheableTask
 abstract class GenerateSkormCodeTask : BaseModelGenerationTask() {
 
     init {
@@ -35,6 +36,7 @@ abstract class GenerateSkormCodeTask : BaseModelGenerationTask() {
     }
 
     @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
     @get:Optional
     abstract val attributes: RegularFileProperty
 

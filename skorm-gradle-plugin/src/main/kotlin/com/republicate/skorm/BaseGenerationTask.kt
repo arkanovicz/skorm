@@ -4,6 +4,7 @@ import org.apache.velocity.VelocityContext
 import org.apache.velocity.app.VelocityEngine
 import org.gradle.api.DefaultTask
 import org.gradle.api.provider.Property
+import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
@@ -12,6 +13,7 @@ import java.io.File
 import java.io.FileWriter
 import java.util.*
 
+@CacheableTask
 abstract class BaseGenerationTask : DefaultTask() {
 
     @get:Input
