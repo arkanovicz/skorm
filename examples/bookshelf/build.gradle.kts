@@ -30,7 +30,7 @@ kotlin {
     jvm {
         compilations.all {
             compileTaskProvider.configure {
-                compilerOptions.freeCompilerArgs.add("-Xjvm-default=all")
+                compilerOptions.freeCompilerArgs.add("-jvm-default=no-compatibility")
             }
         }
         testRuns["test"].executionTask.configure {
