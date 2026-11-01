@@ -11,9 +11,9 @@ include("skorm-gradle-plugin")
 
 pluginManagement {
     repositories {
-        mavenLocal()
         gradlePluginPortal()
         mavenCentral()
+        mavenLocal() // last: a Maven-fetched copy has no module metadata (okhttp 5's umbrella jar is empty without it)
     }
 }
 
