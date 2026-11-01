@@ -2,6 +2,12 @@
 
 All notable changes to Skorm are documented in this file.
 
+## [0.24] - 2026-11-01
+
+### Changed
+- **Build**: Gradle 9.4.1 and Kotlin 2.4.21; Dokka 2.2.0 (V2); publishing through `com.vanniktech.maven.publish` 0.37.0 to the Central Portal instead of nexus-publish, with signing only on the `MavenCentral` tasks (no `-Prelease`). Two Gradle 9 finds in the plugin: `KotlinTool` threw the ANTLR 2 `SemanticException` shaded inside Gradle 8's Groovy instead of kddl's, and the generation tasks are now `@CacheableTask` with content-only file inputs (uncached when reverse-engineering a datasource)
+- Dependencies: essential-kson 2.18, kotlinx-datetime 0.8.0, kotlinx-serialization 1.12.0, ktor 3.6.1, antlr-kotlin 1.0.14, slf4j 2.0.20, commons-lang3 3.21.0, commons-collections4 4.6.0; test-only h2 2.5.252, JUnit 6.1.3, mockito 5.24.0, testcontainers 1.21.4, postgresql 42.7.14
+
 ## [0.23] - 2026-10-08
 
 ### Changed
