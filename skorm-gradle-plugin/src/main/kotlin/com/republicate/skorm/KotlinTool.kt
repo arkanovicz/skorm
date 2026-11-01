@@ -6,7 +6,7 @@ import com.republicate.kddl.ASTForeignKey
 import com.republicate.kddl.ASTSchema
 import com.republicate.kddl.ASTTable
 import com.republicate.kddl.FieldType
-import groovyjarjarantlr.SemanticException
+import com.republicate.kddl.SemanticException
 import org.atteo.evo.inflector.English
 import java.util.*
 
