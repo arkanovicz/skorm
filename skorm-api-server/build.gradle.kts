@@ -6,16 +6,10 @@ description = "Skorm API server"
 
 plugins {
     alias(libs.plugins.jvm)
-    java
-    `maven-publish`
 }
 
 kotlin {
     jvmToolchain(21)
-}
-
-java {
-    withSourcesJar()
 }
 
 dependencies {
@@ -25,13 +19,5 @@ dependencies {
     implementation(libs.kotlin.logging)
     // testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.0")
     // testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
-}
-
-publishing {
-    publications {
-        create<MavenPublication>("maven") {
-            from(components["java"])
-        }
-    }
 }
 

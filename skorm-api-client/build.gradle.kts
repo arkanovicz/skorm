@@ -9,7 +9,6 @@ description = "Skorm API client"
 
 plugins {
     alias(libs.plugins.multiplatform)
-    `maven-publish`
 }
 
 kotlin {

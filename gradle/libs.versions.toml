@@ -1,7 +1,7 @@
 [versions]
 kotlin = "2.4.21"
-dokka = "1.9.20"
-nexus-publish = "2.0.0"
+dokka = "2.2.0"
+maven-publish = "0.35.0"
 antlr-kotlin = "1.0.10"
 commons-collections4 = "4.5.0"
 commons-lang3 = "3.20.0"
@@ -79,5 +79,5 @@ atomicfu = { id = "org.jetbrains.kotlinx.atomicfu", version.ref = "kotlinx-atomi
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
-nexusPublish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexus-publish" }
+mavenPublish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }
 versions = { id = "io.github.ben-manes.versions", version.ref = "versionsPlugin" }

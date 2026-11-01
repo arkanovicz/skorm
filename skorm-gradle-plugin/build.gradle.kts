@@ -10,12 +10,10 @@ plugins {
     alias(libs.plugins.jvm)
     alias(libs.plugins.antlr)
     `java-gradle-plugin`
-    `maven-publish`
 }
 
 java {
     toolchain.languageVersion.set(JavaLanguageVersion.of(21))
-    withSourcesJar()
 }
 
 gradlePlugin {
@@ -38,14 +36,25 @@ buildscript {
     }
 }
 
-kotlin {
-    sourceSets{
-        main {
-            kotlin.srcDirs(
-                file("${layout.buildDirectory.get()}/generated-src/main/kotlin"),
-            )
+tasks.register<com.strumenta.antlrkotlin.gradle.AntlrKotlinTask>("generateKotlinGrammarSource") {
+    // maxHeapSize = "64m"
+    packageName = "com.republicate.skorm.parser"
+    arguments = listOf("-no-visitor", "-no-listener")
+    source = project.objects
+        .sourceDirectorySet("antlr", "antlr")
+        .srcDir("src/main/antlr").apply {
+            include("*.g4")
         }
-        test
+    outputDirectory = layout.buildDirectory.dir("generated-src/main/kotlin").get().asFile
+    group = "code generation"
+}
+
+kotlin {
+    sourceSets {
+        main {
+            // the task's output, so compilation, the sources jar and Dokka all depend on it
+            kotlin.srcDir(tasks.named("generateKotlinGrammarSource"))
+        }
     }
     jvmToolchain(21)
 }
@@ -76,31 +85,9 @@ tasks {
     }
 }
 
-tasks.register<com.strumenta.antlrkotlin.gradle.AntlrKotlinTask>("generateKotlinGrammarSource") {
-    // maxHeapSize = "64m"
-    packageName = "com.republicate.skorm.parser"
-    arguments = listOf("-no-visitor", "-no-listener")
-    source = project.objects
-        .sourceDirectorySet("antlr", "antlr")
-        .srcDir("src/main/antlr").apply {
-            include("*.g4")
-        }
-    outputDirectory = File("build/generated-src/main/kotlin")
-    group = "code generation"
-
-}
-
-tasks.filter { it.name.startsWith("compileKotlin") }.forEach { it.dependsOn("generateKotlinGrammarSource") }
-tasks.findByName("dokkaHtml")?.dependsOn("generateKotlinGrammarSource")
-tasks.findByName("sourcesJar")?.dependsOn("generateKotlinGrammarSource")
-
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
     jvmArgs("--add-opens", "java.base/java.lang=ALL-UNNAMED")
     // GoldenOutputTest rewrites its expected files under this variable: a run must not be skipped as up-to-date
     inputs.property("SKORM_UPDATE_GOLDEN", providers.environmentVariable("SKORM_UPDATE_GOLDEN").orElse(""))
-}
-
-tasks.withType<Test>().configureEach {
-    useJUnitPlatform()
 }

@@ -12,7 +12,6 @@ description = "Skorm common code"
 
 plugins {
     alias(libs.plugins.multiplatform)
-    `maven-publish`
     alias(libs.plugins.atomicfu)
 }
 

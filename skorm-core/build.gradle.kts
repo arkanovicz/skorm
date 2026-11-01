@@ -9,7 +9,6 @@ description = "Skorm core processor"
 
 plugins {
     alias(libs.plugins.multiplatform)
-    `maven-publish`
 }
 
 kotlin {

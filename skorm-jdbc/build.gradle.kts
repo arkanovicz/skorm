@@ -2,13 +2,11 @@ description = "Skorm JDBC connector"
 
 plugins {
     `java-library`
-    `maven-publish`
     alias(libs.plugins.jvm) // for Kotlin tests
 }
 
 java {
     toolchain.languageVersion.set(JavaLanguageVersion.of(21))
-    withSourcesJar()
 }
 
 dependencies {
@@ -35,13 +33,5 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
-}
-
-publishing {
-    publications {
-        create<MavenPublication>("maven") {
-            from(components["java"])
-        }
-    }
 }
 
