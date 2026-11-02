@@ -305,7 +305,7 @@ open class CoreProcessor @JvmOverloads constructor(
 
     private fun Entity.generateFetchStatement(): QueryDefinition {
         val stmt = "SELECT ${selection()} WHERE ${
-            primaryKey.joinToString(" AND ") { "${writeMapper(it.name)} = ?" }
+            primaryKey.joinToString(" AND ") { "${writeMapper(it.name)} = ${it.parameter()}" }
         };"
         return QueryDefinition(stmt, primaryKey.map { it.name })
     }
@@ -323,7 +323,7 @@ open class CoreProcessor @JvmOverloads constructor(
 
     private fun Entity.generateDeleteStatement(): QueryDefinition {
         val stmt = "DELETE FROM ${schema.name}.${writeMapper(name)} WHERE ${
-            primaryKey.joinToString(" AND ") { "${writeMapper(it.name)} = ?" }
+            primaryKey.joinToString(" AND ") { "${writeMapper(it.name)} = ${it.parameter()}" }
         };"
         return QueryDefinition(stmt, primaryKey.map { it.name })
     }
@@ -332,9 +332,30 @@ open class CoreProcessor @JvmOverloads constructor(
         val stmt = "UPDATE ${schema.name}.${writeMapper(name)} SET ${
             params.joinToString(", ") { "${writeMapper(it)} = ?" }
         } WHERE ${
-            primaryKey.joinToString(" AND ") { "${writeMapper(it.name)} = ?" }
+            primaryKey.joinToString(" AND ") { "${writeMapper(it.name)} = ${it.parameter()}" }
         };"
         return QueryDefinition(stmt, params.toList() + primaryKey.map { it.name })
+    }
+
+    // a serial is a column definition, not a type; the driver names the rest, precision kept
+    private fun Field.castType(meta: MetaInfos): String {
+        val base = type.substringBefore('(')
+        val valueType = when (base) {
+            "serial" -> "integer"
+            "bigserial" -> "bigint"
+            else -> base
+        }
+        return meta.castType(valueType) + type.substring(base.length)
+    }
+
+    private fun Field.parameter(): String {
+        return connector.getMetaInfos().let { meta ->
+            when {
+                meta.strictColumnTypes && meta.columnMarkers -> "?::${castType(meta)}"
+                meta.strictColumnTypes -> "CAST(? AS ${castType(meta)})"
+                else -> "?"
+            }
+        }
     }
 
     companion object {

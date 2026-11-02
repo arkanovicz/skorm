@@ -18,8 +18,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 /**
- * Fetch, update and delete by primary key on PostgreSQL, the key given as a String (a REST path) or a Long,
- * for key types whose kddl name is no PostgreSQL type: the parameters go uncast, PostgreSQL types them from the column.
+ * Fetch, update and delete by primary key on PostgreSQL, the key given as a String (a REST path) or a number,
+ * for key types whose kddl name is no PostgreSQL type (cast through the driver's `cast_types`), and for a number
+ * given for a varchar key, which only the cast makes comparable.
  */
 class PostgreSQLKeyTest {
 
@@ -46,7 +47,7 @@ class PostgreSQLKeyTest {
     }
 
     @Test
-    fun keysBindUncast() {
+    fun keysAreCastToTheColumnType() {
         assumeTrue(System.getenv("SKORM_SKIP_PG_TESTS") == null, "SKORM_SKIP_PG_TESTS set")
         assumeTrue(System.getenv("DOCKER_HOST") != null || java.io.File("/var/run/docker.sock").exists(), "no Docker on this host")
         DockerClientFactory.instance().client()
@@ -60,15 +61,19 @@ class PostgreSQLKeyTest {
             connector.mutate(null, "CREATE TABLE keys.dbl (id double precision PRIMARY KEY, label varchar)")
             connector.mutate(null, "INSERT INTO keys.tiny VALUES (3, 'before'), (4, 'before')")
             connector.mutate(null, "INSERT INTO keys.dbl VALUES (3.5, 'before')")
+            connector.mutate(null, "CREATE TABLE keys.code (id varchar(10) PRIMARY KEY, label varchar)")
+            connector.mutate(null, "INSERT INTO keys.code VALUES ('12', 'before')")
             val db = Db(CoreProcessor(connector))
             val schema = Sch(db)
             val tiny = Ent("tiny", schema, "tinyint")
             val dbl = Ent("dbl", schema, "double")
+            val code = Ent("code", schema, "varchar(10)")
             db.initialize()
             runBlocking {
                 tiny.roundTrip("3")
                 tiny.roundTrip(4L)
                 dbl.roundTrip("3.5")
+                code.roundTrip(12)
             }
             db.close()
         }

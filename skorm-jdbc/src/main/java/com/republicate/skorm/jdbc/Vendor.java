@@ -137,11 +137,20 @@ public class Vendor implements MetaInfos
     private String lastInsertIdQuery = null;
     private String lastInsertIdMethod = null;
 
+    /** whether the JDBC driver is strict about column types */
+    private boolean strictColumnTypes = true;
+
     /** ignore tables matching this pattern */
     private Pattern ignoreTablesPattern = null;
 
     /** quoteIdentifier quote character */
     private Character identifierQuoteChar = null;
+
+    /** whether driver supports ::varchar etc... */
+    private boolean columnMarkers = false;
+
+    /** the engine's names for the kddl types it spells differently */
+    private Map<String, String> castTypes = Map.of();
 
     /** whether the engine is pedantic about implicit casts (PostgreSQL native enums in operator contexts): bind strings untyped */
     private boolean pedanticCasts = false;
@@ -252,6 +261,17 @@ public class Vendor implements MetaInfos
         return lastInsertIdMethod;
     }
 
+    @Override
+    public boolean isStrictColumnTypes()
+    {
+        return strictColumnTypes;
+    }
+
+    public void setStrictColumnTypes(boolean strictColumnTypes)
+    {
+        this.strictColumnTypes = strictColumnTypes;
+    }
+
     public Pattern getIgnoreTablesPattern()
     {
         return ignoreTablesPattern;
@@ -282,6 +302,36 @@ public class Vendor implements MetaInfos
         {
             this.identifierQuoteChar = identifierQuoteChar.charAt(0);
         }
+    }
+
+    @Override
+    public boolean hasColumnMarkers()
+    {
+        return columnMarkers;
+    }
+
+    public void setColumnMarkers(boolean columnMarkers)
+    {
+        this.columnMarkers = columnMarkers;
+    }
+
+    @Override
+    public String castType(String type)
+    {
+        return castTypes.getOrDefault(type, type);
+    }
+
+    /** comma-separated kddl:engine pairs, e.g. {@code tinyint:smallint, double:double precision} */
+    public void setCastTypes(String spec)
+    {
+        Map<String, String> map = new HashMap<>();
+        for (String pair : spec.split(","))
+        {
+            String[] parts = pair.split(":");
+            if (parts.length != 2) throw new ConfigurationException("invalid cast_types entry: " + pair.trim());
+            map.put(parts[0].trim(), parts[1].trim());
+        }
+        castTypes = Map.copyOf(map);
     }
 
     public boolean hasPedanticCasts()

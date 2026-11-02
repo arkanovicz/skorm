@@ -25,6 +25,14 @@ class QueryResult @JvmOverloads constructor(
 interface MetaInfos {
     val identifierQuoteChar: Char
     val identifierInternalCase: Char // 'U'ppercase, 'L'owercase, 'S'ensitive
+    @Suppress("INAPPLICABLE_JVM_NAME")
+    @get:JvmName("isStrictColumnTypes")
+    val strictColumnTypes: Boolean
+    @Suppress("INAPPLICABLE_JVM_NAME")
+    @get:JvmName("hasColumnMarkers")
+    val columnMarkers: Boolean
+    /** the engine's name for a kddl type, to cast a parameter to it */
+    fun castType(type: String): String
 }
 
 interface Connector: Configurable, AutoCloseable {
