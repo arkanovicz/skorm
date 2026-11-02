@@ -42,7 +42,7 @@ class KotlinTool {
         "money", "numeric" -> "Double" // TODO
         "blob" -> "ByteArray"
         "uuid" -> "Uuid"
-        "json" -> "Json"
+        "json", "jsonb" -> "Json"
         else -> throw SemanticException("unsupported type: $base")
     }
 

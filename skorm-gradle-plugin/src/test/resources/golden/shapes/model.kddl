@@ -15,6 +15,7 @@ database shapes {
       big biginteger?
       uid uuid?                            // each of these pulls in its own import
       meta json?
+      doc jsonb?
       born date?
       seen timestamp?
       stamp timestamptz?

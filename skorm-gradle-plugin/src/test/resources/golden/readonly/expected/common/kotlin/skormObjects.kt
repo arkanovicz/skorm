@@ -90,6 +90,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                     addField(Field("big", "bigint", false, false))
                     addField(Field("uid", "uuid", false, false))
                     addField(Field("meta", "json", false, false))
+                    addField(Field("doc", "jsonb", false, false))
                     addField(Field("born", "date", false, false))
                     addField(Field("seen", "timestamp", false, false))
                     addField(Field("stamp", "timestamptz", false, false))
@@ -114,6 +115,8 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                 get() = getUuid("uid")
             val meta: Json?
                 get() = getJson("meta")
+            val doc: Json?
+                get() = getJson("doc")
             val born: LocalDate?
                 get() = getLocalDate("born")
             val seen: LocalDateTime?
@@ -326,6 +329,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                     addField(Field("big", "bigint", false, false))
                     addField(Field("uid", "uuid", false, false))
                     addField(Field("meta", "json", false, false))
+                    addField(Field("doc", "jsonb", false, false))
                     addField(Field("born", "date", false, false))
                     addField(Field("seen", "timestamp", false, false))
                     addField(Field("stamp", "timestamptz", false, false))

@@ -14,6 +14,7 @@ All notable changes to Skorm are documented in this file.
 - ksql `Instant`, for values, arguments and composite fields (`InstantAttribute`, served over REST)
 
 ### Fixed
+- `jsonb` was refused at generation; it maps to `Json` like `json`
 - Fetch, update and delete by key failed on PostgreSQL for a `tinyint`, `double` or `long` key, cast with the kddl name (`?::tinyint`)
 - `datetime`, `datetimetz`, `datetime_tz` and `timestamp_tz` were refused at generation (kddl 0.32)
 - PostgreSQL DDL received `biginteger` and `datetime(n)` verbatim; HyperSQL DDL received `timestamptz` and `timetz`, which HSQLDB and H2 reject (kddl 0.32)

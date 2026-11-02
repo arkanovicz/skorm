@@ -20,6 +20,7 @@ CREATE TABLE person (
   big bigint,
   uid uuid,
   meta json,
+  doc jsonb,
   born date,
   seen timestamp,
   stamp timestamptz,
@@ -67,12 +68,12 @@ CREATE TABLE base_vip (
 
 CREATE VIEW vip AS
   SELECT
-    person.person_id,name,rank,nature,small,tiny,big,uid,meta,born,seen,stamp,kind
+    person.person_id,name,rank,nature,small,tiny,big,uid,meta,doc,born,seen,stamp,kind
   FROM base_vip JOIN person ON person.person_id = base_vip.person_id;
 
 CREATE RULE insert_vip AS ON INSERT TO vip DO INSTEAD (
-  INSERT INTO person (person_id,name,rank,nature,small,tiny,big,uid,meta,born,seen,stamp,kind)
-    VALUES (     COALESCE(NEW.person_id,NEXTVAL('person_person_id_seq')),NEW.name,NEW.rank,NEW.nature,NEW.small,NEW.tiny,NEW.big,NEW.uid,NEW.meta,NEW.born,NEW.seen,NEW.stamp,'vip');
+  INSERT INTO person (person_id,name,rank,nature,small,tiny,big,uid,meta,doc,born,seen,stamp,kind)
+    VALUES (     COALESCE(NEW.person_id,NEXTVAL('person_person_id_seq')),NEW.name,NEW.rank,NEW.nature,NEW.small,NEW.tiny,NEW.big,NEW.uid,NEW.meta,NEW.doc,NEW.born,NEW.seen,NEW.stamp,'vip');
   SELECT SETVAL('person_person_id_seq', NEW.person_id) person_id WHERE NEW.person_id > (SELECT last_value FROM person_person_id_seq);
   INSERT INTO base_vip (person_id)
     VALUES (COALESCE(NEW.person_id,CURRVAL('person_person_id_seq')))
@@ -85,6 +86,7 @@ CREATE RULE insert_vip AS ON INSERT TO vip DO INSTEAD (
             (SELECT big FROM person WHERE person.person_id = base_vip.person_id),
             (SELECT uid FROM person WHERE person.person_id = base_vip.person_id),
             (SELECT meta FROM person WHERE person.person_id = base_vip.person_id),
+            (SELECT doc FROM person WHERE person.person_id = base_vip.person_id),
             (SELECT born FROM person WHERE person.person_id = base_vip.person_id),
             (SELECT seen FROM person WHERE person.person_id = base_vip.person_id),
             (SELECT stamp FROM person WHERE person.person_id = base_vip.person_id),
@@ -93,7 +95,7 @@ CREATE RULE insert_vip AS ON INSERT TO vip DO INSTEAD (
 
 CREATE RULE update_vip AS ON UPDATE TO vip DO INSTEAD (
   UPDATE person
-    SET name = NEW.name,rank = NEW.rank,nature = NEW.nature,small = NEW.small,tiny = NEW.tiny,big = NEW.big,uid = NEW.uid,meta = NEW.meta,born = NEW.born,seen = NEW.seen,stamp = NEW.stamp
+    SET name = NEW.name,rank = NEW.rank,nature = NEW.nature,small = NEW.small,tiny = NEW.tiny,big = NEW.big,uid = NEW.uid,meta = NEW.meta,doc = NEW.doc,born = NEW.born,seen = NEW.seen,stamp = NEW.stamp
     WHERE person_id = NEW.person_id
   RETURNING NEW.*;
 );

@@ -437,7 +437,9 @@ class KotlinToolTest {
             // datetime used to have no entry at all
             "timestamp" to "LocalDateTime", "datetime" to "LocalDateTime", "datetime(3)" to "LocalDateTime",
             "timestamptz" to "Instant", "datetimetz" to "Instant", "datetime_tz" to "Instant", "timestamp_tz" to "Instant",
-            "text" to "String", "clob" to "String"
+            "text" to "String", "clob" to "String",
+            // kddl keeps jsonb apart: a different PostgreSQL type, the same Kotlin one
+            "json" to "Json", "jsonb" to "Json"
         )
         for ((spelling, kotlin) in expected) {
             val field = ASTField(table, "f", spelling, false, true, false)
