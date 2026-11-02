@@ -1,9 +1,16 @@
+#if($useInstantType)
+@file:OptIn(kotlin.time.ExperimentalTime::class) // Instant is experimental below Kotlin 2.3
+
+#end
 package $package
 
 import com.republicate.skorm.*
 #if(!$resolved.attributes.isEmpty())
 import kotlinx.datetime.*
 import com.republicate.kson.Json
+#end
+#if($useInstantType)
+import kotlin.time.Instant
 #end
 
 

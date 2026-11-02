@@ -1,6 +1,13 @@
+#if($useInstantType)
+@file:OptIn(kotlin.time.ExperimentalTime::class) // Instant is experimental below Kotlin 2.3
+
+#end
 package $package
 
 import kotlinx.datetime.*
+#if($useInstantType)
+import kotlin.time.Instant
+#end
 import com.republicate.kson.Json
 
 ## the composite row classes ksql attributes declare; the accessors are members of their receivers

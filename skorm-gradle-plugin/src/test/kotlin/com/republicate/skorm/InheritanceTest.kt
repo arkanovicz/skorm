@@ -40,7 +40,10 @@ class InheritanceTest {
                 kotlin("jvm") version "2.4.0"
                 id("com.republicate.skorm")
             }
-            kotlin { jvmToolchain(21) }
+            kotlin {
+                jvmToolchain(21)
+                compilerOptions { apiVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_2) } // the stack's: Instant is experimental there
+            }
             skorm {
                 model.set(file("src/main/model/inh.kddl"))
                 destPackage.set("inh.model")
@@ -79,6 +82,8 @@ class InheritanceTest {
             }
         """.trimIndent())
         dir.resolve("src/test/kotlin/InheritanceCheck.kt").writeText("""
+            @file:OptIn(kotlin.time.ExperimentalTime::class)
+
             import com.republicate.kson.toJsonObject
             import com.republicate.skorm.core.CoreProcessor
             import com.republicate.skorm.core.mutationAttribute

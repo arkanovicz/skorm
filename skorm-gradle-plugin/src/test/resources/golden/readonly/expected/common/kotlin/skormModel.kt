@@ -1,6 +1,9 @@
+@file:OptIn(kotlin.time.ExperimentalTime::class) // Instant is experimental below Kotlin 2.3
+
 package shapes.model
 
 import kotlinx.datetime.*
+import kotlin.time.Instant
 import com.republicate.kson.Json
 
 open class Counts(): Json.MutableObject() {

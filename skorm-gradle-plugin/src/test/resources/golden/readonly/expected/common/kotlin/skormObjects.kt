@@ -1,3 +1,5 @@
+@file:OptIn(kotlin.time.ExperimentalTime::class) // Instant is experimental below Kotlin 2.3
+
 package shapes.model
 
 /**
