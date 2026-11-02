@@ -46,6 +46,7 @@ class InheritanceTest {
             }
             skorm {
                 model.set(file("src/main/model/inh.kddl"))
+                attributes.set(file("src/main/model/inh.ksql"))
                 destPackage.set("inh.model")
                 dialect.set("postgresql")
             }
@@ -78,6 +79,16 @@ class InheritanceTest {
                   city varchar(50)
                   owner -- person
                 }
+              }
+            }
+        """.trimIndent())
+        dir.resolve("src/main/model/inh.ksql").writeText("""
+            database inh {
+              schema main {
+                attr lastSeen: Instant? =
+                  SELECT max(seen) FROM person;
+                attr seenSince(since: Instant): Int =
+                  SELECT count(*) FROM person WHERE seen >= {since};
               }
             }
         """.trimIndent())
@@ -138,6 +149,9 @@ class InheritanceTest {
                             assertEquals(PersonKind.person, MutablePerson.fetch(alice.personId)!!.kind)
                             // a timestamptz is an Instant, both ways
                             assertEquals(seen, MutablePerson.fetch(alice.personId)!!.seen)
+                            assertEquals(seen, db.main.lastSeen())
+                            assertEquals(1, db.main.seenSince(seen))
+                            assertEquals(0, db.main.seenSince(Instant.parse("2026-11-02T07:34:57Z")))
 
                             // fetch, and a navigation to a hierarchy member
                             assertIs<MutableVip>(MutablePerson.fetch(bob.personId))

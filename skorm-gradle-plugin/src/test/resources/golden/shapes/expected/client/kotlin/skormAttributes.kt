@@ -70,6 +70,12 @@ internal actual fun ShapesDatabase.registerAttributes() {
 
     // attribute main.tinies
     ShapesDatabase.main.scalarSetAttribute<Int?>("tinies", setOf())
+
+    // attribute main.stampedSince
+    ShapesDatabase.main.scalarAttribute<Int>("stampedSince", setOf("since"))
+
+    // attribute main.lastStamp
+    ShapesDatabase.main.scalarAttribute<Instant?>("lastStamp", setOf())
     if (!MutableShapesDatabase.isInstantiated()) return
     // forward foreign key attribute
     MutableShapesDatabase.main.entity("friendship").instanceAttributes.rowAttribute<MutableShapesDatabase.MutableMainSchema.MutablePerson>("a", setOf("a_id"), MutableShapesDatabase.MutableMainSchema.MutablePerson)
@@ -134,4 +140,10 @@ internal actual fun ShapesDatabase.registerAttributes() {
 
     // attribute main.tinies
     MutableShapesDatabase.main.scalarSetAttribute<Int?>("tinies", setOf())
+
+    // attribute main.stampedSince
+    MutableShapesDatabase.main.scalarAttribute<Int>("stampedSince", setOf("since"))
+
+    // attribute main.lastStamp
+    MutableShapesDatabase.main.scalarAttribute<Instant?>("lastStamp", setOf())
 }

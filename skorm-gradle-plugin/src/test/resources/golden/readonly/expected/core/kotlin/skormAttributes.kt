@@ -81,4 +81,12 @@ internal actual fun ShapesDatabase.registerAttributes() {
     // attribute main.tinies
     ShapesDatabase.main.scalarSetAttribute<Int?>("tinies", """
         SELECT tiny FROM person;""".trimIndent())
+
+    // attribute main.stampedSince
+    ShapesDatabase.main.scalarAttribute<Int>("stampedSince", """
+        SELECT count(*) FROM person WHERE stamp >= {since};""".trimIndent())
+
+    // attribute main.lastStamp
+    ShapesDatabase.main.scalarAttribute<Instant?>("lastStamp", """
+        SELECT max(stamp) FROM person;""".trimIndent())
 }

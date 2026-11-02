@@ -23,6 +23,9 @@ class ResolvedModel(
 ) {
     /** the halves to emit registrations for: this one, then the mutable twin when there is one */
     val halves: List<ResolvedModel> get() = listOfNotNull(this, mutableTwin)
+
+    /** whether a ksql attribute of either half names this simple type */
+    fun uses(type: String) = halves.any { half -> half.attributes.any { type in it.types } }
 }
 
 class ResolvedSchema(
@@ -155,7 +158,9 @@ class QueryAttribute(
     val sql: String,
     /** the parameter names the SQL binds, in order */
     val params: List<String>,
-    val composite: CompositeClass?
+    val composite: CompositeClass?,
+    /** the simple types it names: arguments, value, composite fields */
+    val types: Collection<String>
 )
 
 class CompositeClass(

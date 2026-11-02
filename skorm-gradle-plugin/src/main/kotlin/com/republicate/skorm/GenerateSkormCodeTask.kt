@@ -77,6 +77,7 @@ abstract class GenerateSkormCodeTask : BaseModelGenerationTask() {
     override fun populateContext(context: VelocityContext) {
         super.populateContext(context)
         context.put("resolved", resolved)
+        context.put("useInstantType", context.get("useInstantType") == true || resolved.uses("Instant"))
         context.put("multiplatform", multiplatform.get())
     }
 

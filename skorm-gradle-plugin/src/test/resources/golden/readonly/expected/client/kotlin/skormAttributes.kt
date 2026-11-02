@@ -70,4 +70,10 @@ internal actual fun ShapesDatabase.registerAttributes() {
 
     // attribute main.tinies
     ShapesDatabase.main.scalarSetAttribute<Int?>("tinies", setOf())
+
+    // attribute main.stampedSince
+    ShapesDatabase.main.scalarAttribute<Int>("stampedSince", setOf("since"))
+
+    // attribute main.lastStamp
+    ShapesDatabase.main.scalarAttribute<Instant?>("lastStamp", setOf())
 }

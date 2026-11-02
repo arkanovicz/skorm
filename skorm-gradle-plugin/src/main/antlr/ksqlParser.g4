@@ -32,6 +32,7 @@ simple_type:
 | TIME
 | DATE
 | DATETIME
+| INSTANT
 | INTERVAL
 | CHAR
 | STRING

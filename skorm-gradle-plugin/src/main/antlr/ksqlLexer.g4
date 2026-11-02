@@ -17,6 +17,7 @@ DOUBLE: 'Double' ;
 TIME: 'LocalTime' ;
 DATE: 'LocalDate' ;
 DATETIME: 'LocalDateTime' ;
+INSTANT: 'Instant' ;
 INTERVAL: 'DateTimePeriod' ;
 CHAR: 'Char' ;
 STRING: 'String' ;

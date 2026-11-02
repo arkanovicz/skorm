@@ -42,5 +42,12 @@ database shapes {
     // a scalar flow of nullable values
     attr tinies: Int?* =
       SELECT tiny FROM person;
+
+    // an Instant, as value and as argument: the generated files opt in to kotlin.time.ExperimentalTime
+    attr stampedSince(since: Instant): Int =
+      SELECT count(*) FROM person WHERE stamp >= {since};
+
+    attr lastStamp: Instant? =
+      SELECT max(stamp) FROM person;
   }
 }

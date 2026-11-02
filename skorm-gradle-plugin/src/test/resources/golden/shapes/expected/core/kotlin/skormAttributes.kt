@@ -81,6 +81,14 @@ internal actual fun ShapesDatabase.registerAttributes() {
     // attribute main.tinies
     ShapesDatabase.main.scalarSetAttribute<Int?>("tinies", """
         SELECT tiny FROM person;""".trimIndent())
+
+    // attribute main.stampedSince
+    ShapesDatabase.main.scalarAttribute<Int>("stampedSince", """
+        SELECT count(*) FROM person WHERE stamp >= {since};""".trimIndent())
+
+    // attribute main.lastStamp
+    ShapesDatabase.main.scalarAttribute<Instant?>("lastStamp", """
+        SELECT max(stamp) FROM person;""".trimIndent())
     if (!MutableShapesDatabase.isInstantiated()) return
     // forward foreign key attribute
     MutableShapesDatabase.main.entity("friendship").instanceAttributes.rowAttribute<MutableShapesDatabase.MutableMainSchema.MutablePerson>("a", "SELECT * FROM main.person LEFT JOIN main.base_vip USING (person_id) WHERE person.person_id = {a_id};", MutableShapesDatabase.MutableMainSchema.MutablePerson)
@@ -158,4 +166,12 @@ DELETE FROM person WHERE person_id = {person_id};""".trimIndent())
     // attribute main.tinies
     MutableShapesDatabase.main.scalarSetAttribute<Int?>("tinies", """
         SELECT tiny FROM person;""".trimIndent())
+
+    // attribute main.stampedSince
+    MutableShapesDatabase.main.scalarAttribute<Int>("stampedSince", """
+        SELECT count(*) FROM person WHERE stamp >= {since};""".trimIndent())
+
+    // attribute main.lastStamp
+    MutableShapesDatabase.main.scalarAttribute<Instant?>("lastStamp", """
+        SELECT max(stamp) FROM person;""".trimIndent())
 }

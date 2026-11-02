@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package com.republicate.skorm
 
 import kotlinx.coroutines.flow.Flow
@@ -7,6 +9,8 @@ import com.republicate.kson.Json
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 /*
@@ -212,6 +216,14 @@ class NullableLocalDateTimeAttribute(name: String, parameters: Set<String>): Sca
     override fun handleResult(result: Any?) = Json.TypeUtils.toLocalDateTime(result)
 }
 
+class InstantAttribute(name: String, parameters: Set<String>): ScalarAttribute<Instant>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toInstant(result) ?: throw SkormException("attribute $name cannot have a null result")
+}
+
+class NullableInstantAttribute(name: String, parameters: Set<String>): ScalarAttribute<Instant?>(name, parameters) {
+    override fun handleResult(result: Any?) = Json.TypeUtils.toInstant(result)
+}
+
 class LocalDateAttribute(name: String, parameters: Set<String>): ScalarAttribute<LocalDate>(name, parameters) {
     override fun handleResult(result: Any?) = Json.TypeUtils.toLocalDate(result) ?: throw SkormException("attribute $name cannot have a null result")
 }
@@ -357,6 +369,7 @@ inline fun <reified T> scalarAttributeOf(name: String, params: Set<String>): Sca
         LocalTime::class -> NullableLocalTimeAttribute(name, params) as ScalarAttribute<T>
         LocalDate::class -> NullableLocalDateAttribute(name, params) as ScalarAttribute<T>
         LocalDateTime::class -> NullableLocalDateTimeAttribute(name, params) as ScalarAttribute<T>
+        Instant::class -> NullableInstantAttribute(name, params) as ScalarAttribute<T>
         ByteArray::class -> NullableBytesAttribute(name, params) as ScalarAttribute<T>
         // not supported yet
         // else -> throw SkormException("unhandled type: ${T::class.qualifiedName}")
@@ -374,6 +387,7 @@ inline fun <reified T> scalarAttributeOf(name: String, params: Set<String>): Sca
         LocalTime::class -> LocalTimeAttribute(name, params) as ScalarAttribute<T>
         LocalDate::class -> LocalDateAttribute(name, params) as ScalarAttribute<T>
         LocalDateTime::class -> LocalDateTimeAttribute(name, params) as ScalarAttribute<T>
+        Instant::class -> InstantAttribute(name, params) as ScalarAttribute<T>
         ByteArray::class -> BytesAttribute(name, params) as ScalarAttribute<T>
         // not supported yet
         // else -> throw SkormException("unhandled type: ${T::class.qualifiedName}")

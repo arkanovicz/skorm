@@ -373,6 +373,14 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
         suspend fun `tinies`() = harvest<Int?>("tinies")
         @JvmName("tinies")
         fun tiniesBlocking() = blocking { `tinies`().toList() }
+        // attribute main.stampedSince
+        suspend fun `stampedSince`(since: Instant) = eval<Int>("stampedSince", since)
+        @JvmName("stampedSince")
+        fun stampedSinceBlocking(since: Instant) = blocking { `stampedSince`(since) }
+        // attribute main.lastStamp
+        suspend fun `lastStamp`() = eval<Instant?>("lastStamp")
+        @JvmName("lastStamp")
+        fun lastStampBlocking() = blocking { `lastStamp`() }
     }
     open class OtherSchema(db: Database): Schema("other", db) {
         interface Badge : Instance {

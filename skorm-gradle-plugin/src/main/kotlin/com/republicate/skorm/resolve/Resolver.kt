@@ -235,7 +235,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
     // ---- ksql attributes --------------------------------------------------------------------
 
     private val simpleTypes = setOf("Boolean", "Int", "Long", "Float", "Double", "LocalTime", "LocalDate",
-        "LocalDateTime", "DateTimePeriod", "Char", "String", "Json", "Any?")
+        "LocalDateTime", "Instant", "DateTimePeriod", "Char", "String", "Json", "Any?")
 
     /** An argument's type is a simple type or an enum class the schema declares. */
     private fun checkArguments(item: RMItem, schemaName: String, enums: Set<String>) {
@@ -326,7 +326,9 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
             coreRegistration = core, clientRegistration = client, factory = factory,
             sql = item.sql ?: "",
             params = item.parameters.toList(),
-            composite = composite
+            composite = composite,
+            types = (item.arguments?.map { it.second } ?: emptyList()) + listOfNotNull((type as? RMSimpleType)?.takeIf { !isEntity }?.name) +
+                (composite?.fields?.map { it.type } ?: emptyList())
         )
     }
 }

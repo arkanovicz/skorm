@@ -12,6 +12,7 @@ import io.ktor.util.*
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.toCollection
 import kotlinx.datetime.*
+import kotlin.time.Instant
 
 private val logger = KotlinLogging.logger("skorm.api")
 
@@ -114,6 +115,11 @@ fun Route.rest(entity: Entity) {
                     is LocalDateTimeAttribute, is NullableLocalDateTimeAttribute ->  {
                         get(attribute.key) {
                             call.respond(entity.instanceAttributes.eval<LocalDateTime>(attribute.key, call.allParameters()))
+                        }
+                    }
+                    is InstantAttribute, is NullableInstantAttribute ->  {
+                        get(attribute.key) {
+                            call.respond(entity.instanceAttributes.eval<Instant>(attribute.key, call.allParameters()))
                         }
                     }
                     is LocalTimeAttribute, is NullableLocalTimeAttribute ->  {

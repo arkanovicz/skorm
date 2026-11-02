@@ -8,6 +8,9 @@ All notable changes to Skorm are documented in this file.
 - **Breaking**: `timestamptz` maps to `kotlin.time.Instant` instead of `LocalDateTime`. PostgreSQL's driver returned it as wall-clock time in the JVM's zone; H2 and HSQLDB returned an `OffsetDateTime` no getter could convert
 - **Breaking**: `timetz` is refused at generation (was `LocalTime`, offset dropped, and shifted to the JVM's zone on PostgreSQL); there is no multiplatform offset time yet
 
+### Added
+- ksql `Instant`, for values, arguments and composite fields (`InstantAttribute`, served over REST)
+
 ## [0.24] - 2026-11-01
 
 ### Changed

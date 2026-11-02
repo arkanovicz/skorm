@@ -444,7 +444,7 @@ mut [Entity.]name[(params)] = { SQL; SQL; ... }
 
 A composite field takes a `?` of its own: `(name: String, born: LocalDate?)` reads `born` as `LocalDate?`, its siblings stay non-null. A composite may have a single field, `(seen: LocalDateTime?)`: a row with one named value.
 
-Supported scalar types: `Int`, `Long`, `String`, `Boolean`, `Double`, `Float`, `LocalDate`, `LocalDateTime`, `LocalTime`
+Supported scalar types: `Int`, `Long`, `String`, `Boolean`, `Double`, `Float`, `LocalDate`, `LocalDateTime`, `LocalTime`, `Instant`
 
 #### Parameters
 
