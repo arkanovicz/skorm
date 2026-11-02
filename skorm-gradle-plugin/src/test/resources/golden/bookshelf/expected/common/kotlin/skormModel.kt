@@ -1,6 +1,9 @@
+@file:OptIn(kotlin.time.ExperimentalTime::class) // Instant is experimental below Kotlin 2.3
+
 package com.republicate.skorm.bookshelf
 
 import kotlinx.datetime.*
+import kotlin.time.Instant
 import com.republicate.kson.Json
 
 open class CurrentBorrower(): ExampleDatabase.BookshelfSchema.DudeImpl() {

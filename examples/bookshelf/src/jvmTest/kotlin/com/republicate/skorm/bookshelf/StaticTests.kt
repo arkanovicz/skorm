@@ -1,3 +1,5 @@
+@file:OptIn(kotlin.time.ExperimentalTime::class) // Instant is experimental below Kotlin 2.3
+
 package com.republicate.skorm.bookshelf
 
 import com.republicate.skorm.SkormException
@@ -18,6 +20,7 @@ import org.junit.jupiter.api.assertThrows
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.time.Instant
 
 /** A non-suspend view of a row delegates the whole field contract: the row interface itself. */
 private class BookView(row: Book) : Book by row
@@ -73,6 +76,12 @@ class StaticTests {
                 assertEquals(Genre.essay, theBook.genre)
                 assertEquals(1, author.countInGenre(Genre.essay))
                 assertEquals(0, author.countInGenre(Genre.poetry))
+
+                // a timestamptz round-trips as an Instant: H2 gets HyperSQL's TIMESTAMP WITH TIME ZONE
+                val acquired = Instant.parse("2026-11-02T07:34:56.123456Z")
+                theBook.acquired = acquired
+                theBook.update()
+                assertEquals(acquired, Book.fetch(theBook.bookId)?.acquired)
 
                 // a scalar flow harvests the column's values themselves
                 val titles = author.titles().toList()

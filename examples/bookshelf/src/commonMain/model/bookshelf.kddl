@@ -16,6 +16,7 @@ database example {
       *book_id serial
       title varchar(100)
       genre enum('fiction', 'novel', 'essay', 'poetry')
+      acquired timestamptz?
       donor --> dude?
     }
 

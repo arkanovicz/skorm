@@ -1,3 +1,5 @@
+@file:OptIn(kotlin.time.ExperimentalTime::class) // Instant is experimental below Kotlin 2.3
+
 package com.republicate.skorm.bookshelf
 
 /**
@@ -10,6 +12,7 @@ package com.republicate.skorm.bookshelf
 
 import com.republicate.kson.Json
 import kotlinx.datetime.*
+import kotlin.time.Instant
 import com.republicate.skorm.*
 import kotlinx.coroutines.flow.*
 import kotlin.jvm.JvmName
@@ -119,6 +122,7 @@ open class ExampleDatabase(processor: Processor): Database("example", processor)
                     addField(Field("bookId", "serial", true, true))
                     addField(Field("title", "varchar(100)", false, false))
                     addField(Field("genre", "enum('fiction','novel','essay','poetry')", false, false))
+                    addField(Field("acquired", "timestamptz", false, false))
                     addField(Field("donor", "integer", false, false))
                     addField(Field("authorId", "integer", false, false))
                 }
@@ -129,6 +133,8 @@ open class ExampleDatabase(processor: Processor): Database("example", processor)
                 get() = getString("title")!!
             val genre: Genre
                 get() = getString("genre")!!.let { Genre.valueOf(it) }
+            val acquired: Instant?
+                get() = getInstant("acquired")
             val donor: Int?
                 get() = getInt("donor")
             val authorId: Int
@@ -333,6 +339,7 @@ class MutableExampleDatabase(processor: Processor): ExampleDatabase(processor), 
                     addField(Field("bookId", "serial", true, true))
                     addField(Field("title", "varchar(100)", false, false))
                     addField(Field("genre", "enum('fiction','novel','essay','poetry')", false, false))
+                    addField(Field("acquired", "timestamptz", false, false))
                     addField(Field("donor", "integer", false, false))
                     addField(Field("authorId", "integer", false, false))
                 }
@@ -343,6 +350,9 @@ class MutableExampleDatabase(processor: Processor): ExampleDatabase(processor), 
             override var genre: Genre
                 get() = getString("genre")!!.let { Genre.valueOf(it) }
                 set(v) { put("genre", v.toString()) }
+            override var acquired: Instant?
+                get() = getInstant("acquired")
+                set(v) { put("acquired", v) }
             override var donor: Int?
                 get() = getInt("donor")
                 set(v) { put("donor", v) }

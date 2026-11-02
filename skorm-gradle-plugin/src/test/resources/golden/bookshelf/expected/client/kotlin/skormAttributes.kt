@@ -1,8 +1,11 @@
+@file:OptIn(kotlin.time.ExperimentalTime::class) // Instant is experimental below Kotlin 2.3
+
 package com.republicate.skorm.bookshelf
 
 import com.republicate.skorm.*
 import kotlinx.datetime.*
 import com.republicate.kson.Json
+import kotlin.time.Instant
 
 
 // attribute registrations for client, called from initialize(): the read-only database's, then the mutable one's when it exists
