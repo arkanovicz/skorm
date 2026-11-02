@@ -17,7 +17,7 @@ CREATE TABLE person (
   nature enum_nature NOT NULL,
   small smallint NOT NULL,
   tiny smallint,
-  big biginteger,
+  big bigint,
   uid uuid,
   meta json,
   born date,

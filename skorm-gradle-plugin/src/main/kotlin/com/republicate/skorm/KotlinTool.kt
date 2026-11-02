@@ -25,24 +25,23 @@ class KotlinTool {
 
     private fun kotlinType(base: String): String = when (base.lowercase(Locale.ROOT)) {
         "boolean" -> "Boolean"
-        "char", "text", "varchar", "clob" -> "String" // TODO streams for "text" and "clob"
+        "char", "text", "varchar" -> "String" // TODO streams for "text"
         "date" -> "LocalDate"
         "timestamp" -> "LocalDateTime"
         "timestamptz" -> "Instant"
         "time" -> "LocalTime"
         // java.time.OffsetTime is JVM-only and kotlinx-datetime has no counterpart
         "timetz" -> throw SemanticException("unsupported type: timetz (no multiplatform offset time yet; use time or timestamptz)")
-        // every spelling kddl's lexer accepts: the base keeps the one the model used
-        "tinyint", "byte" -> "Byte"
-        "smallint", "smallinteger", "short" -> "Short"
-        "int", "integer", "serial" -> "Int"
-        "long", "bigint", "biginteger", "bigserial" -> "Long"
+        // kddl normalizes spellings: one name per type
+        "tinyint" -> "Byte"
+        "smallint" -> "Short"
+        "integer", "serial" -> "Int"
+        "bigint", "bigserial" -> "Long"
         "float" -> "Float"
         "double" -> "Double"
-        "money", "numeric", "decimal" -> "Double" // TODO
+        "money", "numeric" -> "Double" // TODO
         "blob" -> "ByteArray"
         "uuid" -> "Uuid"
-        "binary", "varbinary" -> "ByteArray" // TODO streams
         "json" -> "Json"
         else -> throw SemanticException("unsupported type: $base")
     }

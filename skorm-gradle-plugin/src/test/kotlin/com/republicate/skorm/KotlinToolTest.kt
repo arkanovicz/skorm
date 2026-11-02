@@ -423,7 +423,7 @@ class KotlinToolTest {
     }
 
     @Test
-    fun `every integer spelling kddl accepts maps to a Kotlin type and getter`() {
+    fun `every spelling kddl accepts maps to a Kotlin type and getter`() {
         val db = ASTDatabase("test_db")
         val schema = ASTSchema(db, "test_schema")
         db.schemas[schema.name] = schema
@@ -433,7 +433,11 @@ class KotlinToolTest {
             "tinyint" to "Byte", "byte" to "Byte",
             "smallint" to "Short", "smallinteger" to "Short", "short" to "Short",
             "int" to "Int", "integer" to "Int",
-            "bigint" to "Long", "biginteger" to "Long", "long" to "Long"
+            "bigint" to "Long", "biginteger" to "Long", "long" to "Long",
+            // datetime used to have no entry at all
+            "timestamp" to "LocalDateTime", "datetime" to "LocalDateTime", "datetime(3)" to "LocalDateTime",
+            "timestamptz" to "Instant", "datetimetz" to "Instant", "datetime_tz" to "Instant", "timestamp_tz" to "Instant",
+            "text" to "String", "clob" to "String"
         )
         for ((spelling, kotlin) in expected) {
             val field = ASTField(table, "f", spelling, false, true, false)

@@ -90,7 +90,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                     addField(Field("nature", "enum('a','b')", false, false))
                     addField(Field("small", "smallint", false, false))
                     addField(Field("tiny", "tinyint", false, false))
-                    addField(Field("big", "biginteger", false, false))
+                    addField(Field("big", "bigint", false, false))
                     addField(Field("uid", "uuid", false, false))
                     addField(Field("meta", "json", false, false))
                     addField(Field("born", "date", false, false))
@@ -207,8 +207,8 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                 override suspend fun browse() = super.browse() as Flow<Friendship>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
-                    addField(Field("aId", "int", true, false))
-                    addField(Field("bId", "int", true, false))
+                    addField(Field("aId", "integer", true, false))
+                    addField(Field("bId", "integer", true, false))
                     addField(Field("since", "date", false, false))
                 }
             }
@@ -244,8 +244,8 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("label", "varchar(20)", false, false))
-                    addField(Field("aId", "int", false, false))
-                    addField(Field("bId", "int", false, false))
+                    addField(Field("aId", "integer", false, false))
+                    addField(Field("bId", "integer", false, false))
                 }
             }
             val label: String
@@ -273,8 +273,8 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("addressId", "serial", true, true))
                     addField(Field("city", "varchar(50)", false, false))
-                    addField(Field("owner", "int", false, false))
-                    addField(Field("backup", "int", false, false))
+                    addField(Field("owner", "integer", false, false))
+                    addField(Field("backup", "integer", false, false))
                     addField(Field("code", "char(2)", false, false))
                 }
             }
@@ -326,7 +326,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                     addField(Field("nature", "enum('a','b')", false, false))
                     addField(Field("small", "smallint", false, false))
                     addField(Field("tiny", "tinyint", false, false))
-                    addField(Field("big", "biginteger", false, false))
+                    addField(Field("big", "bigint", false, false))
                     addField(Field("uid", "uuid", false, false))
                     addField(Field("meta", "json", false, false))
                     addField(Field("born", "date", false, false))
@@ -345,8 +345,8 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                 override suspend fun browse() = super.browse() as Flow<PersonAddress>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
-                    addField(Field("personId", "int", false, false))
-                    addField(Field("addressId", "int", false, false))
+                    addField(Field("personId", "integer", false, false))
+                    addField(Field("addressId", "integer", false, false))
                 }
             }
             val personId: Int
@@ -394,7 +394,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("label", "varchar(20)", false, false))
-                    addField(Field("personId", "int", false, false))
+                    addField(Field("personId", "integer", false, false))
                 }
             }
             val label: String
@@ -465,7 +465,7 @@ class MutableShapesDatabase(processor: Processor): ShapesDatabase(processor), Mu
                     addField(Field("nature", "enum('a','b')", false, false))
                     addField(Field("small", "smallint", false, false))
                     addField(Field("tiny", "tinyint", false, false))
-                    addField(Field("big", "biginteger", false, false))
+                    addField(Field("big", "bigint", false, false))
                     addField(Field("uid", "uuid", false, false))
                     addField(Field("meta", "json", false, false))
                     addField(Field("born", "date", false, false))
@@ -584,8 +584,8 @@ class MutableShapesDatabase(processor: Processor): ShapesDatabase(processor), Mu
                 override suspend fun browse() = super.browse() as Flow<MutableFriendship>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
-                    addField(Field("aId", "int", true, false))
-                    addField(Field("bId", "int", true, false))
+                    addField(Field("aId", "integer", true, false))
+                    addField(Field("bId", "integer", true, false))
                     addField(Field("since", "date", false, false))
                 }
             }
@@ -618,8 +618,8 @@ class MutableShapesDatabase(processor: Processor): ShapesDatabase(processor), Mu
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("label", "varchar(20)", false, false))
-                    addField(Field("aId", "int", false, false))
-                    addField(Field("bId", "int", false, false))
+                    addField(Field("aId", "integer", false, false))
+                    addField(Field("bId", "integer", false, false))
                 }
             }
             override var label: String
@@ -650,8 +650,8 @@ class MutableShapesDatabase(processor: Processor): ShapesDatabase(processor), Mu
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("addressId", "serial", true, true))
                     addField(Field("city", "varchar(50)", false, false))
-                    addField(Field("owner", "int", false, false))
-                    addField(Field("backup", "int", false, false))
+                    addField(Field("owner", "integer", false, false))
+                    addField(Field("backup", "integer", false, false))
                     addField(Field("code", "char(2)", false, false))
                 }
             }
@@ -705,7 +705,7 @@ class MutableShapesDatabase(processor: Processor): ShapesDatabase(processor), Mu
                     addField(Field("nature", "enum('a','b')", false, false))
                     addField(Field("small", "smallint", false, false))
                     addField(Field("tiny", "tinyint", false, false))
-                    addField(Field("big", "biginteger", false, false))
+                    addField(Field("big", "bigint", false, false))
                     addField(Field("uid", "uuid", false, false))
                     addField(Field("meta", "json", false, false))
                     addField(Field("born", "date", false, false))
@@ -726,8 +726,8 @@ class MutableShapesDatabase(processor: Processor): ShapesDatabase(processor), Mu
                 override suspend fun browse() = super.browse() as Flow<MutablePersonAddress>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
-                    addField(Field("personId", "int", false, false))
-                    addField(Field("addressId", "int", false, false))
+                    addField(Field("personId", "integer", false, false))
+                    addField(Field("addressId", "integer", false, false))
                 }
             }
             override var personId: Int
@@ -751,7 +751,7 @@ class MutableShapesDatabase(processor: Processor): ShapesDatabase(processor), Mu
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("label", "varchar(20)", false, false))
-                    addField(Field("personId", "int", false, false))
+                    addField(Field("personId", "integer", false, false))
                 }
             }
             override var label: String

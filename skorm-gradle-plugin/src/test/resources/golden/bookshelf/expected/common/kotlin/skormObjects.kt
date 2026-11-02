@@ -119,8 +119,8 @@ open class ExampleDatabase(processor: Processor): Database("example", processor)
                     addField(Field("bookId", "serial", true, true))
                     addField(Field("title", "varchar(100)", false, false))
                     addField(Field("genre", "enum('fiction','novel','essay','poetry')", false, false))
-                    addField(Field("donor", "int", false, false))
-                    addField(Field("authorId", "int", false, false))
+                    addField(Field("donor", "integer", false, false))
+                    addField(Field("authorId", "integer", false, false))
                 }
             }
             val bookId: Int
@@ -172,8 +172,8 @@ open class ExampleDatabase(processor: Processor): Database("example", processor)
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("borrowingDate", "date", false, false))
                     addField(Field("restitutionDate", "date", false, false))
-                    addField(Field("bookId", "int", false, false))
-                    addField(Field("dudeId", "int", false, false))
+                    addField(Field("bookId", "integer", false, false))
+                    addField(Field("dudeId", "integer", false, false))
                 }
             }
             val borrowingDate: LocalDate
@@ -229,8 +229,8 @@ open class ExampleDatabase(processor: Processor): Database("example", processor)
                 override suspend fun browse() = super.browse() as Flow<BookTag>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
-                    addField(Field("bookId", "int", false, false))
-                    addField(Field("tagId", "int", false, false))
+                    addField(Field("bookId", "integer", false, false))
+                    addField(Field("tagId", "integer", false, false))
                 }
             }
             val bookId: Int
@@ -333,8 +333,8 @@ class MutableExampleDatabase(processor: Processor): ExampleDatabase(processor), 
                     addField(Field("bookId", "serial", true, true))
                     addField(Field("title", "varchar(100)", false, false))
                     addField(Field("genre", "enum('fiction','novel','essay','poetry')", false, false))
-                    addField(Field("donor", "int", false, false))
-                    addField(Field("authorId", "int", false, false))
+                    addField(Field("donor", "integer", false, false))
+                    addField(Field("authorId", "integer", false, false))
                 }
             }
             override var title: String
@@ -388,8 +388,8 @@ class MutableExampleDatabase(processor: Processor): ExampleDatabase(processor), 
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("borrowingDate", "date", false, false))
                     addField(Field("restitutionDate", "date", false, false))
-                    addField(Field("bookId", "int", false, false))
-                    addField(Field("dudeId", "int", false, false))
+                    addField(Field("bookId", "integer", false, false))
+                    addField(Field("dudeId", "integer", false, false))
                 }
             }
             override var borrowingDate: LocalDate
@@ -448,8 +448,8 @@ class MutableExampleDatabase(processor: Processor): ExampleDatabase(processor), 
                 override suspend fun browse() = super.browse() as Flow<MutableBookTag>
                 fun initialize() {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
-                    addField(Field("bookId", "int", false, false))
-                    addField(Field("tagId", "int", false, false))
+                    addField(Field("bookId", "integer", false, false))
+                    addField(Field("tagId", "integer", false, false))
                 }
             }
             override var bookId: Int
