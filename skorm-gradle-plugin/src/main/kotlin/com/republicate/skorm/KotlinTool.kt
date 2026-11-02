@@ -28,7 +28,7 @@ class KotlinTool {
         "char", "text", "varchar", "clob" -> "String" // TODO streams for "text" and "clob"
         "date" -> "LocalDate"
         "timestamp" -> "LocalDateTime"
-        "timestamptz" -> "LocalDateTime" // for now TODO
+        "timestamptz" -> "Instant"
         "time" -> "LocalTime"
         "timetz" -> "LocalTime" // for now TODO
         // every spelling kddl's lexer accepts: the base keeps the one the model used

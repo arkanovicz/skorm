@@ -4,6 +4,9 @@ All notable changes to Skorm are documented in this file.
 
 ## [0.25] - unreleased
 
+### Changed
+- **Breaking**: `timestamptz` maps to `kotlin.time.Instant` instead of `LocalDateTime`. PostgreSQL's driver returned it as wall-clock time in the JVM's zone; H2 and HSQLDB returned an `OffsetDateTime` no getter could convert
+
 ## [0.24] - 2026-11-01
 
 ### Changed

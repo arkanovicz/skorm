@@ -17,6 +17,7 @@ database shapes {
       meta json?
       born date?
       seen timestamp?
+      stamp timestamptz?
     }
 
     table country {

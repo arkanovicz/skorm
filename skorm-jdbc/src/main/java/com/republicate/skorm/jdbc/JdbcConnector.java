@@ -11,6 +11,8 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Savepoint;
+import java.sql.Types;
+import java.time.OffsetDateTime;
 import java.util.*;
 
 public class JdbcConnector implements Connector, Closeable
@@ -480,12 +482,20 @@ public class JdbcConnector implements Connector, Closeable
         boolean prefretch = false;
         boolean over = false;
         int rowSize;
+        boolean[] withTimeZone;
 
         RowIterator(ResultSet rs, PooledStatement stmt) throws SQLException
         {
             this.resultSet = rs;
             this.statement = stmt;
-            this.rowSize = rs.getMetaData().getColumnCount();
+            ResultSetMetaData meta = rs.getMetaData();
+            this.rowSize = meta.getColumnCount();
+            this.withTimeZone = new boolean[rowSize];
+            for (int i = 0; i < rowSize; ++i)
+            {
+                // PostgreSQL reports timestamptz as a plain TIMESTAMP, and returns it as a java.sql.Timestamp in the JVM's zone
+                withTimeZone[i] = meta.getColumnType(i + 1) == Types.TIMESTAMP_WITH_TIMEZONE || "timestamptz".equalsIgnoreCase(meta.getColumnTypeName(i + 1));
+            }
         }
 
         @Override
@@ -545,7 +555,7 @@ public class JdbcConnector implements Connector, Closeable
                 Object[] result = new Object[rowSize];
                 for (int i = 0; i < rowSize; ++i)
                 {
-                    result[i] = ClassMapper.read(resultSet.getObject(i + 1));
+                    result[i] = ClassMapper.read(withTimeZone[i] ? resultSet.getObject(i + 1, OffsetDateTime.class) : resultSet.getObject(i + 1));
                 }
                 return result;
             }

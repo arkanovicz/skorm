@@ -66,7 +66,10 @@ class InheritanceTest {
         dir.resolve("src/main/model/inh.kddl").writeText("""
             database inh {
               schema main {
-                table person { name varchar(50) }
+                table person {
+                  name varchar(50)
+                  seen timestamptz?
+                }
                 table vip : person { since date }
                 table address {
                   city varchar(50)
@@ -84,6 +87,7 @@ class InheritanceTest {
             import kotlinx.coroutines.runBlocking
             import kotlinx.coroutines.flow.*
             import kotlinx.datetime.LocalDate
+            import kotlin.time.Instant
             import org.testcontainers.containers.PostgreSQLContainer
             import kotlin.test.Test
             import kotlin.test.assertEquals
@@ -110,7 +114,8 @@ class InheritanceTest {
                         db.mutationAttribute("create", InheritanceCheck::class.java.getResource("/create-script.sql")!!.readText())
                         runBlocking {
                             db.perform("create")
-                            val alice = MutablePerson.new().apply { name = "Alice" }.also { it.insert() }
+                            val seen = Instant.parse("2026-11-02T07:34:56.123456Z")
+                            val alice = MutablePerson.new().apply { name = "Alice"; this.seen = seen }.also { it.insert() }
                             val bob = MutableVip.new().apply { name = "Bob"; since = LocalDate(2020, 1, 1) }.also { it.insert() }
                             MutableAddress.new().apply { city = "Paris"; owner = bob.personId }.insert()
 
@@ -126,6 +131,8 @@ class InheritanceTest {
                             assertEquals(PersonKind.person, alice.kind)
                             assertEquals(PersonKind.vip, bob.kind)
                             assertEquals(PersonKind.person, MutablePerson.fetch(alice.personId)!!.kind)
+                            // a timestamptz is an Instant, both ways
+                            assertEquals(seen, MutablePerson.fetch(alice.personId)!!.seen)
 
                             // fetch, and a navigation to a hierarchy member
                             assertIs<MutableVip>(MutablePerson.fetch(bob.personId))

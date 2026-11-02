@@ -1,7 +1,10 @@
 package com.republicate.skorm.jdbc;
 import kotlinx.datetime.ConvertersKt;
+import kotlin.time.jdk8.InstantConversionsJDK8Kt;
 import kotlin.uuid.Uuid;
 import java.sql.SQLException;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -24,11 +27,14 @@ public class ClassMapper {
         readMap = new HashMap<>();
         readMap.put(java.sql.Date.class, obj -> new kotlinx.datetime.LocalDate(((java.sql.Date)obj).toLocalDate()));
         readMap.put(java.sql.Timestamp.class, obj -> new kotlinx.datetime.LocalDateTime(((java.sql.Timestamp)obj).toLocalDateTime()));
+        readMap.put(OffsetDateTime.class, obj -> InstantConversionsJDK8Kt.toKotlinInstant(((OffsetDateTime)obj).toInstant()));
         readMap.put(UUID.class, obj -> Uuid.Companion.parse(obj.toString()));
 
         writeMap = new HashMap<>();
         writeMap.put(kotlinx.datetime.LocalDate.class, obj -> java.sql.Date.valueOf(ConvertersKt.toJavaLocalDate((kotlinx.datetime.LocalDate)obj)));
         writeMap.put(kotlinx.datetime.LocalDateTime.class, obj -> java.sql.Timestamp.valueOf(ConvertersKt.toJavaLocalDateTime((kotlinx.datetime.LocalDateTime)obj)));
+        // PostgreSQL's driver refuses java.time.Instant; every driver takes an OffsetDateTime
+        writeMap.put(kotlin.time.Instant.class, obj -> OffsetDateTime.ofInstant(InstantConversionsJDK8Kt.toJavaInstant((kotlin.time.Instant)obj), ZoneOffset.UTC));
         writeMap.put(Uuid.class, obj -> UUID.fromString(obj.toString()));
     }
 

@@ -17,6 +17,9 @@ import kotlin.uuid.Uuid
 #if($useDatetimeType || !$resolved.attributes.isEmpty())
 import kotlinx.datetime.*
 #end
+#if($useInstantType)
+import kotlin.time.Instant
+#end
 import com.republicate.skorm.*
 import kotlinx.coroutines.flow.*
 import kotlin.jvm.JvmName

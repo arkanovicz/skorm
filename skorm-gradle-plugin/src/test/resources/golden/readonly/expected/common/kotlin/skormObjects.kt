@@ -11,6 +11,7 @@ package shapes.model
 import com.republicate.kson.Json
 import kotlin.uuid.Uuid
 import kotlinx.datetime.*
+import kotlin.time.Instant
 import com.republicate.skorm.*
 import kotlinx.coroutines.flow.*
 import kotlin.jvm.JvmName
@@ -89,6 +90,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                     addField(Field("meta", "json", false, false))
                     addField(Field("born", "date", false, false))
                     addField(Field("seen", "timestamp", false, false))
+                    addField(Field("stamp", "timestamptz", false, false))
                     addField(Field("kind", "person_kind", false, false))
                 }
             }
@@ -114,6 +116,8 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                 get() = getLocalDate("born")
             val seen: LocalDateTime?
                 get() = getLocalDateTime("seen")
+            val stamp: Instant?
+                get() = getInstant("stamp")
             val kind: PersonKind
                 get() = getString("kind")!!.let { PersonKind.valueOf(it) }
             // reverse foreign key
@@ -322,6 +326,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                     addField(Field("meta", "json", false, false))
                     addField(Field("born", "date", false, false))
                     addField(Field("seen", "timestamp", false, false))
+                    addField(Field("stamp", "timestamptz", false, false))
                     addField(Field("kind", "person_kind", false, false))
                 }
             }
