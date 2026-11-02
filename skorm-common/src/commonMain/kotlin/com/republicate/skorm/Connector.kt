@@ -25,12 +25,6 @@ class QueryResult @JvmOverloads constructor(
 interface MetaInfos {
     val identifierQuoteChar: Char
     val identifierInternalCase: Char // 'U'ppercase, 'L'owercase, 'S'ensitive
-    @Suppress("INAPPLICABLE_JVM_NAME")
-    @get:JvmName("isStrictColumnTypes")
-    val strictColumnTypes: Boolean
-    @Suppress("INAPPLICABLE_JVM_NAME")
-    @get:JvmName("hasColumnMarkers")
-    val columnMarkers: Boolean
 }
 
 interface Connector: Configurable, AutoCloseable {

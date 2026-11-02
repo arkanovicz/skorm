@@ -137,17 +137,11 @@ public class Vendor implements MetaInfos
     private String lastInsertIdQuery = null;
     private String lastInsertIdMethod = null;
 
-    /** whether the JDBC driver is strict about column types */
-    private boolean strictColumnTypes = true;
-
     /** ignore tables matching this pattern */
     private Pattern ignoreTablesPattern = null;
 
     /** quoteIdentifier quote character */
     private Character identifierQuoteChar = null;
-
-    /** whether driver supports ::varchar etc... */
-    private boolean columnMarkers = false;
 
     /** whether the engine is pedantic about implicit casts (PostgreSQL native enums in operator contexts): bind strings untyped */
     private boolean pedanticCasts = false;
@@ -258,17 +252,6 @@ public class Vendor implements MetaInfos
         return lastInsertIdMethod;
     }
 
-    @Override
-    public boolean isStrictColumnTypes()
-    {
-        return strictColumnTypes;
-    }
-
-    public void setStrictColumnTypes(boolean strictColumnTypes)
-    {
-        this.strictColumnTypes = strictColumnTypes;
-    }
-
     public Pattern getIgnoreTablesPattern()
     {
         return ignoreTablesPattern;
@@ -299,17 +282,6 @@ public class Vendor implements MetaInfos
         {
             this.identifierQuoteChar = identifierQuoteChar.charAt(0);
         }
-    }
-
-    @Override
-    public boolean hasColumnMarkers()
-    {
-        return columnMarkers;
-    }
-
-    public void setColumnMarkers(boolean columnMarkers)
-    {
-        this.columnMarkers = columnMarkers;
     }
 
     public boolean hasPedanticCasts()

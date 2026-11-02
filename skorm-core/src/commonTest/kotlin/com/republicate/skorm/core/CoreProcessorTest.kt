@@ -11,8 +11,6 @@ class CoreProcessorTest {
         override fun getMetaInfos() = object : MetaInfos {
             override val identifierQuoteChar = '"'
             override val identifierInternalCase = 'L'
-            override val strictColumnTypes = false
-            override val columnMarkers = false
         }
         override fun query(schema: String, query: String, vararg params: Any?) = throw UnsupportedOperationException()
         override fun mutate(schema: String, query: String, vararg params: Any?) = throw UnsupportedOperationException()

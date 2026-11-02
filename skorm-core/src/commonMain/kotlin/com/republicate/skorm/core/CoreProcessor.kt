@@ -305,7 +305,7 @@ open class CoreProcessor @JvmOverloads constructor(
 
     private fun Entity.generateFetchStatement(): QueryDefinition {
         val stmt = "SELECT ${selection()} WHERE ${
-            primaryKey.joinToString(" AND ") { "${writeMapper(it.name)} = ${it.parameter()}" }
+            primaryKey.joinToString(" AND ") { "${writeMapper(it.name)} = ?" }
         };"
         return QueryDefinition(stmt, primaryKey.map { it.name })
     }
@@ -323,7 +323,7 @@ open class CoreProcessor @JvmOverloads constructor(
 
     private fun Entity.generateDeleteStatement(): QueryDefinition {
         val stmt = "DELETE FROM ${schema.name}.${writeMapper(name)} WHERE ${
-            primaryKey.joinToString(" AND ") { "${writeMapper(it.name)} = ${it.parameter()}" }
+            primaryKey.joinToString(" AND ") { "${writeMapper(it.name)} = ?" }
         };"
         return QueryDefinition(stmt, primaryKey.map { it.name })
     }
@@ -332,27 +332,9 @@ open class CoreProcessor @JvmOverloads constructor(
         val stmt = "UPDATE ${schema.name}.${writeMapper(name)} SET ${
             params.joinToString(", ") { "${writeMapper(it)} = ?" }
         } WHERE ${
-            primaryKey.joinToString(" AND ") { "${writeMapper(it.name)} = ${it.parameter()}" }
+            primaryKey.joinToString(" AND ") { "${writeMapper(it.name)} = ?" }
         };"
         return QueryDefinition(stmt, params.toList() + primaryKey.map { it.name })
-    }
-
-    // Map pseudo-types to actual SQL types for parameter casting
-    private fun Field.castType(): String = when (type) {
-        "serial" -> "integer"
-        "bigserial" -> "bigint"
-        "smallserial" -> "smallint"
-        else -> type
-    }
-
-    private fun Field.parameter(): String {
-        return connector.getMetaInfos().let { meta ->
-            when {
-                meta.strictColumnTypes && meta.columnMarkers -> "?::${this.castType()}"
-                meta.strictColumnTypes -> "CAST(? AS ${this.castType()})"
-                else -> "?"
-            }
-        }
     }
 
     companion object {
