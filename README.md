@@ -344,11 +344,13 @@ database <name> {
 #### Field Types
 
 - **Strings**: `varchar(length)`, `char(length)`, `text`
-- **Numbers**: `tinyint`, `smallint`, `int`, `bigint`, `long`, `float`, `double`, `numeric(p,s)`, `money` (the last two read as `Double` for now)
+- **Numbers**: `tinyint`, `smallint`, `integer`, `bigint`, `float`, `double`, `numeric(p,s)`, `money` (the last two read as `Double` for now)
 - **Booleans**: `boolean`
 - **Dates**: `date`, `time`, `timestamp` (kotlinx-datetime `LocalDate`, `LocalTime`, `LocalDateTime`), `timestamptz` (`kotlin.time.Instant`)
 - **Special**: `serial`, `bigserial` (auto-increment), `uuid`, `json`, `blob`
 - **Enums**: `enum('value1', 'value2', ...)`, or the name of a schema-level `enum level(low, high)`
+
+kddl accepts aliases (`int`, `long`, `datetime`, `clob`…) and normalizes them to these names.
 
 #### Field Modifiers
 
