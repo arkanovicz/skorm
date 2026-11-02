@@ -30,7 +30,8 @@ class KotlinTool {
         "timestamp" -> "LocalDateTime"
         "timestamptz" -> "Instant"
         "time" -> "LocalTime"
-        "timetz" -> "LocalTime" // for now TODO
+        // java.time.OffsetTime is JVM-only and kotlinx-datetime has no counterpart
+        "timetz" -> throw SemanticException("unsupported type: timetz (no multiplatform offset time yet; use time or timestamptz)")
         // every spelling kddl's lexer accepts: the base keeps the one the model used
         "tinyint", "byte" -> "Byte"
         "smallint", "smallinteger", "short" -> "Short"

@@ -338,6 +338,14 @@ class KotlinToolTest {
         assertEquals("Boolean", tool.type(ASTField(table, "active", "boolean", false, true, false)))
         assertEquals("Long", tool.type(ASTField(table, "big", "long", false, true, false)))
         assertEquals("Double", tool.type(ASTField(table, "amount", "double", false, true, false)))
+        assertEquals("Instant", tool.type(ASTField(table, "stamp", "timestamptz", false, true, false)))
+    }
+
+    @Test
+    fun `type refuses timetz`() {
+        val table = ASTTable(ASTSchema(ASTDatabase("test_db"), "test_schema"), "test_table")
+        val e = assertThrows<com.republicate.kddl.SemanticException> { tool.type(ASTField(table, "at", "timetz", false, true, false)) }
+        assertTrue(e.message!!.startsWith("unsupported type: timetz"))
     }
 
     @Test

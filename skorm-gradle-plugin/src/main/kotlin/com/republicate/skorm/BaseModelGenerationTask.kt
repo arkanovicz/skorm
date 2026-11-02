@@ -62,7 +62,7 @@ abstract class BaseModelGenerationTask: BaseGenerationTask() {
             .mapNotNull { field -> (field.type as? FieldType.Primitive)?.base?.lowercase() }
             .toSet()
         context.put("database", database)
-        context.put("useDatetimeType", usedPrimitiveBases.any { it in setOf("timestamp", "date", "time", "timetz") })
+        context.put("useDatetimeType", usedPrimitiveBases.any { it in setOf("timestamp", "date", "time") })
         context.put("useInstantType", "timestamptz" in usedPrimitiveBases)
         context.put("useUuidType", "uuid" in usedPrimitiveBases)
         context.put("useJsonType", "json" in usedPrimitiveBases || "jsonb" in usedPrimitiveBases)
