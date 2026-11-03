@@ -378,7 +378,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
         @JvmName("summary")
         fun summaryBlocking() = blocking { `summary`() }
         // attribute main.everybody
-        suspend fun `everybody`() = query<ShapesDatabase.MainSchema.Person>("everybody")
+        open suspend fun `everybody`() = query<ShapesDatabase.MainSchema.Person>("everybody")
         @JvmName("everybody")
         fun everybodyBlocking() = blocking { `everybody`().toList() }
         // attribute main.tinies

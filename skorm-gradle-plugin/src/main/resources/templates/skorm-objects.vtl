@@ -196,7 +196,7 @@ open class ${half.databaseClass}(processor: Processor): Database("$half.name", p
 #end
 #foreach ($attr in $schema.attributes)
 #if(!$half.mutable || $attr.entityRows || $attr.verb == "perform")
-#if($half.mutable && $attr.entityRows)#set($override = "override ")#{else}#set($override = "")#end
+#if($attr.entityRows)#if($half.mutable)#set($override = "override ")#{else}#set($override = "open ")#end#{else}#set($override = "")#end
         // attribute $attr.qualifiedName
         ${override}suspend fun `${attr.name}`(#typedArguments($attr.arguments)) = ${attr.verb}${attr.generics}("$attr.name"#accessorArgs($attr))$attr.cast
 #end

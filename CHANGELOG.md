@@ -17,6 +17,7 @@ All notable changes to Skorm are documented in this file.
 - Fetch, update and delete by an enum key failed on PostgreSQL: the key parameter was cast with the kddl spelling (`?::enum(...)`, or the declared enum's name). An enum key is now bound untyped, like any enum parameter since 0.19. For that the runtime `Field.type` of a declared enum field carries its values like an inline one, `enum('low','high')` instead of `level` (also the `filter.read/write.<type>` key)
 - A `bigserial` key was not recognised as generated: it was sent on insert and never read back
 - `jsonb` was refused at generation; it maps to `Json` like `json`
+- A schema-level ksql attribute returning rows (`attr everybody: Person*`) did not compile: the mutable schema overrides it, but the read-only one was not `open`
 - Fetch, update and delete by key failed on PostgreSQL for a `tinyint`, `double` or `long` key, cast with the kddl name (`?::tinyint`): the driver properties now map kddl names to the engine's (`driver.cast_types`, `MetaInfos.castType`)
 - `datetime`, `datetimetz`, `datetime_tz` and `timestamp_tz` were refused at generation (kddl 0.32)
 - PostgreSQL DDL received `biginteger` and `datetime(n)` verbatim; HyperSQL DDL received `timestamptz` and `timetz`, which HSQLDB and H2 reject (kddl 0.32)
