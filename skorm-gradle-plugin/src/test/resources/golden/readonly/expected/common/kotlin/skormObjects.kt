@@ -77,6 +77,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                 }
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Person?
+                suspend fun fetch(personId: Int) = super.fetch(personId) as Person?
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun browse() = super.browse() as Flow<Person>
                 fun initialize() {
@@ -178,6 +179,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                 override fun new(): Country = CountryImpl(this)
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Country?
+                suspend fun fetch(code: String) = super.fetch(code) as Country?
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun browse() = super.browse() as Flow<Country>
                 fun initialize() {
@@ -203,6 +205,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                 override fun new(): Friendship = FriendshipImpl(this)
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Friendship?
+                suspend fun fetch(aId: Int, bId: Int) = super.fetch(aId, bId) as Friendship?
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun browse() = super.browse() as Flow<Friendship>
                 fun initialize() {
@@ -267,6 +270,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                 override fun new(): Address = AddressImpl(this)
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Address?
+                suspend fun fetch(addressId: Int) = super.fetch(addressId) as Address?
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun browse() = super.browse() as Flow<Address>
                 fun initialize() {
@@ -316,6 +320,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                 override fun new(): Vip = VipImpl(this)
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Vip?
+                suspend fun fetch(personId: Int) = super.fetch(personId) as Vip?
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun browse() = super.browse() as Flow<Vip>
                 fun initialize() {

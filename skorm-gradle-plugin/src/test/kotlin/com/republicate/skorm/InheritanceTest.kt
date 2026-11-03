@@ -79,6 +79,14 @@ class InheritanceTest {
                   city varchar(50)
                   owner -- person
                 }
+                table country {
+                  *code char(2)                    // a natural key: given at birth, MutableCountry.new(code)
+                  label varchar(50)
+                }
+                table line {
+                  *line_id bigserial              // generated like a serial, read back on insert
+                  text varchar(50)
+                }
               }
             }
         """.trimIndent())
@@ -114,9 +122,12 @@ class InheritanceTest {
             typealias Vip = InhDatabase.MainSchema.Vip
             typealias Address = InhDatabase.MainSchema.Address
             typealias PersonKind = InhDatabase.MainSchema.PersonKind
+            typealias Country = InhDatabase.MainSchema.Country
             typealias MutablePerson = MutableInhDatabase.MutableMainSchema.MutablePerson
             typealias MutableVip = MutableInhDatabase.MutableMainSchema.MutableVip
             typealias MutableAddress = MutableInhDatabase.MutableMainSchema.MutableAddress
+            typealias MutableCountry = MutableInhDatabase.MutableMainSchema.MutableCountry
+            typealias MutableLine = MutableInhDatabase.MutableMainSchema.MutableLine
 
             class InheritanceCheck {
                 @Test
@@ -167,6 +178,13 @@ class InheritanceTest {
                             assertIsNot<com.republicate.skorm.MutableInstance>(readOnlyBob)
                             assertEquals(listOf("Paris"), readOnlyBob.addresses().map { it.city }.toList())
                             assertEquals(2, Person.browse().count())
+
+                            // a natural key is given to new(), typed, and fetch() takes it typed as well
+                            MutableCountry.new("fr").apply { label = "France" }.insert()
+                            assertEquals("France", Country.fetch("fr")!!.label)
+                            // a bigserial key is generated: read back on insert
+                            val line = MutableLine.new().apply { text = "hello" }.also { it.insert() }
+                            assertEquals("hello", MutableLine.fetch(line.lineId)!!.text)
                         }
                     }
                 }

@@ -95,7 +95,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
             implClass = "${names.entity(table)}Impl",
             objectName = kotlin.camel(table.name),
             base = if (names.mutable) names.readOnly.entityClass(table) else null,
-            hasPrimaryKey = key(table).isNotEmpty(),
+            key = (inherited + own).filter { it.primaryKey },
             fields = inherited + own,
             ownFields = own,
             parentClass = table.parent?.let { names.entityClass(it) },
@@ -120,8 +120,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
             kotlinType = kotlin.type(field),
             nullable = !field.nonNull,
             primaryKey = field.primaryKey,
-            // FAITHFUL: `bigserial` is not recognised as generated
-            generated = rawType == "serial",
+            generated = (field.type as? FieldType.Primitive)?.isSerial == true,
             writable = !field.primaryKey && field !== root.kind,
             getter = kotlin.getter(field),
             enumClass = if (kotlin.isEnum(field.type)) kotlin.enumName(field) else null

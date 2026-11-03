@@ -58,6 +58,7 @@ open class ExampleDatabase(processor: Processor): Database("example", processor)
                 override fun new(): Dude = DudeImpl(this)
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Dude?
+                suspend fun fetch(dudeId: Int) = super.fetch(dudeId) as Dude?
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun browse() = super.browse() as Flow<Dude>
                 fun initialize() {
@@ -78,6 +79,7 @@ open class ExampleDatabase(processor: Processor): Database("example", processor)
                 override fun new(): Author = AuthorImpl(this)
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Author?
+                suspend fun fetch(authorId: Int) = super.fetch(authorId) as Author?
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun browse() = super.browse() as Flow<Author>
                 fun initialize() {
@@ -115,6 +117,7 @@ open class ExampleDatabase(processor: Processor): Database("example", processor)
                 override fun new(): Book = BookImpl(this)
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Book?
+                suspend fun fetch(bookId: Int) = super.fetch(bookId) as Book?
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun browse() = super.browse() as Flow<Book>
                 fun initialize() {
@@ -208,6 +211,7 @@ open class ExampleDatabase(processor: Processor): Database("example", processor)
                 override fun new(): Tag = TagImpl(this)
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Tag?
+                suspend fun fetch(tagId: Int) = super.fetch(tagId) as Tag?
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun browse() = super.browse() as Flow<Tag>
                 fun initialize() {
@@ -283,6 +287,7 @@ class MutableExampleDatabase(processor: Processor): ExampleDatabase(processor), 
                 override fun new(): MutableDude = MutableDudeImpl(this)
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as MutableDude?
+                suspend fun fetch(dudeId: Int) = super.fetch(dudeId) as MutableDude?
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun browse() = super.browse() as Flow<MutableDude>
                 fun initialize() {
@@ -302,6 +307,7 @@ class MutableExampleDatabase(processor: Processor): ExampleDatabase(processor), 
                 override fun new(): MutableAuthor = MutableAuthorImpl(this)
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as MutableAuthor?
+                suspend fun fetch(authorId: Int) = super.fetch(authorId) as MutableAuthor?
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun browse() = super.browse() as Flow<MutableAuthor>
                 fun initialize() {
@@ -332,6 +338,7 @@ class MutableExampleDatabase(processor: Processor): ExampleDatabase(processor), 
                 override fun new(): MutableBook = MutableBookImpl(this)
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as MutableBook?
+                suspend fun fetch(bookId: Int) = super.fetch(bookId) as MutableBook?
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun browse() = super.browse() as Flow<MutableBook>
                 fun initialize() {
@@ -432,6 +439,7 @@ class MutableExampleDatabase(processor: Processor): ExampleDatabase(processor), 
                 override fun new(): MutableTag = MutableTagImpl(this)
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as MutableTag?
+                suspend fun fetch(tagId: Int) = super.fetch(tagId) as MutableTag?
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun browse() = super.browse() as Flow<MutableTag>
                 fun initialize() {

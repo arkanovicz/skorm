@@ -54,7 +54,8 @@ class ResolvedEntity(
     val objectName: String,
     /** the read-only row interface the mutable one extends, `ExampleDatabase.BookshelfSchema.Book`; null in the read-only half */
     val base: String?,
-    val hasPrimaryKey: Boolean,
+    /** the key columns, in declaration order: the typed `fetch`, and the typed `new` when a caller gives them */
+    val key: List<ResolvedField>,
     /** every column the entity's rows carry: inherited first, then its own */
     val fields: List<ResolvedField>,
     /** the columns declared on this table, which its class declares (inherited ones come from the superclass) */
@@ -76,7 +77,14 @@ class ResolvedEntity(
     val joins: List<JoinAttribute>,
     /** the ksql attributes declared on this entity: members of its class */
     val attributes: List<QueryAttribute>
-)
+) {
+    val hasPrimaryKey get() = key.isNotEmpty()
+    /**
+     * Whether a caller gives the key at birth, `MutableCountry.new(code)`: declared rather than generated.
+     * A hierarchy's rows are not born this way yet: the root's `new(kind, key…)` is pending.
+     */
+    val naturalKey get() = key.isNotEmpty() && key.none { it.generated } && kindValue == null
+}
 
 class ResolvedField(
     /** `title` — the mapped property name */

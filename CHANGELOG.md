@@ -11,8 +11,10 @@ All notable changes to Skorm are documented in this file.
 
 ### Added
 - ksql `Instant`, for values, arguments and composite fields (`InstantAttribute`, served over REST)
+- Typed keys on the generated entities: `Country.fetch(code: String)` beside the `vararg Any` one, and `MutableCountry.new(code: String)` for a declared (non-generated) key, the only way to give a new row its key — key fields have no setter, so a table with a natural key could not be inserted at all through the typed API. A hierarchy's rows are still born through `new()` / `new(kind)`
 
 ### Fixed
+- A `bigserial` key was not recognised as generated: it was sent on insert and never read back
 - `jsonb` was refused at generation; it maps to `Json` like `json`
 - Fetch, update and delete by key failed on PostgreSQL for a `tinyint`, `double` or `long` key, cast with the kddl name (`?::tinyint`): the driver properties now map kddl names to the engine's (`driver.cast_types`, `MetaInfos.castType`)
 - `datetime`, `datetimetz`, `datetime_tz` and `timestamp_tz` were refused at generation (kddl 0.32)

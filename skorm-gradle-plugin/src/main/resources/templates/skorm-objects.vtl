@@ -36,6 +36,8 @@ import ${package}.${resolved.databaseClass}.${schema.className}.${enum.name}
 ## ---- macros: what both halves print the same way -------------------------------------------------
 #macro(fieldGetter $field)#if($field.enumClass)${field.getter}("$field.name")#if($field.nullable)?#{else}!!#end.let { ${field.enumClass}.valueOf(it) }#{else}${field.getter}("$field.name")#if(!$field.nullable)!!#end#end#end
 #macro(fieldSetter $field)#if($field.enumClass)put("$field.name", v#if($field.nullable)?#end.toString())#{else}put("$field.name", v)#end#end
+#macro(keyParams $entity)#foreach($field in $entity.key)${field.identifier}: ${field.kotlinType}#if($foreach.hasNext), #end#end#end
+#macro(keyValue $field)${field.identifier}#if($field.enumClass).toString()#end#end
 #macro(accessorArgs $attr)#if($attr.arguments), #if($attr.arguments.size() > 1)#namedValues($attr.arguments)#else#values($attr.arguments)#end#end#end
 #macro(entityCompanion $half $schema $entity)
             companion object: Entity("$entity.objectName", ${half.databaseClass}.${schema.objectName}#if($entity.parentClass), ${entity.parentClass}#end)#if($half.mutable), MutableEntity#end {
@@ -54,6 +56,11 @@ import ${package}.${resolved.databaseClass}.${schema.className}.${enum.name}
 #if ($entity.hasPrimaryKey)
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun fetch(vararg key: Any) = super.fetch(*key) as ${entity.className}?
+                suspend fun fetch(#keyParams($entity)) = super.fetch(#foreach($field in $entity.key)#keyValue($field)#if($foreach.hasNext), #end#end) as ${entity.className}?
+#end
+#if ($half.mutable && $entity.naturalKey)
+                // a row's identity is given at birth, never set: a rekeyed row would shadow a persisted one
+                fun new(#keyParams($entity)): ${entity.className} = new().apply { #foreach($field in $entity.key)put("$field.name", #keyValue($field))#if($foreach.hasNext); #end#end }
 #end
                 @Suppress("UNCHECKED_CAST")
                 override suspend fun browse() = super.browse() as Flow<${entity.className}>

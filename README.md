@@ -154,7 +154,9 @@ A row type is an interface, so a table hierarchy (`MutableVip : Vip, MutablePers
 inherit side by side; the `Impl` class behind it is the storage, and carries the blocking twins.
 The companion object is the entity: `Book.browse()`, `Book.fetch(id)` read through the read-only
 database, `MutableBook.browse()`, `MutableBook.new()` through the mutable one. A row has no
-constructor: `MutableBook.new()` builds one to insert. Read attributes and navigations are
+constructor: `MutableBook.new()` builds one to insert. A key is never set: a generated one comes
+back from the insert, a declared one is given at birth, `MutableCountry.new("fr")`, typed like the
+`fetch` that finds the row again, `Country.fetch("fr")`. Read attributes and navigations are
 declared once, on the read-only interface, and inherited; the mutable interface redeclares those
 returning rows, covariantly, and adds the mutations.
 
