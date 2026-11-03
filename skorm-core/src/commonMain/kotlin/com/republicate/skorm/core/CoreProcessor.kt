@@ -348,9 +348,11 @@ open class CoreProcessor @JvmOverloads constructor(
         return meta.castType(valueType) + type.substring(base.length)
     }
 
+    // an enum has no castable name (the engine's is the DDL's); untyped, the value takes the column's type
     private fun Field.parameter(): String {
         return connector.getMetaInfos().let { meta ->
             when {
+                type.substringBefore('(') == "enum" -> "?"
                 meta.strictColumnTypes && meta.columnMarkers -> "?::${castType(meta)}"
                 meta.strictColumnTypes -> "CAST(? AS ${castType(meta)})"
                 else -> "?"

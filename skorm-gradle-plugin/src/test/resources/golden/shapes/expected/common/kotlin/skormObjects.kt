@@ -87,7 +87,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("personId", "serial", true, true))
                     addField(Field("name", "varchar(50)", false, false))
-                    addField(Field("rank", "level", false, false))
+                    addField(Field("rank", "enum('low','high')", false, false))
                     addField(Field("nature", "enum('a','b')", false, false))
                     addField(Field("small", "smallint", false, false))
                     addField(Field("tiny", "tinyint", false, false))
@@ -98,7 +98,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                     addField(Field("born", "date", false, false))
                     addField(Field("seen", "timestamp", false, false))
                     addField(Field("stamp", "timestamptz", false, false))
-                    addField(Field("kind", "person_kind", false, false))
+                    addField(Field("kind", "enum('person','vip')", false, false))
                 }
             }
             val personId: Int
@@ -330,7 +330,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("personId", "serial", true, true))
                     addField(Field("name", "varchar(50)", false, false))
-                    addField(Field("rank", "level", false, false))
+                    addField(Field("rank", "enum('low','high')", false, false))
                     addField(Field("nature", "enum('a','b')", false, false))
                     addField(Field("small", "smallint", false, false))
                     addField(Field("tiny", "tinyint", false, false))
@@ -341,7 +341,7 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                     addField(Field("born", "date", false, false))
                     addField(Field("seen", "timestamp", false, false))
                     addField(Field("stamp", "timestamptz", false, false))
-                    addField(Field("kind", "person_kind", false, false))
+                    addField(Field("kind", "enum('person','vip')", false, false))
                 }
             }
         }
@@ -471,7 +471,7 @@ class MutableShapesDatabase(processor: Processor): ShapesDatabase(processor), Mu
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("personId", "serial", true, true))
                     addField(Field("name", "varchar(50)", false, false))
-                    addField(Field("rank", "level", false, false))
+                    addField(Field("rank", "enum('low','high')", false, false))
                     addField(Field("nature", "enum('a','b')", false, false))
                     addField(Field("small", "smallint", false, false))
                     addField(Field("tiny", "tinyint", false, false))
@@ -482,7 +482,7 @@ class MutableShapesDatabase(processor: Processor): ShapesDatabase(processor), Mu
                     addField(Field("born", "date", false, false))
                     addField(Field("seen", "timestamp", false, false))
                     addField(Field("stamp", "timestamptz", false, false))
-                    addField(Field("kind", "person_kind", false, false))
+                    addField(Field("kind", "enum('person','vip')", false, false))
                 }
             }
             override var name: String
@@ -723,7 +723,7 @@ class MutableShapesDatabase(processor: Processor): ShapesDatabase(processor), Mu
                     if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
                     addField(Field("personId", "serial", true, true))
                     addField(Field("name", "varchar(50)", false, false))
-                    addField(Field("rank", "level", false, false))
+                    addField(Field("rank", "enum('low','high')", false, false))
                     addField(Field("nature", "enum('a','b')", false, false))
                     addField(Field("small", "smallint", false, false))
                     addField(Field("tiny", "tinyint", false, false))
@@ -734,7 +734,7 @@ class MutableShapesDatabase(processor: Processor): ShapesDatabase(processor), Mu
                     addField(Field("born", "date", false, false))
                     addField(Field("seen", "timestamp", false, false))
                     addField(Field("stamp", "timestamptz", false, false))
-                    addField(Field("kind", "person_kind", false, false))
+                    addField(Field("kind", "enum('person','vip')", false, false))
                 }
             }
         }

@@ -109,7 +109,11 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
     }
 
     private fun field(table: ASTTable, field: com.republicate.kddl.ASTField): ResolvedField {
-        val rawType = field.type.toString()
+        // a declared enum carries its values like an inline one: the runtime knows an enum by that spelling alone
+        val rawType = when (val t = field.type) {
+            is FieldType.NamedEnum -> FieldType.InlineEnum(t.enum.values).toString()
+            else -> t.toString()
+        }
         val name = kotlin.camel(field.name)
         Collisions.checkField(table.name, name)
         // the key a subtype inherits stays a key of its rows

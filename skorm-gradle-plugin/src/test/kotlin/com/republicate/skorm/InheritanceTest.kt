@@ -83,6 +83,11 @@ class InheritanceTest {
                   *code char(2)                    // a natural key: given at birth, MutableCountry.new(code)
                   label varchar(50)
                 }
+                table identity {
+                  *service enum('google', 'email') // a composite key with an enum part
+                  *external_id varchar(100)
+                  owner -- person
+                }
                 table line {
                   *line_id bigserial              // generated like a serial, read back on insert
                   text varchar(50)
@@ -123,10 +128,13 @@ class InheritanceTest {
             typealias Address = InhDatabase.MainSchema.Address
             typealias PersonKind = InhDatabase.MainSchema.PersonKind
             typealias Country = InhDatabase.MainSchema.Country
+            typealias Identity = InhDatabase.MainSchema.Identity
+            typealias Service = InhDatabase.MainSchema.Service
             typealias MutablePerson = MutableInhDatabase.MutableMainSchema.MutablePerson
             typealias MutableVip = MutableInhDatabase.MutableMainSchema.MutableVip
             typealias MutableAddress = MutableInhDatabase.MutableMainSchema.MutableAddress
             typealias MutableCountry = MutableInhDatabase.MutableMainSchema.MutableCountry
+            typealias MutableIdentity = MutableInhDatabase.MutableMainSchema.MutableIdentity
             typealias MutableLine = MutableInhDatabase.MutableMainSchema.MutableLine
 
             class InheritanceCheck {
@@ -182,6 +190,9 @@ class InheritanceTest {
                             // a natural key is given to new(), typed, and fetch() takes it typed as well
                             MutableCountry.new("fr").apply { label = "France" }.insert()
                             assertEquals("France", Country.fetch("fr")!!.label)
+                            MutableIdentity.new(Service.google, "alice@gmail").apply { owner = alice.personId }.insert()
+                            assertEquals(alice.personId, Identity.fetch(Service.google, "alice@gmail")!!.owner)
+                            assertEquals(Service.google, MutableIdentity.fetch(Service.google, "alice@gmail")!!.service)
                             // a bigserial key is generated: read back on insert
                             val line = MutableLine.new().apply { text = "hello" }.also { it.insert() }
                             assertEquals("hello", MutableLine.fetch(line.lineId)!!.text)
