@@ -2,7 +2,13 @@
 
 All notable changes to Skorm are documented in this file.
 
-## [0.25] - unreleased
+## [0.26] - unreleased
+
+### Fixed
+- A plain `timestamp`, `date` or `time` passed through the JVM's zone, as a `java.sql.Timestamp`/`Date`/`Time`: a wall clock inside a DST gap (02:30 on the night Paris springs forward) came back as 03:30 and was stored as 03:30. Columns are now read with JDBC 4.2's `getObject(i, java.time.LocalDateTime/LocalDate/LocalTime.class)` and bound as `java.time` values. A `time` column was not usable at all: it was read as a `java.sql.Time` no getter accepts, and a `LocalTime` parameter reached the driver unconverted
+- A schema-level ksql attribute returning rows (`attr everybody: Person*`) did not compile: the mutable schema overrides it, but the read-only one was not `open`
+
+## [0.25] - 2026-11-03
 
 ### Changed
 - **Breaking**: `timestamptz` maps to `kotlin.time.Instant` instead of `LocalDateTime`. PostgreSQL's driver returned it as wall-clock time in the JVM's zone; H2 and HSQLDB returned an `OffsetDateTime` no getter could convert
@@ -14,11 +20,9 @@ All notable changes to Skorm are documented in this file.
 - Typed keys on the generated entities: `Country.fetch(code: String)` beside the `vararg Any` one, and `MutableCountry.new(code: String)` for a declared (non-generated) key, the only way to give a new row its key — key fields have no setter, so a table with a natural key could not be inserted at all through the typed API. A hierarchy's rows are still born through `new()` / `new(kind)`
 
 ### Fixed
-- A plain `timestamp`, `date` or `time` passed through the JVM's zone, as a `java.sql.Timestamp`/`Date`/`Time`: a wall clock inside a DST gap (02:30 on the night Paris springs forward) came back as 03:30 and was stored as 03:30. Columns are now read with JDBC 4.2's `getObject(i, java.time.LocalDateTime/LocalDate/LocalTime.class)` and bound as `java.time` values. A `time` column was not usable at all: it was read as a `java.sql.Time` no getter accepts, and a `LocalTime` parameter reached the driver unconverted
 - Fetch, update and delete by an enum key failed on PostgreSQL: the key parameter was cast with the kddl spelling (`?::enum(...)`, or the declared enum's name). An enum key is now bound untyped, like any enum parameter since 0.19. For that the runtime `Field.type` of a declared enum field carries its values like an inline one, `enum('low','high')` instead of `level` (also the `filter.read/write.<type>` key)
 - A `bigserial` key was not recognised as generated: it was sent on insert and never read back
 - `jsonb` was refused at generation; it maps to `Json` like `json`
-- A schema-level ksql attribute returning rows (`attr everybody: Person*`) did not compile: the mutable schema overrides it, but the read-only one was not `open`
 - Fetch, update and delete by key failed on PostgreSQL for a `tinyint`, `double` or `long` key, cast with the kddl name (`?::tinyint`): the driver properties now map kddl names to the engine's (`driver.cast_types`, `MetaInfos.castType`)
 - `datetime`, `datetimetz`, `datetime_tz` and `timestamp_tz` were refused at generation (kddl 0.32)
 - PostgreSQL DDL received `biginteger` and `datetime(n)` verbatim; HyperSQL DDL received `timestamptz` and `timetz`, which HSQLDB and H2 reject (kddl 0.32)
