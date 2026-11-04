@@ -39,7 +39,7 @@ private fun digestAST(databaseContext: ksqlParser.DatabaseContext): RMDatabase {
             schema.items.add(item)
             item.receiver = itemContext.receiver?.text
             item.arguments = itemContext.arguments()?.argument()?.map {
-                Pair(it.name!!.text!!, it.simple_type()?.text ?: it.enumType?.text ?: "Any?")
+                Pair(it.name!!.text!!, (it.simple_type()?.text ?: it.enumType?.text)?.let { t -> if (it.optional != null) "$t?" else t } ?: "Any?")
             }?.toSet() ?: setOf()
             // itemContext.findArguments()?.LABEL()?.map { it.text }?.toSet()
             item.action = itemContext.attr_type!!.text!!.startsWith("mut")

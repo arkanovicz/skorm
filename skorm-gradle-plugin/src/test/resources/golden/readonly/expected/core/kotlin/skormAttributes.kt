@@ -86,6 +86,15 @@ internal actual fun ShapesDatabase.registerAttributes() {
     ShapesDatabase.main.scalarAttribute<Int>("stampedSince", """
         SELECT count(*) FROM person WHERE stamp >= {since};""".trimIndent())
 
+    // attribute main.stampedBetween
+    ShapesDatabase.main.scalarAttribute<Int>("stampedBetween", """
+        SELECT count(*) FROM person WHERE ({since}::timestamptz IS NULL OR stamp >= {since})
+                                    AND ({until}::timestamptz IS NULL OR stamp < {until});""".trimIndent())
+
+    // attribute main.ranked
+    ShapesDatabase.main.scalarAttribute<Int>("ranked", """
+        SELECT count(*) FROM person WHERE {rank}::level IS NULL OR rank = {rank};""".trimIndent())
+
     // attribute main.lastStamp
     ShapesDatabase.main.scalarAttribute<Instant?>("lastStamp", """
         SELECT max(stamp) FROM person;""".trimIndent())

@@ -240,9 +240,10 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
     private val simpleTypes = setOf("Boolean", "Int", "Long", "Float", "Double", "LocalTime", "LocalDate",
         "LocalDateTime", "Instant", "DateTimePeriod", "Char", "String", "Json", "Any?")
 
-    /** An argument's type is a simple type or an enum class the schema declares. */
+    /** An argument's type is a simple type or an enum class the schema declares, nullable or not. */
     private fun checkArguments(item: RMItem, schemaName: String, enums: Set<String>) {
-        for ((name, type) in item.arguments ?: emptySet()) {
+        for ((name, declared) in item.arguments ?: emptySet()) {
+            val type = declared.removeSuffix("?")
             if (type !in simpleTypes && type !in enums) throw SkormException(
                 "attribute ${item.receiver?.let { "$it." } ?: ""}${item.name}: argument $name has type $type, " +
                     "neither a simple type nor an enum of schema $schemaName" +
@@ -330,7 +331,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
             sql = item.sql ?: "",
             params = item.parameters.toList(),
             composite = composite,
-            types = (item.arguments?.map { it.second } ?: emptyList()) + listOfNotNull((type as? RMSimpleType)?.takeIf { !isEntity }?.name) +
+            types = (item.arguments?.map { it.second.removeSuffix("?") } ?: emptyList()) + listOfNotNull((type as? RMSimpleType)?.takeIf { !isEntity }?.name) +
                 (composite?.fields?.map { it.type } ?: emptyList())
         )
     }

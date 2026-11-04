@@ -4,6 +4,9 @@ All notable changes to Skorm are documented in this file.
 
 ## [0.28] - unreleased
 
+### Added
+- Nullable ksql arguments: `attr Community.activity(dude_id: Int?, limit: Int)` (a simple type or a declared enum, with `?`) generates a nullable Kotlin parameter. The null is bound untyped, so on PostgreSQL the SQL has to type it where the column cannot: `{dude_id}::int IS NULL`. Over REST a null argument is still dropped by the client
+
 ## [0.27] - 2026-11-04
 
 ### Fixed

@@ -103,6 +103,8 @@ class InheritanceTest {
                   SELECT max(seen) FROM person;
                 attr seenSince(since: Instant): Int =
                   SELECT count(*) FROM person WHERE seen >= {since};
+                attr seenBy(person_id: Int?): Int =
+                  SELECT count(*) FROM person WHERE {person_id}::int IS NULL OR person_id = {person_id};
               }
             }
         """.trimIndent())
@@ -173,6 +175,9 @@ class InheritanceTest {
                             assertEquals(seen, db.main.lastSeen())
                             assertEquals(1, db.main.seenSince(seen))
                             assertEquals(0, db.main.seenSince(Instant.parse("2026-11-02T07:34:57Z")))
+                            // a nullable argument: null reaches the engine, where the cast types it
+                            assertEquals(2, db.main.seenBy(null))
+                            assertEquals(1, db.main.seenBy(alice.personId))
 
                             // fetch, and a navigation to a hierarchy member
                             assertIs<MutableVip>(MutablePerson.fetch(bob.personId))

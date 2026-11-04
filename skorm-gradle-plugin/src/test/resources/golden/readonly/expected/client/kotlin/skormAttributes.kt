@@ -74,6 +74,12 @@ internal actual fun ShapesDatabase.registerAttributes() {
     // attribute main.stampedSince
     ShapesDatabase.main.scalarAttribute<Int>("stampedSince", setOf("since"))
 
+    // attribute main.stampedBetween
+    ShapesDatabase.main.scalarAttribute<Int>("stampedBetween", setOf("since","until"))
+
+    // attribute main.ranked
+    ShapesDatabase.main.scalarAttribute<Int>("ranked", setOf("rank"))
+
     // attribute main.lastStamp
     ShapesDatabase.main.scalarAttribute<Instant?>("lastStamp", setOf())
 }
