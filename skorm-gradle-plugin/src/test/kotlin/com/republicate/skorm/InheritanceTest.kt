@@ -82,6 +82,7 @@ class InheritanceTest {
                 table country {
                   *code char(2)                    // a natural key: given at birth, MutableCountry.new(code)
                   label varchar(50)
+                  meta jsonb?                      // a Json value, bound as text and read back as Json
                 }
                 table identity {
                   *service enum('google', 'email') // a composite key with an enum part
@@ -108,6 +109,7 @@ class InheritanceTest {
         dir.resolve("src/test/kotlin/InheritanceCheck.kt").writeText("""
             @file:OptIn(kotlin.time.ExperimentalTime::class)
 
+            import com.republicate.kson.Json
             import com.republicate.kson.toJsonObject
             import com.republicate.skorm.core.CoreProcessor
             import com.republicate.skorm.core.mutationAttribute
@@ -188,8 +190,13 @@ class InheritanceTest {
                             assertEquals(2, Person.browse().count())
 
                             // a natural key is given to new(), typed, and fetch() takes it typed as well
-                            MutableCountry.new("fr").apply { label = "France" }.insert()
+                            val meta = Json.parse("[{\"id\":\"tea\",\"count\":2}]")!!
+                            MutableCountry.new("fr").apply { label = "France"; this.meta = meta }.insert()
                             assertEquals("France", Country.fetch("fr")!!.label)
+                            // a jsonb column takes a Json value and gives one back
+                            val fetchedMeta = Country.fetch("fr")!!.meta
+                            assertIs<Json.Array>(fetchedMeta)
+                            assertEquals(meta.toString(), fetchedMeta.toString())
                             MutableIdentity.new(Service.google, "alice@gmail").apply { owner = alice.personId }.insert()
                             assertEquals(alice.personId, Identity.fetch(Service.google, "alice@gmail")!!.owner)
                             assertEquals(Service.google, MutableIdentity.fetch(Service.google, "alice@gmail")!!.service)

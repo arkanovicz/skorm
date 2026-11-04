@@ -1,4 +1,5 @@
 package com.republicate.skorm.jdbc;
+import com.republicate.kson.Json;
 import kotlinx.datetime.ConvertersKt;
 import kotlin.time.jdk8.InstantConversionsJDK8Kt;
 import kotlin.uuid.Uuid;
@@ -81,6 +82,7 @@ public class ClassMapper {
     {
         if (obj == null) return null;
         if (obj instanceof Enum) return obj.toString(); // bind enums (e.g. generated Kotlin enum params) as their constant name
+        if (obj instanceof Json) return obj.toString(); // JSON text; a pedantic vendor binds it untyped and the json/jsonb column types it
         return Optional.ofNullable(writeMap.get(obj.getClass())).map(converter -> converter.convert(obj)).orElse(obj);
     }
 }
