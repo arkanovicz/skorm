@@ -2,7 +2,9 @@
 
 All notable changes to Skorm are documented in this file.
 
-## [0.27] - 2006-11-04
+## [0.28] - unreleased
+
+## [0.27] - 2026-11-04
 
 ### Fixed
 - A `Json` value could not be written to a `json`/`jsonb` column: the kson object reached the driver as is ("Can't infer the SQL type to use for an instance of com.republicate.kson.Json$MutableArray" on PostgreSQL, a refused class on H2). It is now bound as its JSON text; PostgreSQL takes it untyped and the column types it, H2 stores it as a JSON string that the read filter already unwraps. The column reads back as a `Json`, on both engines
