@@ -2,7 +2,9 @@
 
 All notable changes to Skorm are documented in this file.
 
-## [0.26] - unreleased
+## [0.27] - unreleased
+
+## [0.26] - 2026-11-04
 
 ### Fixed
 - A plain `timestamp`, `date` or `time` passed through the JVM's zone, as a `java.sql.Timestamp`/`Date`/`Time`: a wall clock inside a DST gap (02:30 on the night Paris springs forward) came back as 03:30 and was stored as 03:30. Columns are now read with JDBC 4.2's `getObject(i, java.time.LocalDateTime/LocalDate/LocalTime.class)` and bound as `java.time` values. A `time` column was not usable at all: it was read as a `java.sql.Time` no getter accepts, and a `LocalTime` parameter reached the driver unconverted
