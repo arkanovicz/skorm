@@ -14,6 +14,7 @@ All notable changes to Skorm are documented in this file.
 - Typed keys on the generated entities: `Country.fetch(code: String)` beside the `vararg Any` one, and `MutableCountry.new(code: String)` for a declared (non-generated) key, the only way to give a new row its key — key fields have no setter, so a table with a natural key could not be inserted at all through the typed API. A hierarchy's rows are still born through `new()` / `new(kind)`
 
 ### Fixed
+- A plain `timestamp`, `date` or `time` passed through the JVM's zone, as a `java.sql.Timestamp`/`Date`/`Time`: a wall clock inside a DST gap (02:30 on the night Paris springs forward) came back as 03:30 and was stored as 03:30. Columns are now read with JDBC 4.2's `getObject(i, java.time.LocalDateTime/LocalDate/LocalTime.class)` and bound as `java.time` values. A `time` column was not usable at all: it was read as a `java.sql.Time` no getter accepts, and a `LocalTime` parameter reached the driver unconverted
 - Fetch, update and delete by an enum key failed on PostgreSQL: the key parameter was cast with the kddl spelling (`?::enum(...)`, or the declared enum's name). An enum key is now bound untyped, like any enum parameter since 0.19. For that the runtime `Field.type` of a declared enum field carries its values like an inline one, `enum('low','high')` instead of `level` (also the `filter.read/write.<type>` key)
 - A `bigserial` key was not recognised as generated: it was sent on insert and never read back
 - `jsonb` was refused at generation; it maps to `Json` like `json`

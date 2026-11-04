@@ -25,14 +25,21 @@ public class ClassMapper {
     static
     {
         readMap = new HashMap<>();
-        readMap.put(java.sql.Date.class, obj -> new kotlinx.datetime.LocalDate(((java.sql.Date)obj).toLocalDate()));
-        readMap.put(java.sql.Timestamp.class, obj -> new kotlinx.datetime.LocalDateTime(((java.sql.Timestamp)obj).toLocalDateTime()));
+        readMap.put(java.time.LocalDate.class, obj -> new kotlinx.datetime.LocalDate((java.time.LocalDate)obj));
+        readMap.put(java.time.LocalTime.class, obj -> new kotlinx.datetime.LocalTime((java.time.LocalTime)obj));
+        readMap.put(java.time.LocalDateTime.class, obj -> new kotlinx.datetime.LocalDateTime((java.time.LocalDateTime)obj));
         readMap.put(OffsetDateTime.class, obj -> InstantConversionsJDK8Kt.toKotlinInstant(((OffsetDateTime)obj).toInstant()));
+        // java.sql values go through the JVM's zone (a wall clock in a DST gap shifts): only array elements still arrive as such
+        readMap.put(java.sql.Date.class, obj -> new kotlinx.datetime.LocalDate(((java.sql.Date)obj).toLocalDate()));
+        readMap.put(java.sql.Time.class, obj -> new kotlinx.datetime.LocalTime(((java.sql.Time)obj).toLocalTime()));
+        readMap.put(java.sql.Timestamp.class, obj -> new kotlinx.datetime.LocalDateTime(((java.sql.Timestamp)obj).toLocalDateTime()));
         readMap.put(UUID.class, obj -> Uuid.Companion.parse(obj.toString()));
 
         writeMap = new HashMap<>();
-        writeMap.put(kotlinx.datetime.LocalDate.class, obj -> java.sql.Date.valueOf(ConvertersKt.toJavaLocalDate((kotlinx.datetime.LocalDate)obj)));
-        writeMap.put(kotlinx.datetime.LocalDateTime.class, obj -> java.sql.Timestamp.valueOf(ConvertersKt.toJavaLocalDateTime((kotlinx.datetime.LocalDateTime)obj)));
+        // java.time, not java.sql: a wall clock must not pass through the JVM's zone
+        writeMap.put(kotlinx.datetime.LocalDate.class, obj -> ConvertersKt.toJavaLocalDate((kotlinx.datetime.LocalDate)obj));
+        writeMap.put(kotlinx.datetime.LocalTime.class, obj -> ConvertersKt.toJavaLocalTime((kotlinx.datetime.LocalTime)obj));
+        writeMap.put(kotlinx.datetime.LocalDateTime.class, obj -> ConvertersKt.toJavaLocalDateTime((kotlinx.datetime.LocalDateTime)obj));
         // PostgreSQL's driver refuses java.time.Instant; every driver takes an OffsetDateTime
         writeMap.put(kotlin.time.Instant.class, obj -> OffsetDateTime.ofInstant(InstantConversionsJDK8Kt.toJavaInstant((kotlin.time.Instant)obj), ZoneOffset.UTC));
         writeMap.put(Uuid.class, obj -> UUID.fromString(obj.toString()));

@@ -12,6 +12,9 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.sql.Types;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.*;
 
@@ -482,7 +485,7 @@ public class JdbcConnector implements Connector, Closeable
         boolean prefretch = false;
         boolean over = false;
         int rowSize;
-        boolean[] withTimeZone;
+        Class<?>[] readAs; // JDBC 4.2 java.time class per column, null for the driver's default
 
         RowIterator(ResultSet rs, PooledStatement stmt) throws SQLException
         {
@@ -490,11 +493,25 @@ public class JdbcConnector implements Connector, Closeable
             this.statement = stmt;
             ResultSetMetaData meta = rs.getMetaData();
             this.rowSize = meta.getColumnCount();
-            this.withTimeZone = new boolean[rowSize];
+            this.readAs = new Class<?>[rowSize];
             for (int i = 0; i < rowSize; ++i)
             {
-                // PostgreSQL reports timestamptz as a plain TIMESTAMP, and returns it as a java.sql.Timestamp in the JVM's zone
-                withTimeZone[i] = meta.getColumnType(i + 1) == Types.TIMESTAMP_WITH_TIMEZONE || "timestamptz".equalsIgnoreCase(meta.getColumnTypeName(i + 1));
+                readAs[i] = readAs(meta.getColumnType(i + 1), meta.getColumnTypeName(i + 1));
+            }
+        }
+
+        // The default getObject gives java.sql.Date/Time/Timestamp, epoch millis in the JVM's zone: a wall clock in a DST gap
+        // shifts by an hour, and PostgreSQL reports timestamptz as a plain TIMESTAMP, so an instant shifts too
+        private static Class<?> readAs(int type, String typeName)
+        {
+            if ("timestamptz".equalsIgnoreCase(typeName)) return OffsetDateTime.class;
+            switch (type)
+            {
+                case Types.TIMESTAMP_WITH_TIMEZONE: return OffsetDateTime.class;
+                case Types.TIMESTAMP: return LocalDateTime.class;
+                case Types.DATE: return LocalDate.class;
+                case Types.TIME: return LocalTime.class;
+                default: return null;
             }
         }
 
@@ -555,7 +572,7 @@ public class JdbcConnector implements Connector, Closeable
                 Object[] result = new Object[rowSize];
                 for (int i = 0; i < rowSize; ++i)
                 {
-                    result[i] = ClassMapper.read(withTimeZone[i] ? resultSet.getObject(i + 1, OffsetDateTime.class) : resultSet.getObject(i + 1));
+                    result[i] = ClassMapper.read(readAs[i] == null ? resultSet.getObject(i + 1) : resultSet.getObject(i + 1, readAs[i]));
                 }
                 return result;
             }
