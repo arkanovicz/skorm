@@ -387,9 +387,9 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
         @JvmName("stampedSince")
         fun stampedSinceBlocking(since: Instant) = blocking { `stampedSince`(since) }
         // attribute main.stampedBetween
-        suspend fun `stampedBetween`(since: Instant? ,until: Instant?) = eval<Int>("stampedBetween", mapOf("since" to since, "until" to until))
+        suspend fun `stampedBetween`(since: Instant?, until: Instant?) = eval<Int>("stampedBetween", mapOf("since" to since, "until" to until))
         @JvmName("stampedBetween")
-        fun stampedBetweenBlocking(since: Instant? ,until: Instant?) = blocking { `stampedBetween`(since,until) }
+        fun stampedBetweenBlocking(since: Instant?, until: Instant?) = blocking { `stampedBetween`(since,until) }
         // attribute main.ranked
         suspend fun `ranked`(rank: Level?) = eval<Int>("ranked", rank)
         @JvmName("ranked")

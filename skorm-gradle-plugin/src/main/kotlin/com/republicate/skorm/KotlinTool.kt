@@ -159,7 +159,7 @@ class KotlinTool {
     // deprecated
     // fun arguments(fields: Set<String>) = fields.joinToString(",") { "${it}: Any?" }
 
-    fun typedArguments(fields: Collection<Pair<String, String?>>) = fields.joinToString(" ,") {
+    fun typedArguments(fields: Collection<Pair<String, String?>>) = fields.joinToString(", ") {
         "${it.first}: ${it.second ?: "Any?"}"
     }
 

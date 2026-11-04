@@ -377,7 +377,7 @@ class MutableExampleDatabase(processor: Processor): ExampleDatabase(processor), 
             // attribute Book.restitute
             suspend fun `restitute`() = perform("restitute")
             // attribute Book.returnFrom
-            suspend fun `returnFrom`(dude_id: Long ,returned_on: LocalDate) = perform("returnFrom", mapOf("dudeId" to dude_id, "returnedOn" to returned_on))
+            suspend fun `returnFrom`(dude_id: Long, returned_on: LocalDate) = perform("returnFrom", mapOf("dudeId" to dude_id, "returnedOn" to returned_on))
         }
         open class MutableBookImpl(entity: Entity = MutableBook): MutableInstanceImpl(entity), MutableBook {
             // the blocking twin of `donor()`: what a reflection-driven caller reaches under that name
@@ -480,6 +480,6 @@ class MutableExampleDatabase(processor: Processor): ExampleDatabase(processor), 
         open class MutableBookTagImpl(entity: Entity = MutableBookTag): MutableInstanceImpl(entity), MutableBookTag {
         }
         // attribute bookshelf.newBookBy
-        suspend fun `newBookBy`(author_name: String ,title: String) = perform("newBookBy", mapOf("authorName" to author_name, "title" to title))
+        suspend fun `newBookBy`(author_name: String, title: String) = perform("newBookBy", mapOf("authorName" to author_name, "title" to title))
     }
 }
