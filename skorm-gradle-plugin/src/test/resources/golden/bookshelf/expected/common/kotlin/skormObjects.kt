@@ -254,6 +254,10 @@ open class ExampleDatabase(processor: Processor): Database("example", processor)
         suspend fun `booksCount`() = eval<Int>("booksCount")
         @JvmName("booksCount")
         fun booksCountBlocking() = blocking { `booksCount`() }
+        // attribute bookshelf.booksAmong
+        open suspend fun `booksAmong`(ids: List<Int>) = query<ExampleDatabase.BookshelfSchema.Book>("booksAmong", ids)
+        @JvmName("booksAmong")
+        fun booksAmongBlocking(ids: List<Int>) = blocking { `booksAmong`(ids).toList() }
     }
 }
 
@@ -479,6 +483,8 @@ class MutableExampleDatabase(processor: Processor): ExampleDatabase(processor), 
         }
         open class MutableBookTagImpl(entity: Entity = MutableBookTag): MutableInstanceImpl(entity), MutableBookTag {
         }
+        // attribute bookshelf.booksAmong
+        override suspend fun `booksAmong`(ids: List<Int>) = query<MutableExampleDatabase.MutableBookshelfSchema.MutableBook>("booksAmong", ids)
         // attribute bookshelf.newBookBy
         suspend fun `newBookBy`(author_name: String, title: String) = perform("newBookBy", mapOf("authorName" to author_name, "title" to title))
     }

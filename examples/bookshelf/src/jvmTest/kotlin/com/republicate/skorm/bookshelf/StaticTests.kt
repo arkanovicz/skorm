@@ -83,6 +83,10 @@ class StaticTests {
                 theBook.update()
                 assertEquals(acquired, Book.fetch(theBook.bookId)?.acquired)
 
+                // a list argument reaches the engine as a SQL array
+                assertEquals(listOf(theBook.bookId), MutableExampleDatabase.bookshelf.booksAmong(listOf(theBook.bookId, theBook.bookId + 1000)).map { it.bookId }.toList())
+                assertEquals(emptyList(), MutableExampleDatabase.bookshelf.booksAmong(emptyList()).toList())
+
                 // a scalar flow harvests the column's values themselves
                 val titles = author.titles().toList()
                 assertTrue(titles.isNotEmpty())

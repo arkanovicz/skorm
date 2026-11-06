@@ -105,6 +105,10 @@ class InheritanceTest {
                   SELECT count(*) FROM person WHERE seen >= {since};
                 attr seenBy(person_id: Int?): Int =
                   SELECT count(*) FROM person WHERE {person_id}::int IS NULL OR person_id = {person_id};
+                attr named(names: String*): Int =
+                  SELECT count(*) FROM person WHERE name = ANY({names});
+                attr identities(services: Service*): Int =
+                  SELECT count(*) FROM identity WHERE service = ANY({services});
               }
             }
         """.trimIndent())
@@ -205,6 +209,11 @@ class InheritanceTest {
                             MutableIdentity.new(Service.google, "alice@gmail").apply { owner = alice.personId }.insert()
                             assertEquals(alice.personId, Identity.fetch(Service.google, "alice@gmail")!!.owner)
                             assertEquals(Service.google, MutableIdentity.fetch(Service.google, "alice@gmail")!!.service)
+                            // a list argument: a SQL array, untyped so that the native enum column types it
+                            assertEquals(2, db.main.named(listOf("Alice", "Bob", "Nobody")))
+                            assertEquals(0, db.main.named(emptyList()))
+                            assertEquals(1, db.main.identities(listOf(Service.google)))
+                            assertEquals(0, db.main.identities(listOf(Service.email)))
                             // a bigserial key is generated: read back on insert
                             val line = MutableLine.new().apply { text = "hello" }.also { it.insert() }
                             assertEquals("hello", MutableLine.fetch(line.lineId)!!.text)

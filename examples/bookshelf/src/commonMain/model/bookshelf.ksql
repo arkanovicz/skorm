@@ -4,6 +4,10 @@ database example {
     attr booksCount: Int =
       SELECT count(*) FROM book;
 
+    // a list argument binds as a SQL array
+    attr booksAmong(ids: Int*): Book* =
+      SELECT * FROM book WHERE book_id = ANY({ids}) ORDER BY book_id;
+
     attr Book.currentBorrower: (Dude, borrowing_date: LocalDate)? =
       SELECT dude.*, borrowing_date FROM bookshelf.borrowing
         JOIN dude USING (dude_id)

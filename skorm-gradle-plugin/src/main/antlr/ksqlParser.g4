@@ -18,8 +18,8 @@ sql_spec:
 
 arguments: ( argument ( CM argument )* ) ;
 
-// an argument is typed by a simple type, or by the name of an enum the kddl model declares; `?` makes it nullable
-argument: name=LABEL ( FS ( simple_type | enumType=LABEL ) ( optional=QM )? )? ;
+// an argument is typed by a simple type, or by the name of an enum the kddl model declares; `*` makes it a list, `?` nullable
+argument: name=LABEL ( FS ( simple_type | enumType=LABEL ) ( multiple=ST )? ( optional=QM )? )? ;
 
 type: simple_type | json_object_type | out_entity | complex_type ;
 

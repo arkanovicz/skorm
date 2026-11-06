@@ -29,6 +29,10 @@ internal actual fun ExampleDatabase.registerAttributes() {
     ExampleDatabase.bookshelf.scalarAttribute<Int>("booksCount", """
         SELECT count(*) FROM book;""".trimIndent())
 
+    // attribute bookshelf.booksAmong
+    ExampleDatabase.bookshelf.rowSetAttribute<ExampleDatabase.BookshelfSchema.Book>("booksAmong", """
+        SELECT * FROM book WHERE book_id = ANY({ids}) ORDER BY book_id;""".trimIndent(), ExampleDatabase.BookshelfSchema.Book::new)
+
     // attribute Book.currentBorrower
     ExampleDatabase.bookshelf.entity("book").instanceAttributes.nullableRowAttribute<CurrentBorrower>("currentBorrower", """
         SELECT dude.*, borrowing_date FROM bookshelf.borrowing
@@ -85,6 +89,10 @@ internal actual fun ExampleDatabase.registerAttributes() {
     // attribute bookshelf.booksCount
     MutableExampleDatabase.bookshelf.scalarAttribute<Int>("booksCount", """
         SELECT count(*) FROM book;""".trimIndent())
+
+    // attribute bookshelf.booksAmong
+    MutableExampleDatabase.bookshelf.rowSetAttribute<MutableExampleDatabase.MutableBookshelfSchema.MutableBook>("booksAmong", """
+        SELECT * FROM book WHERE book_id = ANY({ids}) ORDER BY book_id;""".trimIndent(), MutableExampleDatabase.MutableBookshelfSchema.MutableBook::new)
 
     // attribute Book.currentBorrower
     MutableExampleDatabase.bookshelf.entity("book").instanceAttributes.nullableRowAttribute<CurrentBorrower>("currentBorrower", """

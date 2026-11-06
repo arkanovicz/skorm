@@ -28,6 +28,9 @@ internal actual fun ExampleDatabase.registerAttributes() {
     // attribute bookshelf.booksCount
     ExampleDatabase.bookshelf.scalarAttribute<Int>("booksCount", setOf())
 
+    // attribute bookshelf.booksAmong
+    ExampleDatabase.bookshelf.rowSetAttribute<ExampleDatabase.BookshelfSchema.Book>("booksAmong", setOf("ids"), ExampleDatabase.BookshelfSchema.Book::new)
+
     // attribute Book.currentBorrower
     ExampleDatabase.bookshelf.entity("book").instanceAttributes.nullableRowAttribute<CurrentBorrower>("currentBorrower", setOf("book_id"), ::CurrentBorrower)
 
@@ -63,6 +66,9 @@ internal actual fun ExampleDatabase.registerAttributes() {
 
     // attribute bookshelf.booksCount
     MutableExampleDatabase.bookshelf.scalarAttribute<Int>("booksCount", setOf())
+
+    // attribute bookshelf.booksAmong
+    MutableExampleDatabase.bookshelf.rowSetAttribute<MutableExampleDatabase.MutableBookshelfSchema.MutableBook>("booksAmong", setOf("ids"), MutableExampleDatabase.MutableBookshelfSchema.MutableBook::new)
 
     // attribute Book.currentBorrower
     MutableExampleDatabase.bookshelf.entity("book").instanceAttributes.nullableRowAttribute<CurrentBorrower>("currentBorrower", setOf("book_id"), ::CurrentBorrower)

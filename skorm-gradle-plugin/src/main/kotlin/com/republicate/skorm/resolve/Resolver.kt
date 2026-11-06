@@ -240,10 +240,21 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
     private val simpleTypes = setOf("Boolean", "Int", "Long", "Float", "Double", "LocalTime", "LocalDate",
         "LocalDateTime", "Instant", "DateTimePeriod", "Char", "String", "Json", "Any?")
 
-    /** An argument's type is a simple type or an enum class the schema declares, nullable or not. */
+    /** the simple type an argument names: `Int*?` is a nullable list of `Int` */
+    private fun elementType(declared: String) = declared.removeSuffix("?").removeSuffix("*")
+
+    /** `Int*` is a `List<Int>` in Kotlin, `Int*?` a `List<Int>?` */
+    private fun kotlinArgumentType(declared: String): String {
+        val nullable = declared.endsWith("?")
+        val type = declared.removeSuffix("?")
+        val kotlin = if (type.endsWith("*")) "List<${type.dropLast(1)}>" else type
+        return if (nullable) "$kotlin?" else kotlin
+    }
+
+    /** An argument's type is a simple type or an enum class the schema declares, as a list or not, nullable or not. */
     private fun checkArguments(item: RMItem, schemaName: String, enums: Set<String>) {
         for ((name, declared) in item.arguments ?: emptySet()) {
-            val type = declared.removeSuffix("?")
+            val type = elementType(declared)
             if (type !in simpleTypes && type !in enums) throw SkormException(
                 "attribute ${item.receiver?.let { "$it." } ?: ""}${item.name}: argument $name has type $type, " +
                     "neither a simple type nor an enum of schema $schemaName" +
@@ -325,13 +336,13 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
             schema = kotlin.camel(schemaName),
             receiverClass = item.receiver?.let { names.entityClass(schema, it) } ?: schemaClass,
             registrationPath = item.receiver?.let { ".entity(\"${kotlin.snake(it)}\").instanceAttributes" } ?: "",
-            arguments = item.arguments?.toList() ?: emptyList(),
+            arguments = item.arguments?.map { (name, declared) -> name to kotlinArgumentType(declared) } ?: emptyList(),
             verb = verb, entityRows = isEntity, generics = generics, cast = cast,
             coreRegistration = core, clientRegistration = client, factory = factory,
             sql = item.sql ?: "",
             params = item.parameters.toList(),
             composite = composite,
-            types = (item.arguments?.map { it.second.removeSuffix("?") } ?: emptyList()) + listOfNotNull((type as? RMSimpleType)?.takeIf { !isEntity }?.name) +
+            types = (item.arguments?.map { elementType(it.second) } ?: emptyList()) + listOfNotNull((type as? RMSimpleType)?.takeIf { !isEntity }?.name) +
                 (composite?.fields?.map { it.type } ?: emptyList())
         )
     }

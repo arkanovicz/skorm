@@ -348,6 +348,17 @@ class ResolverTest {
     }
 
     @Test
+    fun `a list argument is a Kotlin List, nullable or not, naming its element type`() {
+        val among = resolve(shelf, """
+            database shelf { schema main {
+              attr among(ids: Int*, titles: String*?): Book* = SELECT * FROM book WHERE book_id = ANY({ids}) OR title = ANY({titles});
+            } }
+        """.trimIndent()).attributes.single()
+        assertEquals(listOf("ids" to "List<Int>", "titles" to "List<String>?"), among.arguments)
+        assertTrue("Int" in among.types && "String" in among.types, among.types.toString())
+    }
+
+    @Test
     fun `a syntax error fails the parse, naming source, line and column`() {
         val ex = assertThrows(SkormException::class.java) {
             parseRuntimeModel(CharStreams.fromString("""
