@@ -477,6 +477,20 @@ mut Book.lend(dude_id: Long) =
     VALUES ({book_id}, {dude_id}, now());
 ```
 
+A parameter is a simple type or an enum the model declares; `?` makes it nullable, `*` makes it a list (`ids: Int*` is a
+`List<Int>`, `Int*?` a `List<Int>?`). A list binds as a SQL array, the shape `= ANY(...)` wants:
+
+```kotlin
+attr booksAmong(ids: Int*): Book* =
+  SELECT * FROM book WHERE book_id = ANY({ids}) ORDER BY book_id;
+```
+
+This needs an engine with SQL arrays (`driver.arrays` in the vendor properties: PostgreSQL, H2 and HSQLDB have them,
+MySQL, MariaDB, SQL Server, Derby, Oracle do not, and a list reaching one of those fails with a clear error).
+On PostgreSQL the array goes untyped, like a string, so the column types it: an enum column and an empty list
+need no cast. A null, over JDBC, is bound untyped too: where the engine cannot type it from a column, the SQL does
+(`{dude_id}::int IS NULL` on PostgreSQL). Over REST a list or a null argument is not carried yet.
+
 #### Examples
 
 **Schema-level scalar:**

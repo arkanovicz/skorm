@@ -4,6 +4,9 @@ All notable changes to Skorm are documented in this file.
 
 ## [0.31] - unreleased
 
+### Added
+- List arguments: `attr booksAmong(ids: Int*): Book*` generates a `List<Int>` parameter (`Int*?` a `List<Int>?`), and a `List` (or a Java array) bound through JDBC becomes a SQL array, the shape `WHERE book_id = ANY({ids})` wants. H2 and HSQLDB get a `createArrayOf` array typed from the elements; PostgreSQL gets an array literal bound untyped, so the column types it: an enum column and an empty list need no cast. A new vendor flag, `driver.arrays`, says which engines have arrays (PostgreSQL, H2, HSQLDB; discovery mode probes `createArrayOf`), and a list reaching an engine without them fails with a clear error instead of the driver's. Over REST a list argument is not carried yet, like a null
+
 ## [0.30] - 2026-11-06
 
 ### Fixed
