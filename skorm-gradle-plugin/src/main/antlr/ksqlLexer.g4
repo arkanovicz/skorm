@@ -63,7 +63,7 @@ QUERY_PART: ~( [{\\'";] )+ -> type( QUERY_PART ) ;
 
 mode PARAM ;
 PARAM_END: '}' -> type( QUERY_PART ), popMode ;
-PARAM_NAME: [a-z_][a-z0-9_]+ -> more ;
+PARAM_NAME: [a-zA-Z_][a-zA-Z0-9_]* -> more ; // same spelling as LABEL, so a declared argument always lexes
 
 mode QUOTED ;
 ESCAPED_SQ: '\\\'' -> more ;

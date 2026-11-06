@@ -4,6 +4,9 @@ All notable changes to Skorm are documented in this file.
 
 ## [0.29] - unreleased
 
+### Fixed
+- A one-letter SQL parameter (`LIMIT {n}`) failed to lex ("token recognition error at: '{n}'"): the ksql lexer wanted two characters for a parameter name, and lowercase only, where an argument name allowed one. Both are now spelled alike
+
 ## [0.28] - 2026-11-04
 
 ### Added

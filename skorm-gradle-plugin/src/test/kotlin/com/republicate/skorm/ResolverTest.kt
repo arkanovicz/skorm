@@ -337,6 +337,17 @@ class ResolverTest {
     }
 
     @Test
+    fun `a parameter is spelled like a label, one letter or a capital included`() {
+        val sample = resolve(shelf, """
+            database shelf { schema main {
+              attr Book.sample(n: Int, maxN: Int): Book* = SELECT * FROM book WHERE book_id > {book_id} LIMIT {n} OFFSET {maxN};
+            } }
+        """.trimIndent()).attributes.single()
+        assertEquals(listOf("n" to "Int", "maxN" to "Int"), sample.arguments)
+        assertEquals(setOf("book_id", "n", "maxN"), com.republicate.skorm.core.AttributeDefinition.parse(sample.sql).parameters())
+    }
+
+    @Test
     fun `a syntax error fails the parse, naming source, line and column`() {
         val ex = assertThrows(SkormException::class.java) {
             parseRuntimeModel(CharStreams.fromString("""
