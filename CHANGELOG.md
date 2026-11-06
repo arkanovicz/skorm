@@ -2,6 +2,8 @@
 
 All notable changes to Skorm are documented in this file.
 
+## [0.31] - unreleased
+
 ## [0.30] - 2026-11-06
 
 ### Fixed
