@@ -2,6 +2,11 @@
 
 All notable changes to Skorm are documented in this file.
 
+## [0.30] - 2026-11-06
+
+### Fixed
+- Bumped kddl to 0.34 (index on FK source was dropped)
+
 ## [0.29] - 2026-11-06
 
 ### Fixed
