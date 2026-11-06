@@ -6,7 +6,9 @@ import kotlin.uuid.Uuid;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,5 +86,67 @@ public class ClassMapper {
         if (obj instanceof Enum) return obj.toString(); // bind enums (e.g. generated Kotlin enum params) as their constant name
         if (obj instanceof Json) return obj.toString(); // JSON text; a pedantic vendor binds it untyped and the json/jsonb column types it
         return Optional.ofNullable(writeMap.get(obj.getClass())).map(converter -> converter.convert(obj)).orElse(obj);
+    }
+
+    /** a value that binds as a SQL array: a Collection (a Kotlin List) or a Java array, bytes excepted (a blob) */
+    public static boolean isArray(Object obj)
+    {
+        return obj instanceof Collection || obj != null && obj.getClass().isArray() && !(obj instanceof byte[]);
+    }
+
+    /** the elements of such a value, each converted like a parameter */
+    public static Object[] elements(Object obj)
+    {
+        Collection<?> items;
+        if (obj instanceof Collection) items = (Collection<?>)obj;
+        else
+        {
+            int n = java.lang.reflect.Array.getLength(obj);
+            List<Object> boxed = new ArrayList<>(n);
+            for (int i = 0; i < n; ++i) boxed.add(java.lang.reflect.Array.get(obj, i));
+            items = boxed;
+        }
+        Object[] ret = new Object[items.size()];
+        int i = 0;
+        for (Object item : items) ret[i++] = write(item);
+        return ret;
+    }
+
+    private static final Map<Class<?>, String> sqlTypeNames = Map.ofEntries(
+        Map.entry(Short.class, "smallint"),
+        Map.entry(Integer.class, "integer"),
+        Map.entry(Long.class, "bigint"),
+        Map.entry(Float.class, "real"),
+        Map.entry(Double.class, "double precision"),
+        Map.entry(java.math.BigDecimal.class, "numeric"),
+        Map.entry(Boolean.class, "boolean"),
+        Map.entry(String.class, "varchar"),
+        Map.entry(java.time.LocalDate.class, "date"),
+        Map.entry(java.time.LocalTime.class, "time"),
+        Map.entry(java.time.LocalDateTime.class, "timestamp"),
+        Map.entry(OffsetDateTime.class, "timestamp with time zone"),
+        Map.entry(UUID.class, "uuid"));
+
+    /** the SQL element type Connection.createArrayOf wants, from the first element present (varchar when none) */
+    public static String arrayTypeName(Object[] elements)
+    {
+        for (Object element : elements)
+        {
+            if (element != null) return sqlTypeNames.getOrDefault(element.getClass(), "varchar");
+        }
+        return "varchar";
+    }
+
+    /** PostgreSQL's array literal, every element quoted: bound untyped, the column types it (an enum included) */
+    public static String arrayLiteral(Object[] elements)
+    {
+        StringBuilder sb = new StringBuilder("{");
+        for (int i = 0; i < elements.length; ++i)
+        {
+            if (i > 0) sb.append(',');
+            if (elements[i] == null) sb.append("NULL");
+            else sb.append('"').append(elements[i].toString().replace("\\", "\\\\").replace("\"", "\\\"")).append('"');
+        }
+        return sb.append('}').toString();
     }
 }

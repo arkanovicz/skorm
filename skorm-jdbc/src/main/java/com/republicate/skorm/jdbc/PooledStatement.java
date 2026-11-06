@@ -187,15 +187,34 @@ public class PooledStatement implements Closeable // TODO implements RowValues
         {
             logger.trace("params-{}", Arrays.asList(paramValues));
         }
-        boolean pedanticCasts = connection != null && connection.getVendor().hasPedanticCasts();
+        Vendor vendor = connection == null ? null : connection.getVendor();
+        boolean pedanticCasts = vendor != null && vendor.hasPedanticCasts();
         for (int i = 0; i < paramValues.length; ++i)
         {
             Object value = paramValues[i];
             if (value instanceof GeneratedKeyMarker) break;
             Object written = ClassMapper.write(value);
+            if (ClassMapper.isArray(written))
+            {
+                // a List binds as a SQL array (WHERE col = ANY(?)); on a pedantic vendor the literal goes untyped
+                // like a string, so the column types it: an enum column, or an empty list, need no cast in the SQL
+                if (vendor == null || !vendor.hasArrays())
+                {
+                    throw new SQLException("vendor " + (vendor == null ? "unknown" : vendor.getTag()) + " has no SQL arrays: cannot bind " + written.getClass().getSimpleName());
+                }
+                Object[] elements = ClassMapper.elements(written);
+                if (pedanticCasts)
+                {
+                    preparedStatement.setObject(i + 1, ClassMapper.arrayLiteral(elements), Types.OTHER);
+                }
+                else
+                {
+                    preparedStatement.setArray(i + 1, connection.createArrayOf(ClassMapper.arrayTypeName(elements), elements));
+                }
+            }
             // Pedantic vendors (PostgreSQL) won't apply an implicit varchar->enum cast in operator
             // contexts (WHERE enum = ?); binding strings untyped lets the server infer the type.
-            if (pedanticCasts && written instanceof String)
+            else if (pedanticCasts && written instanceof String)
             {
                 preparedStatement.setObject(i + 1, written, Types.OTHER);
             }

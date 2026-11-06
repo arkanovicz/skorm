@@ -11,6 +11,8 @@ import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,11 +41,14 @@ public class ConfigTest
         when(mockedDbMetaData.getURL()).thenReturn("jdbc:dummy:");
         when(mockedDbMetaData.storesLowerCaseIdentifiers()).thenReturn(true);
         when(mockedDbMetaData.getIdentifierQuoteString()).thenReturn("`");
+        when(mockedDbMetaData.getConnection()).thenReturn(mockedConnection);
+        when(mockedConnection.createArrayOf(any(), any())).thenThrow(new java.sql.SQLFeatureNotSupportedException());
 
         Connection wrapper = new Connection(mockedConnection);
         Vendor vendor = wrapper.getVendor();
         assertEquals("dummy", vendor.getTag());
         assertEquals(Vendor.CaseSensitivity.LOWERCASE, vendor.getTablesCaseSensitivity());
         assertEquals('`', vendor.getIdentifierQuoteChar());
+        assertFalse(vendor.hasArrays());
     }
 }

@@ -101,6 +101,21 @@ public class Vendor implements MetaInfos
         // identifier quote char
         String quoteString = meta.getIdentifierQuoteString();
         if (quoteString.length() == 1) identifierQuoteChar = quoteString.charAt(0);
+
+        // SQL arrays: no metadata method says, so try one
+        java.sql.Connection connection = meta.getConnection();
+        if (connection != null)
+        {
+            try
+            {
+                connection.createArrayOf("integer", new Object[0]);
+                arrays = true;
+            }
+            catch (SQLException sqle)
+            {
+                arrays = false;
+            }
+        }
     }
 
     /** jdbc tag of the database vendor */
@@ -154,6 +169,9 @@ public class Vendor implements MetaInfos
 
     /** whether the engine is pedantic about implicit casts (PostgreSQL native enums in operator contexts): bind strings untyped */
     private boolean pedanticCasts = false;
+
+    /** whether the engine has SQL arrays: a List parameter binds as one (as an untyped literal on a pedantic engine) */
+    private boolean arrays = false;
 
     /** sql query to get enum values */
     private String describeEnumQuery = null;
@@ -342,6 +360,16 @@ public class Vendor implements MetaInfos
     public void setPedanticCasts(boolean pedanticCasts)
     {
         this.pedanticCasts = pedanticCasts;
+    }
+
+    public boolean hasArrays()
+    {
+        return arrays;
+    }
+
+    public void setArrays(boolean arrays)
+    {
+        this.arrays = arrays;
     }
 
     public String getTableName(String entityName)
