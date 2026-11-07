@@ -31,4 +31,12 @@ class AttributeDefinitionTest {
         assertEquals("INSERT INTO t (a, b) VALUES (?, 'x;y');", parsed[0].stmt.trim())
         assertEquals(listOf("a"), parsed[1].params)
     }
+
+    @Test
+    fun parametersBetweenBracketsCount() {
+        // PostgreSQL's array constructor; brackets quote nothing on the supported vendors
+        val parsed = statements("SELECT ARRAY[{a}, {b}] FROM t WHERE \"quoted {c}\" = 1")
+        assertEquals(listOf("a", "b"), parsed[0].params)
+        assertEquals("SELECT ARRAY[?, ?] FROM t WHERE \"quoted {c}\" = 1;", parsed[0].stmt.trim())
+    }
 }

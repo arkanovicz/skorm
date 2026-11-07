@@ -12,16 +12,16 @@ data class QueryDefinition(val stmt: String, val params: List<String>) {
 sealed interface AttributeDefinition {
 
     companion object {
-        // CB TODO - this is driver specific, but we try to have a kinda generic handling
+        // TODO - identifier quoting is the vendor's (MetaInfos.identifierQuoteChar: `"`, a backtick on MySQL);
+        // the ANSI `"` is hardcoded here. No `[ ]`: that is SQL Server's, and PostgreSQL's ARRAY[{a}] needs the braces.
         // no backslash before the double quote: JavaScript's regex rejects that escape
-        private val lexer = Regex("\\{|\\}|\\bbegin\\b|\\bend\\b|'|\"|\\[|\\]|\\(|\\)|;", RegexOption.IGNORE_CASE)
+        private val lexer = Regex("\\{|\\}|\\bbegin\\b|\\bend\\b|'|\"|\\(|\\)|;", RegexOption.IGNORE_CASE)
         enum class ParserState(val start: String, val end: String = start, val allowParams: Boolean = false) {
             INITIAL(start="", allowParams=true),
             PARAMETER(start="{", end="}", allowParams=false),
             BLOCK(start="begin", end="end", allowParams=true),
             QUOTED(start="'", allowParams=false),
             DOUBLE_QUOTED(start="\"", allowParams=false),
-            BRACKETED(start="[", end="]", allowParams=false),
             // a `;` between parentheses ends no statement: PostgreSQL rules take `DO INSTEAD ( stmt; stmt; )`
             PAREN(start="(", end=")", allowParams=true),
             ERROR(start="?", allowParams=false),
@@ -66,7 +66,7 @@ sealed interface AttributeDefinition {
                         if ((state() == INITIAL || state() == PAREN) && token.lowercase() != BLOCK.end) {
                             val nextState = stateMap[token.lowercase()] ?: throw SkormException("unhandled case")
                             when (nextState) {
-                                BLOCK, QUOTED, DOUBLE_QUOTED, BRACKETED, PAREN -> push(nextState)
+                                BLOCK, QUOTED, DOUBLE_QUOTED, PAREN -> push(nextState)
                                 INITIAL, PARAMETER -> throw SkormException("unexpected case")
                                 ERROR -> throw SkormException("provided queries should not have '?' markers")
                                 END -> if (state() == INITIAL) {

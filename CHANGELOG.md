@@ -5,6 +5,7 @@ All notable changes to Skorm are documented in this file.
 ## [0.32] - unreleased
 
 ### Fixed
+- A parameter between brackets was dropped: the runtime parser took `[…]` for a SQL Server quoted identifier, so PostgreSQL's `ARRAY[{a}, {b}]` went out with its braces. Brackets are plain text now; `'` and `"` are the only quotes the parser knows
 - A ksql attribute returning columns generates a row class named after the attribute, at package level, while entities live in their schema object: `attr Community.dude: (…)*` produced a second `Dude`, which the registration resolved to the composite and the accessor to the entity, and the accessor's cast failed at runtime. Generation now refuses a composite named like an entity, an enum or another composite, and says which
 
 ## [0.31] - 2026-11-06
