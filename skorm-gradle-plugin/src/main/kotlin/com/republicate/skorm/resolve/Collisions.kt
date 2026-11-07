@@ -78,4 +78,23 @@ object Collisions {
         joins.forEach { claim(it.receiverClass, it.name, "a ${it.label}") }
         attributes.forEach { claim(it.receiverClass, it.name, "the attribute ${it.qualifiedName}") }
     }
+
+    /**
+     * A composite row class is emitted at package level, entities and enums inside their schema object: a name
+     * shared with one of them resolves to the composite in the registration and to the entity in the accessor,
+     * and the accessor's cast fails at runtime.
+     */
+    fun checkComposites(schemas: List<ResolvedSchema>, attributes: List<QueryAttribute>) {
+        val taken = mutableMapOf<String, String>()
+        schemas.forEach { schema ->
+            schema.entities.forEach { taken[it.className] = "table ${it.tableName}" }
+            schema.enums.forEach { taken[it.name] = "enum ${it.name}" }
+        }
+        attributes.forEach { attribute ->
+            val composite = attribute.composite ?: return@forEach
+            val previous = taken.put(composite.className, "attribute ${attribute.qualifiedName}")
+            if (previous != null) throw SkormException(
+                "attribute ${attribute.qualifiedName}: its row class ${composite.className} would be named like $previous; rename the attribute")
+        }
+    }
 }

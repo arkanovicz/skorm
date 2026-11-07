@@ -47,6 +47,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
         resolved.joins.forEach { Collisions.checkAccessor(it.receiverClass, it.name, it.label) }
         resolved.attributes.forEach { Collisions.checkAccessor(it.receiverClass, it.name, "attribute") }
         Collisions.checkUnique(resolved.joins, resolved.attributes)
+        Collisions.checkComposites(resolved.schemas, resolved.attributes)
         return resolved
     }
 

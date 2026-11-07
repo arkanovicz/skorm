@@ -294,6 +294,18 @@ class ResolverTest {
         assertTrue(ex.message!!.contains("'books'") && ex.message!!.contains("reverse foreign key"), ex.message)
     }
 
+    @Test
+    fun `a composite attribute whose class would be named like an entity is refused`() {
+        val ex = assertThrows(SkormException::class.java) {
+            resolve(shelf, """
+                database shelf { schema main {
+                  attr Book.dude: (name: String, given: Int)* = SELECT name, 1 AS given FROM dude;
+                } }
+            """.trimIndent())
+        }
+        assertTrue(ex.message!!.contains("Book.dude") && ex.message!!.contains("table dude"), ex.message)
+    }
+
     /** The static list in [Collisions] must match what reflection sees here, where the full classpath exists. */
     @Test
     fun `the inherited-member list is what InstanceImpl and MutableInstanceImpl actually expose`() {
