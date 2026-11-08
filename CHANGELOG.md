@@ -2,7 +2,7 @@
 
 All notable changes to Skorm are documented in this file.
 
-## [0.32] - unreleased
+## [0.32] - 2026-11-08
 
 ### Fixed
 - A parameter between brackets was dropped: the runtime parser took `[…]` for a SQL Server quoted identifier, so PostgreSQL's `ARRAY[{a}, {b}]` went out with its braces. Brackets are plain text now; `'` and `"` are the only quotes the parser knows
