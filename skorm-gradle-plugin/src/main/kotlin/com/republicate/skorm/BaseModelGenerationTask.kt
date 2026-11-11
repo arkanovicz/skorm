@@ -5,15 +5,18 @@ import com.republicate.kddl.ASTSchema
 import com.republicate.kddl.FieldType
 import com.republicate.kddl.Utils
 import com.republicate.kddl.Utils.getFile
+import com.republicate.kddl.gradle.IncludedModels
 import com.republicate.kddl.parse
 import com.republicate.kddl.reverse
 import org.apache.velocity.VelocityContext
 import org.apache.velocity.tools.generic.LogTool
+import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.PathSensitive
@@ -32,6 +35,13 @@ abstract class BaseModelGenerationTask: BaseGenerationTask() {
     @get:Option(option = "model", description = "Source kddl model")
     @get:Optional
     abstract val model: RegularFileProperty
+
+    /** The model files the root includes: editing one of them reruns the task. */
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.NONE)
+    val included: FileCollection = project.files(
+        project.providers.of(IncludedModels::class.java) { it.parameters.model.set(model) }
+    )
 
     @get:Input
     @get:Option(option = "datasource", description = "Datasource JDBC URL with credentials")

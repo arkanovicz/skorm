@@ -37,6 +37,7 @@ essential-kson = { module = "com.republicate.kson:essential-kson", version.ref =
 evo-inflector = { module = "org.atteo:evo-inflector", version.ref = "evo-inflector" }
 h2 = { module = "com.h2database:h2", version.ref = "h2" }
 kddl = { module = "com.republicate.kddl:kddl", version.ref = "kddl" }
+kddl-gradle-plugin = { module = "com.republicate.kddl:kddl-gradle-plugin", version.ref = "kddl" }
 kotlin-logging = { module = "io.github.oshai:kotlin-logging", version.ref = "kotlin-logging"}
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin"}
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }

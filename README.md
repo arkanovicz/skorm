@@ -109,6 +109,7 @@ One call, `initialize()`, registers the entities, the navigations and the ksql a
 Options:
 
 - `model` — the kddl model; or `datasource`, a JDBC URL to reverse-engineer it from. Exactly one.
+  A model may `include 'other.kddl'`, a path relative to itself; editing an included file reruns generation.
 - `attributes` — the ksql attributes declared over it. Without them, only the model is generated.
 - `destPackage` — package of the generated code.
 - `dialect` — `postgresql` or `hypersql`, required to emit the creation script.

@@ -6,6 +6,7 @@ All notable changes to Skorm are documented in this file.
 
 ### Changed
 - kddl 0.35: a model split over several files (`include 'shared.kddl'`) finds the included ones beside the including one. The path was looked up from the working directory, the project's in a Gradle build, so an include next to a model in `src/main/model` was not found. Schemas declared on both sides now merge
+- The files a model includes are inputs of `generateSkormCode`: editing one reruns generation, under the configuration cache too, where an include added later is picked up without reconfiguring. The list comes from kddl's own `IncludedModels` value source, so the plugin now depends on `kddl-gradle-plugin` (without applying it)
 
 ### Fixed
 - With Gradle's configuration cache on, editing the model reran generation from the model as first parsed: the task kept it in a field, and the field was stored with the cached configuration. Only a change that discards the cache entry (a build script, the version catalog) brought the new model in. The model and the attributes are now read by the task's action

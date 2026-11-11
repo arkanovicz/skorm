@@ -66,6 +66,8 @@ dependencies {
     implementation(libs.velocity.tools.generic)
     implementation(libs.evo.inflector)
     api(libs.kddl)
+    // for IncludedModels alone, the value source listing the files a model includes; its plugin is not applied
+    implementation(libs.kddl.gradle.plugin)
     testImplementation(gradleTestKit())
     testImplementation(libs.junit)
     testImplementation(libs.junit.jupiter.api)

@@ -86,4 +86,57 @@ class ModelInputsTest {
         assertContains(sql, "CREATE TABLE memo (")
         assertContains(objects, "interface Memo")
     }
+
+    private fun assertIncludedFilesWatched(vararg args: String) {
+        assertEquals(TaskOutcome.SUCCESS, generate(*args))
+        assertContains(sql, "CREATE TABLE person (")
+        assertEquals(TaskOutcome.UP_TO_DATE, generate(*args))
+
+        write("model/shared.kddl", """
+            database shared {
+              schema core {
+                table person { *id serial }
+                table team { *id serial }
+              }
+            }
+        """)
+        assertEquals(TaskOutcome.SUCCESS, generate(*args))
+        assertContains(sql, "CREATE TABLE team (")
+        assertContains(objects, "interface Team")
+        assertEquals(TaskOutcome.UP_TO_DATE, generate(*args))
+    }
+
+    @Test
+    fun `editing an included model reruns generation`() = assertIncludedFilesWatched()
+
+    @Test
+    fun `with the configuration cache too, which must not freeze the list of includes`() {
+        assertIncludedFilesWatched("--configuration-cache")
+
+        write("model/extra.kddl", """
+            database extra {
+              schema core {
+                table tag { *id serial }
+              }
+            }
+        """)
+        write("model/root.kddl", "include 'extra.kddl'\n" + File(dir, "model/root.kddl").readText())
+        val run = runner("--configuration-cache").build()
+        assertContains(run.output, "Reusing configuration cache.")
+        assertEquals(TaskOutcome.SUCCESS, run.task(":$GEN_TASK_NAME")?.outcome)
+        assertContains(sql, "CREATE TABLE tag (")
+        assertEquals(TaskOutcome.UP_TO_DATE, generate("--configuration-cache"))
+
+        // a file the cached configuration never heard of is watched all the same
+        write("model/extra.kddl", """
+            database extra {
+              schema core {
+                table tag { *id serial }
+                table label { *id serial }
+              }
+            }
+        """)
+        assertEquals(TaskOutcome.SUCCESS, generate("--configuration-cache"))
+        assertContains(sql, "CREATE TABLE label (")
+    }
 }
