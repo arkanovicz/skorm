@@ -158,13 +158,18 @@ class ResolverTest {
               schema s {
                 attr BookAuthor.rank: Int =
                   SELECT count(*) FROM book_author WHERE id <= {id};
+                attr book_author.older: Int =
+                  SELECT count(*) FROM book_author WHERE id < {id};
               }
             }
         """.trimIndent())
         val entity = model.schemas.single().entities.single()
-        val rank = model.attributes.single()
+        val rank = model.attributes.single { it.name == "rank" }
+        // written as the table or as the class, the receiver is the same entity
+        assertEquals(rank.receiverClass, model.attributes.single { it.name == "older" }.receiverClass)
         assertEquals("bookAuthor", entity.objectName)
         assertEquals(".entity(\"bookAuthor\").instanceAttributes", rank.registrationPath)
+        assertEquals("DDatabase.SSchema.BookAuthor", rank.receiverClass)
     }
 
     @Test

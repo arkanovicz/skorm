@@ -40,8 +40,6 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
         fun entity(table: ASTTable) = "$prefix${kotlin.pascal(table.sqlName)}"
         fun entityClass(table: ASTTable) = "${schemaClass(table.schema)}.${entity(table)}"
         fun implClass(table: ASTTable) = "${schemaClass(table.schema)}.${entity(table)}Impl"
-        /** a ksql receiver, by its name in the ksql file */
-        fun entityClass(schema: ASTSchema, name: String) = "${schemaClass(schema)}.$prefix${kotlin.capitalize(name)}"
     }
 
     /** [readOnly]: generate the read-only half alone, for a build that never writes. */
@@ -279,10 +277,11 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
     }
 
     private fun receiver(schema: ASTSchema, name: String): ASTTable =
-        schema.tableNamed(name) ?: throw SkormException("ksql receiver $name: no such table in schema ${schema.name}")
+        schema.tableNamed(name) ?: throw SkormException("ksql receiver $name: no such table in schema ${schema.sqlName}")
 
     private fun queryAttribute(schema: ASTSchema, names: Naming, item: RMItem): QueryAttribute {
         val schemaName = schema.sqlName
+        val receiver = item.receiver?.let { receiver(schema, it) }
         val schemaClass = names.schemaClass(schema)
         val type = item.type
         val composite = (type as? RMCompositeType)?.let { c ->
@@ -354,8 +353,8 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
             qualifiedName = "${item.receiver ?: schemaName}.${item.name}",
             name = item.name,
             schema = kotlin.camel(schemaName),
-            receiverClass = item.receiver?.let { names.entityClass(schema, it) } ?: schemaClass,
-            registrationPath = item.receiver?.let { ".entity(\"${kotlin.camel(receiver(schema, it).sqlName)}\").instanceAttributes" } ?: "",
+            receiverClass = receiver?.let { names.entityClass(it) } ?: schemaClass,
+            registrationPath = receiver?.let { ".entity(\"${kotlin.camel(it.sqlName)}\").instanceAttributes" } ?: "",
             arguments = item.arguments?.map { (name, declared) -> name to kotlinArgumentType(declared) } ?: emptyList(),
             verb = verb, entityRows = isEntity, generics = generics, cast = cast,
             coreRegistration = core, clientRegistration = client, factory = factory,
