@@ -250,6 +250,34 @@ open class CoreProcessor @JvmOverloads constructor(
         }
     }
 
+    /**
+     * Runs [script], the creation script of a kddl schema, when the database has none of the [schemas] it owns;
+     * true when it ran. An importer's database already holds the schemas of its imports: "empty" is asked
+     * of each kddl schema, not of the database. The script runs in one transaction: where DDL is not transactional
+     * (H2, MySQL), a script failing midway leaves its schemas behind, to drop before trying again.
+     */
+    suspend fun createMissingSchemas(schemas: List<String>, script: () -> String): Boolean {
+        val owned = schemas.map { it.lowercase() }
+        val present = blocking {
+            val result = connector.query("", "SELECT schema_name FROM information_schema.schemata")
+            try {
+                buildList { for (row in result.values) add(row[0].toString().lowercase()) }
+            } finally {
+                result.close()
+            }
+        }.filter { it in owned }
+        if (present.size == owned.size) return false
+        if (present.isNotEmpty()) throw SkormException(
+            "cannot create schemas ${owned.joinToString()}: ${present.joinToString()} already there, ${(owned - present.toSet()).joinToString()} missing")
+        val statements = AttributeDefinition.parse(script()).queries(emptyList())
+        transaction("") {
+            with (this as CoreProcessorTransaction) {
+                for (statement in statements) blocking { connector.mutate("", statement.stmt) }
+            }
+        }
+        return true
+    }
+
     override suspend fun begin(schema: String): Transaction {
         return CoreProcessorTransaction(blocking { connector.begin(schema) }, this)
     }
