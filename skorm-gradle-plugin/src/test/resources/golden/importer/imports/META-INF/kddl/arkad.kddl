@@ -1,0 +1,14 @@
+// What the artifact of an imported kddl schema ships: this file and, in META-INF/skorm, where its generated code is.
+database arkad {
+  schema arkad {
+    table room {
+      *id serial
+      name varchar(50)
+    }
+    table message {
+      *id bigserial
+      body text
+    }
+    message *-- room
+  }
+}

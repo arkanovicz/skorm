@@ -74,6 +74,7 @@ abstract class BaseModelGenerationTask: BaseGenerationTask() {
 
     override fun populateContext(context: VelocityContext) {
         val usedPrimitiveBases = database.schemas.values
+            .filter { schema: ASTSchema -> !schema.external }
             .flatMap { schema: ASTSchema -> schema.tables.values }
             .flatMap { table -> table.fields.values }
             .mapNotNull { field -> (field.type as? FieldType.Primitive)?.base?.lowercase() }

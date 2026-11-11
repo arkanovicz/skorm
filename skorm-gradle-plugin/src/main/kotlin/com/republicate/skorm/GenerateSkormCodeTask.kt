@@ -74,11 +74,15 @@ abstract class GenerateSkormCodeTask : BaseModelGenerationTask() {
     @get:Internal
     protected lateinit var resolved: ResolvedModel
 
+    /** the kddl file's name: it names what this kddl schema ships */
+    private val base get() = model.orNull?.asFile?.nameWithoutExtension ?: database.sqlName
+
     override fun populateContext(context: VelocityContext) {
         super.populateContext(context)
         context.put("resolved", resolved)
         context.put("useInstantType", context.get("useInstantType") == true || resolved.uses("Instant"))
         context.put("multiplatform", multiplatform.get())
+        context.put("scriptPath", SchemaInfo.script(base))
     }
 
     private fun generateCore() = core.orNull ?: platforms.get().any { it in JVM_PLATFORMS }
@@ -93,7 +97,7 @@ abstract class GenerateSkormCodeTask : BaseModelGenerationTask() {
         database = readModel()
         attributeModel = attributes.orNull?.let { parseRuntimeModel(Utils.getFile(it.asFile.absolutePath), it.asFile.path) }
         if (attributeModel != null) checkAttributeParameters()
-        resolved = Resolver(KotlinTool()).resolve(database, attributeModel, readOnly.get())
+        resolved = Resolver(KotlinTool()).resolve(database, attributeModel, readOnly.get(), SchemaInfo.read(imports.files))
         val withCore = generateCore()
         val withClient = generateClient()
         logger.lifecycle("$tag generating into $out (core: $withCore, client: $withClient, readOnly: ${readOnly.get()})")
@@ -105,7 +109,6 @@ abstract class GenerateSkormCodeTask : BaseModelGenerationTask() {
         if (withClient) generateCode("templates/skorm-attributes-client.vtl", File(out, "client/kotlin/skormAttributes.kt"))
 
         // any kddl schema may be imported by another
-        val base = model.orNull?.asFile?.nameWithoutExtension ?: database.sqlName
         val common = File(out, "common/resources")
         File(common, "${SearchPathResolver.ARTIFACT_DIR}/$base.kddl").apply { parentFile.mkdirs() }.writeText(database.display().toString())
         SchemaInfo(

@@ -20,6 +20,106 @@ class ResolverTest {
         return Resolver().resolve(database, attributes)
     }
 
+    // ---- import ----
+
+    private val arkad = """
+        database arkad {
+          schema arkad {
+            table message {
+              *id bigserial
+              body text
+            }
+          }
+        }
+    """.trimIndent()
+
+    private val republicate = """
+        import 'arkad.kddl'
+        database republicate {
+          schema republicate {
+            table decision {
+              *id serial
+              message -> arkad.message
+            }
+          }
+        }
+    """.trimIndent()
+
+    private fun arkadInfo(readOnly: Boolean = false, database: String = "arkad") =
+        SchemaInfo("arkad", "net.arkad.model", database, listOf("arkad"), readOnly, emptyList())
+
+    /** the importer resolved, its import served from memory and described by [infos] as its artifact would */
+    private fun importing(kddl: String = republicate, ksql: String? = null, vararg infos: SchemaInfo = arrayOf(arkadInfo())): ResolvedModel {
+        val database = parse(CharStreams.fromString(kddl, "republicate.kddl"), resolver = { path, _ -> CharStreams.fromString(arkad, path) })
+        return Resolver().resolve(database, ksql?.let { parseRuntimeModel(CharStreams.fromString(it)) }, imports = infos.toList())
+    }
+
+    @Test
+    fun `nothing is generated for an imported schema, a link to it returns its owner's class`() {
+        val model = importing()
+        assertEquals(listOf("republicate"), model.schemas.map { it.name })
+        assertEquals(listOf("republicate"), model.mutableTwin!!.schemas.map { it.name })
+        val message = model.join("Decision", "message")
+        assertEquals("net.arkad.model.ArkadDatabase.ArkadSchema.Message", message.targetClass)
+        assertEquals("SELECT * FROM arkad.message WHERE message.id = {message};", message.sql)
+        assertEquals("net.arkad.model.MutableArkadDatabase.MutableArkadSchema.MutableMessage", model.mutableTwin!!.join("MutableDecision", "message").targetClass)
+        // one way: the owner's class is not this kddl schema's to extend
+        assertEquals(1, model.joins.size)
+        assertEquals("Long", model.schemas.single().entities.single().fields.single { it.name == "message" }.kotlinType)
+    }
+
+    @Test
+    fun `the importer's database holds its imports' databases, each half its own`() {
+        val model = importing()
+        val imported = model.imports.single()
+        assertEquals("arkad", imported.property)
+        assertEquals("net.arkad.model.ArkadDatabase", imported.databaseClass)
+        assertFalse(imported.mutable)
+        val mutable = model.mutableTwin!!.imports.single()
+        assertEquals("net.arkad.model.MutableArkadDatabase", mutable.databaseClass)
+        assertTrue(mutable.mutable)
+    }
+
+    @Test
+    fun `an import generated read-only is read-only from the mutable half too`() {
+        val mutable = importing(infos = arrayOf(arkadInfo(readOnly = true))).mutableTwin!!
+        assertEquals("net.arkad.model.ArkadDatabase.ArkadSchema.Message", mutable.join("MutableDecision", "message").targetClass)
+        assertEquals("net.arkad.model.ArkadDatabase", mutable.imports.single().databaseClass)
+        assertFalse(mutable.imports.single().mutable)
+    }
+
+    @Test
+    fun `a ksql attribute returns an imported entity by its qualified name, and declares nothing on an imported schema`() {
+        val thread = importing(ksql = """
+            database republicate {
+              schema republicate {
+                attr Decision.thread: arkad.Message* =
+                  SELECT * FROM arkad.message WHERE id >= {message};
+              }
+            }
+        """.trimIndent()).attributes.single()
+        assertEquals("<net.arkad.model.ArkadDatabase.ArkadSchema.Message>", thread.generics)
+        assertEquals("net.arkad.model.ArkadDatabase.ArkadSchema.Message::new", thread.factory)
+
+        val refused = assertThrows(SkormException::class.java) {
+            importing(ksql = "database republicate { schema arkad { attr count: Int = SELECT count(*) FROM message; } }")
+        }
+        assertTrue(refused.message!!.contains("ksql schema arkad is imported"), refused.message)
+    }
+
+    @Test
+    fun `an import must say where its classes are, and name its database otherwise than the importer's`() {
+        val unknown = assertThrows(SkormException::class.java) { importing(infos = emptyArray()) }
+        assertTrue(unknown.message!!.contains("META-INF/skorm/arkad.properties"), unknown.message)
+        val twin = assertThrows(SkormException::class.java) { importing(infos = arrayOf(arkadInfo(database = "republicate"))) }
+        assertTrue(twin.message!!.contains("named republicate like this one"), twin.message)
+        val shadowed = assertThrows(SkormException::class.java) {
+            importing(kddl = republicate.replace("database republicate", "database app").replace("schema republicate", "schema forum"),
+                infos = arrayOf(arkadInfo(database = "forum")))
+        }
+        assertTrue(shadowed.message!!.contains("named like schema forum"), shadowed.message)
+    }
+
     private fun ResolvedModel.join(receiver: String, name: String): JoinAttribute =
         joins.single { it.receiverClass.endsWith(".$receiver") && it.name == name }
 

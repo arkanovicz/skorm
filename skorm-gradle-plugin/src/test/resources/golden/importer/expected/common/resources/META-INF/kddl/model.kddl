@@ -1,0 +1,16 @@
+import 'arkad.kddl'
+database republicate {
+  schema republicate {
+    table decision {
+      *id serial
+      message -> arkad.message
+      second -> arkad.message?
+      outcome varchar(20)
+    }
+    table ballot {
+      *id serial
+      choice varchar(20)
+      decision_id -- decision
+    }
+  }
+}

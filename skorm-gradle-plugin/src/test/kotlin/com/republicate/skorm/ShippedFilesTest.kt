@@ -51,7 +51,10 @@ class ShippedFilesTest {
               }
             }
         """)
-        generateInto(out, File(models, "root.kddl"), null, "sample.model", "postgresql", readOnly)
+        // the imported kddl schema is found beside the importer; where its generated code is, on the import path
+        val imports = File(dir, "imports")
+        SchemaInfo("arkad", "arkad.model", "arkad", listOf("arkad"), false, emptyList()).write(imports)
+        generateInto(out, File(models, "root.kddl"), null, "sample.model", "postgresql", readOnly, listOf(imports))
     }
 
     private val kddl get() = File(out, "common/resources/${SearchPathResolver.ARTIFACT_DIR}/root.kddl")

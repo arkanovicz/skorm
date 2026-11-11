@@ -9,7 +9,10 @@ class ResolvedModel(
     val name: String,
     /** `ExampleDatabase`, or `MutableExampleDatabase` for the mutable half */
     val databaseClass: String,
+    /** the schemas this kddl schema owns: an imported one is its owner's to generate */
     val schemas: List<ResolvedSchema>,
+    /** the databases of the kddl schemas this one imports */
+    val imports: List<ImportedDatabase>,
     /** foreign-key and many-to-many navigations, in emission order */
     val joins: List<JoinAttribute>,
     /** ksql attributes, in declaration order, the mutations only in the mutable half; empty without a ksql file */
@@ -27,6 +30,20 @@ class ResolvedModel(
     /** whether a ksql attribute of either half names this simple type */
     fun uses(type: String) = halves.any { half -> half.attributes.any { type in it.types } }
 }
+
+/** The database of an imported kddl schema: a property of the importer's database, created with it when absent. */
+class ImportedDatabase(
+    /** `arkad`, for `import 'arkad.kddl'` */
+    val base: String,
+    /** `arkad`: the property holding it */
+    val property: String,
+    /** `com.republicate.arkad.model`, where its generated code is */
+    val destPackage: String,
+    /** `com.republicate.arkad.model.ArkadDatabase`; in the mutable half the mutable one, when its kddl schema generated one */
+    val databaseClass: String,
+    /** whether [databaseClass] is a mutable database: the mutable half then overrides the property, and can create its schemas */
+    val mutable: Boolean
+)
 
 class ResolvedSchema(
     val name: String,

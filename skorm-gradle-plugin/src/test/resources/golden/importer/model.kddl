@@ -1,0 +1,21 @@
+// Frozen input for the golden-output tests: a kddl schema importing another.
+import 'arkad.kddl'
+database republicate {
+
+  schema republicate {
+
+    table decision {
+      *id serial
+      message -> arkad.message             // a link to an imported table: one way, returning its owner's class
+      second -> arkad.message?             // nullable, and a second link to the same table
+      outcome varchar(20)
+    }
+
+    table ballot {
+      *id serial
+      choice varchar(20)
+    }
+
+    ballot *-- decision                    // links between own tables are untouched
+  }
+}

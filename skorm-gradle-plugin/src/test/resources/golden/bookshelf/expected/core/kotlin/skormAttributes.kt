@@ -3,6 +3,7 @@
 package com.republicate.skorm.bookshelf
 
 import com.republicate.skorm.core.*
+import com.republicate.skorm.underlying
 import kotlinx.datetime.*
 import com.republicate.kson.Json
 import kotlin.time.Instant
@@ -152,4 +153,13 @@ INSERT INTO book (title, author_id, genre)
              ( SELECT COUNT(*) FROM borrowing WHERE book_id = {book_id} ) borrowed
         FROM book
         WHERE book_id = {book_id};""".trimIndent(), ::Stats)
+}
+
+/**
+ * Creates the schemas of this kddl schema when the database has none of them, those of its imports first:
+ * true when anything was created. For an initialized database.
+ */
+suspend fun MutableExampleDatabase.createMissingSchemas(): Boolean {
+    val script = { MutableExampleDatabase::class.java.getResource("/META-INF/skorm/bookshelf.sql")!!.readText() }
+    return (processor.underlying as CoreProcessor).createMissingSchemas(listOf("bookshelf"), script)
 }

@@ -6,6 +6,7 @@ import com.republicate.kddl.ASTSchema
 import com.republicate.kddl.ASTTable
 import com.republicate.kddl.FieldType
 import com.republicate.skorm.KotlinTool
+import com.republicate.skorm.SchemaInfo
 import com.republicate.skorm.SkormException
 import com.republicate.skorm.model.RMCompositeType
 import com.republicate.skorm.model.RMDatabase
@@ -26,24 +27,42 @@ import com.republicate.skorm.tableNamed
  */
 class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
 
+    /** what the artifacts on the import path say of their generated code: whose classes an external schema's are */
+    private var imports: List<SchemaInfo> = emptyList()
+
+    /** the kddl schema that owns an external schema, and generated its classes */
+    private fun owner(schema: ASTSchema): SchemaInfo = imports.firstOrNull { schema.sqlName in it.schemas }
+        ?: throw SkormException("schema ${schema.name} is imported, but nothing in skorm.imports generates it: " +
+            "the artifact of the kddl schema that owns it ships ${SchemaInfo.DIR}/<name>.properties")
+
     /**
      * The names of one half. The read-only half names things as declared (`ExampleDatabase`, `Book`);
      * the mutable half prefixes every class with `Mutable`, and each of its classes extends its read-only
      * counterpart. Composite rows are read-only in both halves, so they always take the read-only names.
      */
     private inner class Naming(val mutable: Boolean) {
-        private val prefix = if (mutable) "Mutable" else ""
+        // an imported kddl schema generated read-only has no mutable classes to name
+        private fun prefix(schema: ASTSchema? = null) =
+            if (mutable && !(schema != null && schema.external && owner(schema).readOnly)) "Mutable" else ""
         val readOnly: Naming get() = if (mutable) Naming(false) else this
-        fun database(db: ASTDatabase) = "$prefix${kotlin.pascal(db.sqlName)}Database"
-        fun schema(schema: ASTSchema) = "$prefix${kotlin.pascal(schema.sqlName)}Schema"
-        fun schemaClass(schema: ASTSchema) = "${database(schema.db)}.${schema(schema)}"
-        fun entity(table: ASTTable) = "$prefix${kotlin.pascal(table.sqlName)}"
+        fun database(db: ASTDatabase) = "${prefix()}${kotlin.pascal(db.sqlName)}Database"
+        /** the database class of an imported kddl schema, by its full name: it lives in its own package */
+        fun database(info: SchemaInfo) = "${info.destPackage}.${if (mutable && !info.readOnly) "Mutable" else ""}${kotlin.pascal(sqlName(info.database))}Database"
+        fun schema(schema: ASTSchema) = "${prefix(schema)}${kotlin.pascal(schema.sqlName)}Schema"
+        fun schemaClass(schema: ASTSchema) =
+            "${if (schema.external) database(owner(schema)) else database(schema.db)}.${schema(schema)}"
+        fun entity(table: ASTTable) = "${prefix(table.schema)}${kotlin.pascal(table.sqlName)}"
         fun entityClass(table: ASTTable) = "${schemaClass(table.schema)}.${entity(table)}"
         fun implClass(table: ASTTable) = "${schemaClass(table.schema)}.${entity(table)}Impl"
     }
 
-    /** [readOnly]: generate the read-only half alone, for a build that never writes. */
-    fun resolve(database: ASTDatabase, attributes: RMDatabase?, readOnly: Boolean = false): ResolvedModel {
+    /**
+     * [readOnly]: generate the read-only half alone, for a build that never writes.
+     * [imports]: the kddl schemas found on the import path. Nothing is generated for an external schema:
+     * its classes are its owner's, named here where a link points at them.
+     */
+    fun resolve(database: ASTDatabase, attributes: RMDatabase?, readOnly: Boolean = false, imports: List<SchemaInfo> = emptyList()): ResolvedModel {
+        this.imports = imports
         val mutable = if (readOnly) null else half(database, attributes, Naming(true), null)
         val resolved = half(database, attributes, Naming(false), mutable)
         resolved.joins.forEach { Collisions.checkAccessor(it.receiverClass, it.name, it.label) }
@@ -54,9 +73,13 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
     }
 
     private fun half(database: ASTDatabase, attributes: RMDatabase?, names: Naming, mutableTwin: ResolvedModel?): ResolvedModel {
-        val joins = database.schemas.values.flatMap { joins(it, names) }
+        val own = database.schemas.values.filter { !it.external }
+        // first: a missing import is best reported as such, not through the first link that needs it
+        val imported = importedDatabases(database, names)
+        val joins = own.flatMap { joins(it, names) }
         val queries = attributes?.schemas?.flatMap { rm ->
             val schema = database.schemaNamed(rm.name) ?: throw SkormException("ksql schema ${rm.name}: no such schema in the model")
+            if (schema.external) throw SkormException("ksql schema ${rm.name} is imported: its attributes are declared by the kddl schema that owns it")
             val enums = kotlin.enumDecls(schema).map { it.name }.toSet()
             rm.items.filter { names.mutable || !it.action }
                 .map { checkArguments(it, rm.name, enums); queryAttribute(schema, names, it) }
@@ -64,13 +87,28 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
         return ResolvedModel(
             name = database.sqlName,
             databaseClass = names.database(database),
-            schemas = database.schemas.values.map { schema(it, names, joins, queries) },
+            schemas = own.map { schema(it, names, joins, queries) },
+            imports = imported,
             joins = joins,
             attributes = queries,
             mutable = names.mutable,
             base = if (names.mutable) names.readOnly.database(database) else null,
             mutableTwin = mutableTwin
         )
+    }
+
+    /** The databases of the kddl schemas this one imports itself: it holds them, and brings them up on its processor. */
+    private fun importedDatabases(database: ASTDatabase, names: Naming): List<ImportedDatabase> = database.imports.map { path ->
+        val base = path.substringAfterLast('/').substringBeforeLast('.')
+        val info = imports.firstOrNull { it.base == base }
+            ?: throw SkormException("import '$path': nothing in skorm.imports ships ${SchemaInfo.DIR}/$base.properties, which says where its generated classes are")
+        if (sqlName(info.database) == database.sqlName) throw SkormException(
+            "import '$path': its database is named ${info.database} like this one; two generated databases of one name cannot be told apart")
+        val property = kotlin.camel(sqlName(info.database))
+        database.schemas.values.firstOrNull { !it.external && kotlin.camel(it.sqlName) == property }?.let {
+            throw SkormException("import '$path': its database ${info.database} is named like schema ${it.name}, both would be `$property` on the generated database")
+        }
+        ImportedDatabase(base, property, info.destPackage, names.database(info), mutable = names.mutable && !info.readOnly)
     }
 
     private fun schema(schema: ASTSchema, names: Naming, joins: List<JoinAttribute>, queries: List<QueryAttribute>): ResolvedSchema {
@@ -120,6 +158,11 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
         }
         val name = kotlin.camel(field.sqlName)
         Collisions.checkField(table.name, name)
+        // kddl has no way to name an imported enum; one only gets here as the type of a key a link copies
+        (field.type as? FieldType.NamedEnum)?.let {
+            if (it.enum.schema.external) throw SkormException(
+                "${table.name}.${field.name}: typed by ${it.enum.schema.name}.${it.enum.name}, an enum of an imported schema, which is not supported yet")
+        }
         // the key a subtype inherits stays a key of its rows
         val root = generateSequence(table) { it.parent }.last()
         return ResolvedField(

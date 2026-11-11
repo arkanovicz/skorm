@@ -1,0 +1,14 @@
+// Frozen input for the golden-output tests: attributes of a kddl schema importing another.
+database republicate {
+  schema republicate {
+
+    // an imported entity, returned: qualified by its schema
+    attr Decision.thread: arkad.Message* =
+      SELECT * FROM arkad.message WHERE id >= {message};
+
+    // a composite on an imported entity
+    attr Decision.subject: (arkad.Message, votes: Int) =
+      SELECT m.*, (SELECT count(*) FROM republicate.ballot WHERE decision_id = {id}) votes
+      FROM arkad.message m WHERE m.id = {message};
+  }
+}

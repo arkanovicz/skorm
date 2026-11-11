@@ -5,6 +5,14 @@
 package $package
 
 import com.republicate.skorm.core.*
+#if($resolved.mutableTwin)
+import com.republicate.skorm.underlying
+#foreach ($import in $resolved.mutableTwin.imports)
+#if($import.mutable)
+import ${import.destPackage}.createMissingSchemas
+#end
+#end
+#end
 #if(!$resolved.attributes.isEmpty())
 import kotlinx.datetime.*
 import com.republicate.kson.Json
@@ -32,3 +40,19 @@ internal #if($multiplatform)actual #{end}fun ${resolved.databaseClass}.registerA
 #end
 #end
 }
+#if($resolved.mutableTwin)
+
+/**
+ * Creates the schemas of this kddl schema when the database has none of them, those of its imports first:
+ * true when anything was created. For an initialized database.
+ */
+suspend fun ${resolved.mutableTwin.databaseClass}.createMissingSchemas(): Boolean {
+#foreach ($import in $resolved.mutableTwin.imports)
+#if($import.mutable)
+    val ${import.property}Created = ${import.property}.createMissingSchemas() // first: this one's tables reference its own
+#end
+#end
+    val script = { ${resolved.mutableTwin.databaseClass}::class.java.getResource("/$scriptPath")!!.readText() }
+    return (processor.underlying as CoreProcessor).createMissingSchemas(listOf(#foreach($schema in $resolved.schemas)"$schema.name"#if($foreach.hasNext), #end#end), script)#foreach ($import in $resolved.mutableTwin.imports)#if($import.mutable) || ${import.property}Created#end#end
+}
+#end

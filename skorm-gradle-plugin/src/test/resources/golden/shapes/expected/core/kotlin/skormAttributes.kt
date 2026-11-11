@@ -3,6 +3,7 @@
 package shapes.model
 
 import com.republicate.skorm.core.*
+import com.republicate.skorm.underlying
 import kotlinx.datetime.*
 import com.republicate.kson.Json
 import kotlin.time.Instant
@@ -224,4 +225,13 @@ DELETE FROM person WHERE person_id = {person_id};""".trimIndent())
     // attribute Badge.bearers
     MutableShapesDatabase.other.entity("badge").instanceAttributes.rowSetAttribute<Bearers>("bearers", """
         SELECT person.*, badge.label FROM main.person JOIN other.badge USING (person_id) WHERE badge.label = {label};""".trimIndent(), ::Bearers)
+}
+
+/**
+ * Creates the schemas of this kddl schema when the database has none of them, those of its imports first:
+ * true when anything was created. For an initialized database.
+ */
+suspend fun MutableShapesDatabase.createMissingSchemas(): Boolean {
+    val script = { MutableShapesDatabase::class.java.getResource("/META-INF/skorm/model.sql")!!.readText() }
+    return (processor.underlying as CoreProcessor).createMissingSchemas(listOf("main", "other"), script)
 }

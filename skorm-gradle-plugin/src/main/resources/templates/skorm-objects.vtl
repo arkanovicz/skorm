@@ -122,6 +122,12 @@ open class ${half.databaseClass}(processor: Processor): Database("$half.name", p
     override val readOnly: ${half.base} = ${half.base}(processor)
 #end
 #if($half.mutable)#set($modifier = "override")#{else}#set($modifier = "open")#end
+#foreach ($import in $half.imports)
+#if(!$half.mutable || $import.mutable)
+    /** the database of the imported kddl schema `$import.base`, on this processor: the one already created, or a new one */
+    $modifier val ${import.property}: ${import.databaseClass} by lazy { imported(if (${import.databaseClass}.isInstantiated()) ${import.databaseClass}.instance else null) { ${import.databaseClass}(processor) } }
+#end
+#end
 #foreach ($schema in $half.schemas)
     $modifier val ${schema.objectName}: ${schema.className} by lazy { ${schema.className}(this) }
 #end
@@ -135,6 +141,11 @@ open class ${half.databaseClass}(processor: Processor): Database("$half.name", p
 #end
 #end
         super.initialize()
+#if(!$half.mutable)
+#foreach ($import in $half.imports)
+        if (!${import.property}.populated) ${import.property}.initialize() // after this one, which carries the processor's configuration
+#end
+#end
 #if($half.mutable)
         readOnly.initialize()
 #elseif($half.mutableTwin)

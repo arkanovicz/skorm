@@ -42,8 +42,17 @@ class GoldenOutputTest {
         "shapes.model", "postgresql", readOnly = true
     )
 
-    private fun check(name: String, model: File, attributes: File, destPackage: String, dialect: String, readOnly: Boolean = false) {
-        generateInto(out, model, attributes, destPackage, dialect, readOnly)
+    /** a kddl schema importing another, found with its SchemaInfo in a directory laid out like its artifact */
+    @Test
+    fun importer() = check(
+        "importer",
+        golden.resolve("importer/model.kddl"),
+        golden.resolve("importer/attributes.ksql"),
+        "importer.model", "postgresql", imports = listOf(golden.resolve("importer/imports"))
+    )
+
+    private fun check(name: String, model: File, attributes: File, destPackage: String, dialect: String, readOnly: Boolean = false, imports: List<File> = emptyList()) {
+        generateInto(out, model, attributes, destPackage, dialect, readOnly, imports)
 
         val expected = golden.resolve("$name/expected")
         val actual = out.filesByPath()
@@ -59,7 +68,7 @@ class GoldenOutputTest {
 }
 
 /** Every output of the task, whatever the targets, in the expect/actual form; ConsumerShapesTest compiles the plain call of a single-target module. */
-internal fun generateInto(out: File, model: File, attributes: File?, destPackage: String, dialect: String, readOnly: Boolean = false) {
+internal fun generateInto(out: File, model: File, attributes: File?, destPackage: String, dialect: String, readOnly: Boolean = false, imports: List<File> = emptyList()) {
     val project = ProjectBuilder.builder().build()
     project.pluginManager.apply("com.republicate.skorm")
     (project.extensions.getByName(EXTENSION_NAME) as SkormParams).also {
@@ -70,6 +79,7 @@ internal fun generateInto(out: File, model: File, attributes: File?, destPackage
         it.core.set(true)
         it.client.set(true)
         it.readOnly.set(readOnly)
+        it.imports.from(imports.map { root -> root.absoluteFile })
         it.outputDirectory.set(out)
     }
     (project.tasks.getByName(GEN_TASK_NAME) as GenerateSkormCodeTask).also { it.multiplatform.set(true) }.generate()

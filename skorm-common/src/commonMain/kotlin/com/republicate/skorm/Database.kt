@@ -36,6 +36,17 @@ open class Database protected constructor(name: String, processor: Processor): A
     override fun close() {
         processor.close()
     }
+
+    /**
+     * The database of a kddl schema this one imports: the one already [created], or a new one. Both stand for
+     * parts of one physical database, so they share a processor: its connections, its transactions.
+     */
+    protected fun <D: Database> imported(created: D?, create: () -> D): D {
+        if (created == null) return create()
+        if (created.processor.underlying !== processor.underlying)
+            throw SkormException("database ${created.name} is imported by database $name: they must be created on the same processor")
+        return created
+    }
 }
 
 open class Schema protected constructor(name: String, parent: Database) : AttributeHolder(name, parent) {

@@ -178,21 +178,30 @@ class ModelInputsTest {
         """)
     }
 
-    /** a jar shipping [model] where an artifact does */
+    // what the artifact of the imported kddl schema says of its generated code: an import is not generated without it
+    private val arkadInfo = "database=arkad\nimports=\npackage=arkad.model\nreadOnly=false\nschemas=arkad\n"
+
+    /** a jar shipping [model] where an artifact does, with its schema info */
     private fun jar(path: String, model: String) = File(dir, path).apply {
         parentFile.mkdirs()
         ZipOutputStream(outputStream()).use { zip ->
             zip.putNextEntry(ZipEntry("${SearchPathResolver.ARTIFACT_DIR}/arkad.kddl"))
             zip.write(model.trimIndent().toByteArray())
             zip.closeEntry()
+            zip.putNextEntry(ZipEntry("${SchemaInfo.DIR}/arkad.properties"))
+            zip.write(arkadInfo.toByteArray())
+            zip.closeEntry()
         }
     }
 
-    // the generated Kotlin still holds the imported schema's classes: not asserted
+    /** nothing of the imported schema is created or generated: its table is referenced, its class named */
     private fun assertImportedOnly() {
         assertContains(sql, "CREATE TABLE decision (")
         assertContains(sql, "REFERENCES arkad.message")
         assertFalse("CREATE TABLE message (" in sql, sql)
+        assertContains(objects, "interface Decision")
+        assertContains(objects, "suspend fun message(): arkad.model.ArkadDatabase.ArkadSchema.Message")
+        assertFalse("interface Message" in objects, objects)
     }
 
     private fun assertJarWatched(vararg args: String) {
@@ -213,6 +222,7 @@ class ModelInputsTest {
     private fun assertDirectoryWatched(vararg args: String) {
         importing("\"lib\"")
         write("lib/arkad.kddl", arkad("serial"))
+        write("lib/${SchemaInfo.DIR}/arkad.properties", arkadInfo)
         assertEquals(TaskOutcome.SUCCESS, generate(*args))
         assertImportedOnly()
         assertContains(sql, "message integer")
