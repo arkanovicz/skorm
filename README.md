@@ -79,7 +79,7 @@ database todo_app {
 ```kotlin
 plugins {
     kotlin("multiplatform") version "2.4.0"
-    id("com.republicate.skorm") version "0.32"
+    id("com.republicate.skorm") version "0.33"
 }
 
 skorm {
