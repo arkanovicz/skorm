@@ -10,6 +10,8 @@ All notable changes to Skorm are documented in this file.
 
 ### Fixed
 - With Gradle's configuration cache on, editing the model reran generation from the model as first parsed: the task kept it in a field, and the field was stored with the cached configuration. Only a change that discards the cache entry (a build script, the version catalog) brought the new model in. The model and the attributes are now read by the task's action
+- The generator took the model's spelling for the database's, while kddl writes every identifier in snake. A name with a capital in it reached the navigation SQL as written (`join_table.studentId` for a `student_id` column) and gave a lowercased property (`studentid`). That is what kddl names the column of a link between two tables keyed alike (two `id`s), one-to-many or many-to-many, so those navigations never worked; a model written in camel (`firstName varchar(50)`) failed the same way. Every generated name now starts from the name kddl gives the object in SQL, through kddl's own transform: a model written in camel generates what its snake twin does
+- A ksql attribute on a table of several words (`attr BookAuthor.rank`) was refused, "table not found: bookauthor", and would have registered on an entity that does not exist (`book_author` for `bookAuthor`). Schemas and receivers named in a ksql file are now matched by their SQL name
 
 ## [0.32] - 2026-11-08
 

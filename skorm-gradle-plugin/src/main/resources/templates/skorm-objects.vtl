@@ -46,7 +46,7 @@ import ${package}.${resolved.databaseClass}.${schema.className}.${enum.name}
                 // rows are read joined with the subtypes' tables: each comes back as the class its kind names
                 override val source = "$entity.source"
                 override fun new(kind: String?): ${entity.className} = when (kind) {
-                    "$entity.tableName" -> new()
+                    "$entity.kindValue" -> new()
 #foreach ($kind in $entity.kinds)
                     "$kind.first" -> ${kind.second}.new()
 #end

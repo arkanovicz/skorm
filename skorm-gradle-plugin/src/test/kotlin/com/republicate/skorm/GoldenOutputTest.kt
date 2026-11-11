@@ -43,21 +43,7 @@ class GoldenOutputTest {
     )
 
     private fun check(name: String, model: File, attributes: File, destPackage: String, dialect: String, readOnly: Boolean = false) {
-        val project = ProjectBuilder.builder().build()
-        project.pluginManager.apply("com.republicate.skorm")
-        (project.extensions.getByName(EXTENSION_NAME) as SkormParams).also {
-            it.model.set(model.absoluteFile)
-            it.attributes.set(attributes.absoluteFile)
-            it.destPackage.set(destPackage)
-            it.dialect.set(dialect)
-            // every output, whatever the targets
-            it.core.set(true)
-            it.client.set(true)
-            it.readOnly.set(readOnly)
-            it.outputDirectory.set(out)
-        }
-        // the expect/actual form; ConsumerShapesTest compiles the plain call of a single-target module
-        (project.tasks.getByName(GEN_TASK_NAME) as GenerateSkormCodeTask).also { it.multiplatform.set(true) }.generate()
+        generateInto(out, model, attributes, destPackage, dialect, readOnly)
 
         val expected = golden.resolve("$name/expected")
         val actual = out.filesByPath()
@@ -70,7 +56,24 @@ class GoldenOutputTest {
         assertEquals(wanted.keys.sorted(), actual.keys.sorted(), "$name: generated files")
         for ((path, file) in wanted) assertEquals(file.readText(), actual.getValue(path).readText(), "$name: $path")
     }
-
-    private fun File.filesByPath() =
-        walk().filter { it.isFile }.associateBy { it.relativeTo(this).invariantSeparatorsPath }
 }
+
+/** Every output of the task, whatever the targets, in the expect/actual form; ConsumerShapesTest compiles the plain call of a single-target module. */
+internal fun generateInto(out: File, model: File, attributes: File?, destPackage: String, dialect: String, readOnly: Boolean = false) {
+    val project = ProjectBuilder.builder().build()
+    project.pluginManager.apply("com.republicate.skorm")
+    (project.extensions.getByName(EXTENSION_NAME) as SkormParams).also {
+        it.model.set(model.absoluteFile)
+        attributes?.let { file -> it.attributes.set(file.absoluteFile) }
+        it.destPackage.set(destPackage)
+        it.dialect.set(dialect)
+        it.core.set(true)
+        it.client.set(true)
+        it.readOnly.set(readOnly)
+        it.outputDirectory.set(out)
+    }
+    (project.tasks.getByName(GEN_TASK_NAME) as GenerateSkormCodeTask).also { it.multiplatform.set(true) }.generate()
+}
+
+internal fun File.filesByPath() =
+    walk().filter { it.isFile }.associateBy { it.relativeTo(this).invariantSeparatorsPath }

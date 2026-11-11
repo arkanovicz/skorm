@@ -87,6 +87,86 @@ class ResolverTest {
         assertTrue(books.sql.contains("JOIN main.book AS towards_table") && books.sql.endsWith("{tag_id};"))
     }
 
+    private val campus = """
+        database campus {
+          schema main {
+            table student {
+              *id serial
+              name varchar(20)
+            }
+            table course { *id serial }
+            table lesson { *id serial }
+            table follows {
+              follower -- student
+              followed -- student
+            }
+            student *-* course
+            lesson *-- course
+          }
+        }
+    """.trimIndent()
+
+    @Test
+    fun `a many-to-many between two tables keyed alike names its columns as the database does`() {
+        val model = resolve(campus)
+        val courses = model.join("Student", "courses")
+        val students = model.join("Course", "students")
+        assertEquals(listOf("id"), courses.params)
+        assertTrue(courses.sql.endsWith("ON towards_table.id = join_table.course_id WHERE join_table.student_id = {id};"), courses.sql)
+        assertTrue(students.sql.endsWith("ON towards_table.id = join_table.student_id WHERE join_table.course_id = {id};"), students.sql)
+        // the join table is an entity too: its fields are what the runtime makes of those columns
+        val join = model.schemas.single().entities.single { it.tableName == "student_course" }
+        assertEquals(listOf("studentId", "courseId"), join.fields.map { it.name })
+    }
+
+    @Test
+    fun `a link between two tables keyed alike is named after the table, its column as the database names it`() {
+        val model = resolve(campus)
+        val course = model.join("Lesson", "course")
+        val lessons = model.join("Course", "lessons")
+        assertEquals(listOf("course_id"), course.params)
+        assertEquals("SELECT * FROM main.course WHERE course.id = {course_id};", course.sql)
+        assertEquals("SELECT * FROM main.lesson WHERE lesson.course_id = {id};", lessons.sql)
+        val lesson = model.schemas.single().entities.single { it.tableName == "lesson" }
+        assertEquals(listOf("id", "courseId"), lesson.fields.map { it.name })
+    }
+
+    @Test
+    fun `a table linked to itself many-to-many declares its join table, and gets both collections`() {
+        val refused = assertThrows(com.republicate.kddl.SemanticException::class.java) {
+            resolve("database d { schema s { table student { *id serial }\n student *-* student } }")
+        }
+        assertTrue(refused.message!!.contains("declare the join table"), refused.message)
+
+        val model = resolve(campus)
+        val followeds = model.join("Student", "followeds")
+        val followers = model.join("Student", "followers")
+        assertTrue(followeds.sql.endsWith("ON towards_table.id = join_table.followed WHERE join_table.follower = {id};"), followeds.sql)
+        assertTrue(followers.sql.endsWith("ON towards_table.id = join_table.follower WHERE join_table.followed = {id};"), followers.sql)
+    }
+
+    @Test
+    fun `an attribute on a table of several words registers on the entity as it is named`() {
+        val model = resolve("""
+            database d {
+              schema s {
+                table book_author { *id serial }
+              }
+            }
+        """.trimIndent(), """
+            database d {
+              schema s {
+                attr BookAuthor.rank: Int =
+                  SELECT count(*) FROM book_author WHERE id <= {id};
+              }
+            }
+        """.trimIndent())
+        val entity = model.schemas.single().entities.single()
+        val rank = model.attributes.single()
+        assertEquals("bookAuthor", entity.objectName)
+        assertEquals(".entity(\"bookAuthor\").instanceAttributes", rank.registrationPath)
+    }
+
     @Test
     fun `two links to the same table are told apart by their column`() {
         val model = resolve("""

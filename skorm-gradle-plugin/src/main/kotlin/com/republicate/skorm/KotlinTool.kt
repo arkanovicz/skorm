@@ -1,14 +1,33 @@
 package com.republicate.skorm
 
+import com.republicate.kddl.ASTDatabase
 import com.republicate.kddl.ASTEnum
 import com.republicate.kddl.ASTField
 import com.republicate.kddl.ASTForeignKey
 import com.republicate.kddl.ASTSchema
 import com.republicate.kddl.ASTTable
+import com.republicate.kddl.DBObject
 import com.republicate.kddl.FieldType
 import com.republicate.kddl.SemanticException
+import com.republicate.kddl.postgresql.PostgreSQLFormatter
 import org.atteo.evo.inflector.English
 import java.util.*
+
+// what kddl itself applies to every identifier it writes; no dialect overrides it
+private val sqlNames = PostgreSQLFormatter(quoted = false, uppercase = false)
+
+/** The name as it is in the database: a model is spelled as its author likes, kddl writes its SQL in snake. */
+fun sqlName(modelName: String): String = sqlNames.transform(modelName)
+
+/**
+ * The generator names nothing after `name`, the author's spelling, but after this one: SQL takes it as is,
+ * and a Kotlin name derived from it is the one the runtime derives from the column.
+ */
+val DBObject.sqlName: String get() = sqlName(name)
+
+/** A schema, or a table, by its name spelled either way: a ksql file names them as it likes too (`BookAuthor`, `book_author`). */
+fun ASTDatabase.schemaNamed(name: String): ASTSchema? = sqlName(name).let { wanted -> schemas.values.find { it.sqlName == wanted } }
+fun ASTSchema.tableNamed(name: String): ASTTable? = sqlName(name).let { wanted -> tables.values.find { it.sqlName == wanted } }
 
 @Suppress("unused")
 class KotlinTool {
@@ -18,8 +37,8 @@ class KotlinTool {
 
     /** Kotlin type name for a field's value. */
     fun type(field: ASTField): String = when (val t = field.type) {
-        is FieldType.NamedEnum -> pascal(t.enum.name)
-        is FieldType.InlineEnum -> field.alias ?: pascal(field.name)
+        is FieldType.NamedEnum -> pascal(t.enum.sqlName)
+        is FieldType.InlineEnum -> field.alias ?: pascal(field.sqlName)
         is FieldType.Primitive -> kotlinType(t.base)
     }
 
@@ -63,18 +82,18 @@ class KotlinTool {
             for (field in table.fields.values) {
                 when (val t = field.type) {
                     is FieldType.NamedEnum -> named.add(t.enum)
-                    is FieldType.InlineEnum -> inline.add(EnumDecl(field.alias ?: pascal(field.name), t.values))
+                    is FieldType.InlineEnum -> inline.add(EnumDecl(field.alias ?: pascal(field.sqlName), t.values))
                     is FieldType.Primitive -> {}
                 }
             }
         }
-        return named.map { EnumDecl(pascal(it.name), it.values) } + inline
+        return named.map { EnumDecl(pascal(it.sqlName), it.values) } + inline
     }
 
     /** Enum class name to reference from the getter/setter of an enum-typed [field]. */
     fun enumName(field: ASTField): String = when (val t = field.type) {
-        is FieldType.NamedEnum -> pascal(t.enum.name)
-        is FieldType.InlineEnum -> field.alias ?: pascal(field.name)
+        is FieldType.NamedEnum -> pascal(t.enum.sqlName)
+        is FieldType.InlineEnum -> field.alias ?: pascal(field.sqlName)
         is FieldType.Primitive -> throw IllegalArgumentException("not an enum field: ${field.name}")
     }
 
@@ -104,9 +123,9 @@ class KotlinTool {
             if (it.isEmpty()) throw IllegalStateException("Foreign key target table '${fk.towards.name}' has no primary key")
             if (it.size != fk.fields.size) throw IllegalStateException("Foreign key column count (${fk.fields.size}) doesn't match target primary key size (${it.size}) for FK to '${fk.towards.name}'")
         }
-        return "SELECT * FROM ${source ?: "${fk.towards.schema.name}.${fk.towards.name}"} WHERE ${
+        return "SELECT * FROM ${source ?: "${fk.towards.schema.sqlName}.${fk.towards.sqlName}"} WHERE ${
             targetPk.zip(fk.fields).joinToString(" AND ") {
-                "${fk.towards.name}.${it.first.name} = {${it.second.name}}"
+                "${fk.towards.sqlName}.${it.first.sqlName} = {${it.second.sqlName}}"
             }
         };"
     }
@@ -116,9 +135,9 @@ class KotlinTool {
             if (it.isEmpty()) throw IllegalStateException("Foreign key target table '${fk.towards.name}' has no primary key")
             if (fk.fields.size != it.size) throw IllegalStateException("Foreign key column count (${fk.fields.size}) doesn't match target primary key size (${it.size}) for FK from '${fk.from.name}'")
         }
-        return "SELECT * FROM ${source ?: "${fk.from.schema.name}.${fk.from.name}"} WHERE ${
+        return "SELECT * FROM ${source ?: "${fk.from.schema.sqlName}.${fk.from.sqlName}"} WHERE ${
             fk.fields.zip(targetPk).joinToString(" AND ") {
-                "${fk.from.name}.${it.first.name} = {${it.second.name}}"
+                "${fk.from.sqlName}.${it.first.sqlName} = {${it.second.sqlName}}"
             }
         };"
     }
@@ -140,19 +159,19 @@ class KotlinTool {
         val fromPk = from.getPrimaryKey().also {
             if (it.isEmpty()) throw IllegalStateException("Join source table '${from.name}' has no primary key")
         }
-        val towardsRows = towardsSource?.let { "(SELECT * FROM $it)" } ?: "${towards.schema.name}.${towards.name}"
-        return "SELECT towards_table.* FROM ${joinTable.schema.name}.${joinTable.name} AS join_table JOIN $towardsRows AS towards_table ON ${
+        val towardsRows = towardsSource?.let { "(SELECT * FROM $it)" } ?: "${towards.schema.sqlName}.${towards.sqlName}"
+        return "SELECT towards_table.* FROM ${joinTable.schema.sqlName}.${joinTable.sqlName} AS join_table JOIN $towardsRows AS towards_table ON ${
             towardsPk.zip(towardsFk.fields).joinToString(" AND ") {
-                "towards_table.${it.first.name} = join_table.${it.second.name}"
+                "towards_table.${it.first.sqlName} = join_table.${it.second.sqlName}"
             }
         } WHERE ${
             fromFk.fields.zip(fromPk).joinToString(" AND ") {
-                "join_table.${it.first.name} = {${it.second.name}}"
+                "join_table.${it.first.sqlName} = {${it.second.sqlName}}"
             }
         };"
     }
 
-    fun fieldNames(fields: Set<ASTField>) = fields.joinToString(",") { "\"${it.name}\"" }
+    fun fieldNames(fields: Set<ASTField>) = fields.joinToString(",") { "\"${it.sqlName}\"" }
 
     fun names(fields: Collection<String>) = fields.joinToString(",") { "\"$it\"" }
 
@@ -178,8 +197,7 @@ class KotlinTool {
     fun isJoinTable(table: ASTTable) =
         table.foreignKeys.size == 2 && table.foreignKeys.flatMap { it.fields }.toSet() == table.fields.values.toSet()
 
-    fun attributeName(fieldName: String) =
-        camel(fieldName.replace(Regex("_id$|Id$"), ""))
+    fun attributeName(column: String) = camel(column.removeSuffix("_id"))
 
     fun isUniqueFkDest(fk: ASTForeignKey) =
         !fk.from.foreignKeys.filter { it != fk }.map { it -> it.towards }.contains(fk.towards)

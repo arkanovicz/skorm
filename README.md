@@ -332,6 +332,8 @@ database.initialize()
 
 The kddl (Kotlin Data Definition Language) format defines your database structure. It generates both SQL DDL scripts and Kotlin classes.
 
+Spell the model as you like: kddl writes snake in the database (`firstName` and `first_name` both give a `first_name` column), and the generated Kotlin is camel either way (`firstName`).
+
 #### Basic Structure
 
 ```

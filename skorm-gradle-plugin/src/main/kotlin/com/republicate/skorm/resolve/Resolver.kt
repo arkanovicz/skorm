@@ -11,6 +11,9 @@ import com.republicate.skorm.model.RMCompositeType
 import com.republicate.skorm.model.RMDatabase
 import com.republicate.skorm.model.RMItem
 import com.republicate.skorm.model.RMSimpleType
+import com.republicate.skorm.schemaNamed
+import com.republicate.skorm.sqlName
+import com.republicate.skorm.tableNamed
 
 /**
  * Derives the [ResolvedModel] from the kddl structure and the ksql attributes.
@@ -30,10 +33,10 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
     private inner class Naming(val mutable: Boolean) {
         private val prefix = if (mutable) "Mutable" else ""
         val readOnly: Naming get() = if (mutable) Naming(false) else this
-        fun database(db: ASTDatabase) = "$prefix${kotlin.pascal(db.name)}Database"
-        fun schema(schema: ASTSchema) = "$prefix${kotlin.pascal(schema.name)}Schema"
+        fun database(db: ASTDatabase) = "$prefix${kotlin.pascal(db.sqlName)}Database"
+        fun schema(schema: ASTSchema) = "$prefix${kotlin.pascal(schema.sqlName)}Schema"
         fun schemaClass(schema: ASTSchema) = "${database(schema.db)}.${schema(schema)}"
-        fun entity(table: ASTTable) = "$prefix${kotlin.pascal(table.name)}"
+        fun entity(table: ASTTable) = "$prefix${kotlin.pascal(table.sqlName)}"
         fun entityClass(table: ASTTable) = "${schemaClass(table.schema)}.${entity(table)}"
         fun implClass(table: ASTTable) = "${schemaClass(table.schema)}.${entity(table)}Impl"
         /** a ksql receiver or entity type, by its name in the ksql file */
@@ -54,13 +57,13 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
     private fun half(database: ASTDatabase, attributes: RMDatabase?, names: Naming, mutableTwin: ResolvedModel?): ResolvedModel {
         val joins = database.schemas.values.flatMap { joins(it, names) }
         val queries = attributes?.schemas?.flatMap { rm ->
-            val schema = database.schemas[rm.name] ?: throw SkormException("ksql schema ${rm.name}: no such schema in the model")
+            val schema = database.schemaNamed(rm.name) ?: throw SkormException("ksql schema ${rm.name}: no such schema in the model")
             val enums = kotlin.enumDecls(schema).map { it.name }.toSet()
             rm.items.filter { names.mutable || !it.action }
                 .map { checkArguments(it, rm.name, enums); queryAttribute(schema, names, it) }
         } ?: emptyList()
         return ResolvedModel(
-            name = database.name,
+            name = database.sqlName,
             databaseClass = names.database(database),
             schemas = database.schemas.values.map { schema(it, names, joins, queries) },
             joins = joins,
@@ -74,9 +77,9 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
     private fun schema(schema: ASTSchema, names: Naming, joins: List<JoinAttribute>, queries: List<QueryAttribute>): ResolvedSchema {
         val schemaClass = names.schemaClass(schema)
         return ResolvedSchema(
-            name = schema.name,
+            name = schema.sqlName,
             className = names.schema(schema),
-            objectName = kotlin.camel(schema.name),
+            objectName = kotlin.camel(schema.sqlName),
             base = if (names.mutable) names.readOnly.schemaClass(schema) else null,
             enums = kotlin.enumDecls(schema).map { EnumDecl(it.name, it.values) },
             entities = schema.tables.values.map { entity(it, names, joins, queries) },
@@ -91,10 +94,10 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
             .flatMap { ancestor -> ancestor.fields.values.map { field(ancestor, it) } }
         Collisions.checkHierarchy(table)
         return ResolvedEntity(
-            tableName = table.name,
+            tableName = table.sqlName,
             className = names.entity(table),
             implClass = "${names.entity(table)}Impl",
-            objectName = kotlin.camel(table.name),
+            objectName = kotlin.camel(table.sqlName),
             base = if (names.mutable) names.readOnly.entityClass(table) else null,
             key = (inherited + own).filter { it.primaryKey },
             fields = inherited + own,
@@ -102,6 +105,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
             parentClass = table.parent?.let { names.entityClass(it) },
             parentImplClass = table.parent?.let { names.implClass(it) },
             source = sourceOf(table),
+            // a kind is a value, not an identifier: the label kddl gave it, the table's name as written
             kinds = descendants(table).map { it.name to names.entityClass(it) },
             kindValue = if (table.parent != null || table.children.isNotEmpty()) table.name else null,
             joins = joins.filter { it.receiverClass == entityClass },
@@ -115,7 +119,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
             is FieldType.NamedEnum -> FieldType.InlineEnum(t.enum.values).toString()
             else -> t.toString()
         }
-        val name = kotlin.camel(field.name)
+        val name = kotlin.camel(field.sqlName)
         Collisions.checkField(table.name, name)
         // the key a subtype inherits stays a key of its rows
         val root = generateSequence(table) { it.parent }.last()
@@ -137,7 +141,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
         table.getPrimaryKey().ifEmpty { table.parent?.let { key(it) } ?: emptySet() }
 
     private fun descendants(table: ASTTable): List<ASTTable> =
-        table.children.sortedBy { it.name }.flatMap { listOf(it) + descendants(it) }
+        table.children.sortedBy { it.sqlName }.flatMap { listOf(it) + descendants(it) }
 
     /**
      * What a table with descendants is read from, so that a row comes back complete and as its kind:
@@ -147,9 +151,9 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
     private fun sourceOf(table: ASTTable): String? {
         val below = descendants(table)
         if (below.isEmpty()) return null
-        val key = key(table).joinToString(", ") { it.name }
-        return "${table.schema.name}.${table.name}" + below.joinToString("") {
-            " LEFT JOIN ${it.schema.name}.base_${it.name} USING ($key)"
+        val key = key(table).joinToString(", ") { it.sqlName }
+        return "${table.schema.sqlName}.${table.sqlName}" + below.joinToString("") {
+            " LEFT JOIN ${it.schema.sqlName}.base_${it.sqlName} USING ($key)"
         }
     }
 
@@ -168,41 +172,40 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
      * (`club_code` -> `club`).
      */
     private fun navigationName(column: String, towards: ASTTable): String {
-        val key = towards.getPrimaryKey().singleOrNull()?.name ?: return kotlin.attributeName(column)
-        if (column == key) return kotlin.camel(towards.name)
+        val key = towards.getPrimaryKey().singleOrNull()?.sqlName ?: return kotlin.attributeName(column)
+        if (column == key) return kotlin.camel(towards.sqlName)
         // a `_<key>` suffix is the same noise as `_id`
-        val bare = column.removeSuffix("_$key").removeSuffix(kotlin.pascal(key))
-        return kotlin.attributeName(bare)
+        return kotlin.attributeName(column.removeSuffix("_$key"))
     }
 
     private fun foreignKey(fk: ASTForeignKey, names: Naming): List<JoinAttribute> {
         val fromClass = names.entityClass(fk.from)
         val towardsClass = names.entityClass(fk.towards)
-        val column = fk.fields.first().name
+        val column = fk.fields.first().sqlName
         val forwardName = when {
             fk.fields.size == 1 -> navigationName(column, fk.towards)
-            kotlin.isUniqueFkDest(fk) -> kotlin.camel(fk.towards.name)
-            else -> kotlin.attributeName(column) + kotlin.pascal(fk.towards.name)
+            kotlin.isUniqueFkDest(fk) -> kotlin.camel(fk.towards.sqlName)
+            else -> kotlin.attributeName(column) + kotlin.pascal(fk.towards.sqlName)
         }
         val forward = JoinAttribute(
             label = "forward foreign key",
-            ownerSchema = kotlin.camel(fk.from.schema.name), ownerEntity = kotlin.camel(fk.from.name),
+            ownerSchema = kotlin.camel(fk.from.schema.sqlName), ownerEntity = kotlin.camel(fk.from.sqlName),
             receiverClass = fromClass, name = forwardName, targetClass = towardsClass,
             nullable = !fk.nonNull, multiple = false,
             sql = kotlin.foreignKeyForwardQuery(fk, sourceOf(fk.towards)),
-            params = fk.fields.map { it.name }
+            params = fk.fields.map { it.sqlName }
         )
         if (!fk.bidirectional) return listOf(forward)
         val reverseBase =
-            if (kotlin.isUniqueFkDest(fk)) kotlin.camel(fk.from.name)
-            else kotlin.attributeName(column) + kotlin.pascal(fk.from.name)
+            if (kotlin.isUniqueFkDest(fk)) kotlin.camel(fk.from.sqlName)
+            else kotlin.attributeName(column) + kotlin.pascal(fk.from.sqlName)
         val reverse = JoinAttribute(
             label = "reverse foreign key",
-            ownerSchema = kotlin.camel(fk.towards.schema.name), ownerEntity = kotlin.camel(fk.towards.name),
+            ownerSchema = kotlin.camel(fk.towards.schema.sqlName), ownerEntity = kotlin.camel(fk.towards.sqlName),
             receiverClass = towardsClass, name = kotlin.plural(reverseBase), targetClass = fromClass,
             nullable = false, multiple = true,
             sql = kotlin.foreignKeyReverseQuery(fk, sourceOf(fk.from)),
-            params = fk.towards.getPrimaryKey().map { it.name }
+            params = fk.towards.getPrimaryKey().map { it.sqlName }
         )
         return listOf(forward, reverse)
     }
@@ -214,24 +217,24 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
         val right = rightFk.towards
         fun classOf(table: ASTTable) = names.entityClass(table)
         // the collection on each side is named after the far side's column, or its table for a multi-column key
-        val rightToLeftBase = if (leftFk.fields.size == 1) navigationName(leftFk.fields.first().name, left) else kotlin.camel(left.name)
-        val leftToRightBase = if (rightFk.fields.size == 1) navigationName(rightFk.fields.first().name, right) else kotlin.camel(right.name)
+        val rightToLeftBase = if (leftFk.fields.size == 1) navigationName(leftFk.fields.first().sqlName, left) else kotlin.camel(left.sqlName)
+        val leftToRightBase = if (rightFk.fields.size == 1) navigationName(rightFk.fields.first().sqlName, right) else kotlin.camel(right.sqlName)
         return listOf(
             JoinAttribute(
                 label = "left to right n-n join",
-                ownerSchema = kotlin.camel(left.schema.name), ownerEntity = kotlin.camel(left.name),
+                ownerSchema = kotlin.camel(left.schema.sqlName), ownerEntity = kotlin.camel(left.sqlName),
                 receiverClass = classOf(left), name = kotlin.plural(leftToRightBase), targetClass = classOf(right),
                 nullable = false, multiple = true,
                 sql = kotlin.joinTableQuery(join, false, sourceOf(right)),
-                params = left.getPrimaryKey().map { it.name }
+                params = left.getPrimaryKey().map { it.sqlName }
             ),
             JoinAttribute(
                 label = "right to left n-n join",
-                ownerSchema = kotlin.camel(right.schema.name), ownerEntity = kotlin.camel(right.name),
+                ownerSchema = kotlin.camel(right.schema.sqlName), ownerEntity = kotlin.camel(right.sqlName),
                 receiverClass = classOf(right), name = kotlin.plural(rightToLeftBase), targetClass = classOf(left),
                 nullable = false, multiple = true,
                 sql = kotlin.joinTableQuery(join, true, sourceOf(left)),
-                params = right.getPrimaryKey().map { it.name }
+                params = right.getPrimaryKey().map { it.sqlName }
             )
         )
     }
@@ -263,8 +266,11 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
         }
     }
 
+    private fun receiver(schema: ASTSchema, name: String): ASTTable =
+        schema.tableNamed(name) ?: throw SkormException("ksql receiver $name: no such table in schema ${schema.name}")
+
     private fun queryAttribute(schema: ASTSchema, names: Naming, item: RMItem): QueryAttribute {
-        val schemaName = schema.name
+        val schemaName = schema.sqlName
         val schemaClass = names.schemaClass(schema)
         val type = item.type
         val composite = (type as? RMCompositeType)?.let { c ->
@@ -336,7 +342,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
             name = item.name,
             schema = kotlin.camel(schemaName),
             receiverClass = item.receiver?.let { names.entityClass(schema, it) } ?: schemaClass,
-            registrationPath = item.receiver?.let { ".entity(\"${kotlin.snake(it)}\").instanceAttributes" } ?: "",
+            registrationPath = item.receiver?.let { ".entity(\"${kotlin.camel(receiver(schema, it).sqlName)}\").instanceAttributes" } ?: "",
             arguments = item.arguments?.map { (name, declared) -> name to kotlinArgumentType(declared) } ?: emptyList(),
             verb = verb, entityRows = isEntity, generics = generics, cast = cast,
             coreRegistration = core, clientRegistration = client, factory = factory,

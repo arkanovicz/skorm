@@ -108,14 +108,14 @@ abstract class GenerateSkormCodeTask : BaseModelGenerationTask() {
     /** An attribute's declared arguments must match the parameters its SQL actually needs. */
     private fun checkAttributeParameters() {
         for (schema in attributeModel!!.schemas) {
-            val dbSchema = database.schemas[schema.name] ?: throw SkormException("schema not found: ${schema.name}")
+            val dbSchema = database.schemaNamed(schema.name) ?: throw SkormException("schema not found: ${schema.name}")
             for (item in schema.items) {
                 val def = AttributeDefinition.parse(item.sql!!)
                 item.parameters.addAll(def.parameters())
                 val externalParameters = def.parameters().toMutableSet()
                 item.receiver?.let {
-                    val table = dbSchema.tables[it.lowercase()] ?: throw SkormException("table not found: ${it.lowercase()}")
-                    externalParameters.removeAll(table.fields.keys)
+                    val table = dbSchema.tableNamed(it) ?: throw SkormException("table not found: $it")
+                    externalParameters.removeAll(table.fields.values.map { field -> field.sqlName })
                 }
                 val declaredArguments = item.arguments?.map { it.first }?.toSet() ?: setOf()
                 if (declaredArguments != externalParameters) throw SkormException(
