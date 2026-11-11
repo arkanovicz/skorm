@@ -32,10 +32,18 @@ internal actual fun ShapesDatabase.registerAttributes() {
     ShapesDatabase.main.entity("address").instanceAttributes.rowAttribute<ShapesDatabase.MainSchema.Country>("country", setOf("code"), ShapesDatabase.MainSchema.Country)
     // reverse foreign key attribute
     ShapesDatabase.main.entity("country").instanceAttributes.rowSetAttribute<ShapesDatabase.MainSchema.Address>("addresses", setOf("code"), ShapesDatabase.MainSchema.Address)
+    // forward foreign key attribute
+    ShapesDatabase.main.entity("lesson").instanceAttributes.rowAttribute<ShapesDatabase.MainSchema.Course>("course", setOf("course_id"), ShapesDatabase.MainSchema.Course)
+    // reverse foreign key attribute
+    ShapesDatabase.main.entity("course").instanceAttributes.rowSetAttribute<ShapesDatabase.MainSchema.Lesson>("lessons", setOf("id"), ShapesDatabase.MainSchema.Lesson)
     // left to right n-n join attribute
     ShapesDatabase.main.entity("person").instanceAttributes.rowSetAttribute<ShapesDatabase.MainSchema.Address>("addresses", setOf("person_id"), ShapesDatabase.MainSchema.Address)
     // right to left n-n join attribute
     ShapesDatabase.main.entity("address").instanceAttributes.rowSetAttribute<ShapesDatabase.MainSchema.Person>("persons", setOf("address_id"), ShapesDatabase.MainSchema.Person)
+    // left to right n-n join attribute
+    ShapesDatabase.main.entity("student").instanceAttributes.rowSetAttribute<ShapesDatabase.MainSchema.Course>("courses", setOf("id"), ShapesDatabase.MainSchema.Course)
+    // right to left n-n join attribute
+    ShapesDatabase.main.entity("course").instanceAttributes.rowSetAttribute<ShapesDatabase.MainSchema.Student>("students", setOf("id"), ShapesDatabase.MainSchema.Student)
     // forward foreign key attribute
     ShapesDatabase.other.entity("badge").instanceAttributes.rowAttribute<ShapesDatabase.MainSchema.Person>("person", setOf("person_id"), ShapesDatabase.MainSchema.Person)
     // reverse foreign key attribute
@@ -105,10 +113,18 @@ internal actual fun ShapesDatabase.registerAttributes() {
     MutableShapesDatabase.main.entity("address").instanceAttributes.rowAttribute<MutableShapesDatabase.MutableMainSchema.MutableCountry>("country", setOf("code"), MutableShapesDatabase.MutableMainSchema.MutableCountry)
     // reverse foreign key attribute
     MutableShapesDatabase.main.entity("country").instanceAttributes.rowSetAttribute<MutableShapesDatabase.MutableMainSchema.MutableAddress>("addresses", setOf("code"), MutableShapesDatabase.MutableMainSchema.MutableAddress)
+    // forward foreign key attribute
+    MutableShapesDatabase.main.entity("lesson").instanceAttributes.rowAttribute<MutableShapesDatabase.MutableMainSchema.MutableCourse>("course", setOf("course_id"), MutableShapesDatabase.MutableMainSchema.MutableCourse)
+    // reverse foreign key attribute
+    MutableShapesDatabase.main.entity("course").instanceAttributes.rowSetAttribute<MutableShapesDatabase.MutableMainSchema.MutableLesson>("lessons", setOf("id"), MutableShapesDatabase.MutableMainSchema.MutableLesson)
     // left to right n-n join attribute
     MutableShapesDatabase.main.entity("person").instanceAttributes.rowSetAttribute<MutableShapesDatabase.MutableMainSchema.MutableAddress>("addresses", setOf("person_id"), MutableShapesDatabase.MutableMainSchema.MutableAddress)
     // right to left n-n join attribute
     MutableShapesDatabase.main.entity("address").instanceAttributes.rowSetAttribute<MutableShapesDatabase.MutableMainSchema.MutablePerson>("persons", setOf("address_id"), MutableShapesDatabase.MutableMainSchema.MutablePerson)
+    // left to right n-n join attribute
+    MutableShapesDatabase.main.entity("student").instanceAttributes.rowSetAttribute<MutableShapesDatabase.MutableMainSchema.MutableCourse>("courses", setOf("id"), MutableShapesDatabase.MutableMainSchema.MutableCourse)
+    // right to left n-n join attribute
+    MutableShapesDatabase.main.entity("course").instanceAttributes.rowSetAttribute<MutableShapesDatabase.MutableMainSchema.MutableStudent>("students", setOf("id"), MutableShapesDatabase.MutableMainSchema.MutableStudent)
     // forward foreign key attribute
     MutableShapesDatabase.other.entity("badge").instanceAttributes.rowAttribute<MutableShapesDatabase.MutableMainSchema.MutablePerson>("person", setOf("person_id"), MutableShapesDatabase.MutableMainSchema.MutablePerson)
     // reverse foreign key attribute

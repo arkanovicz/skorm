@@ -32,10 +32,18 @@ internal actual fun ShapesDatabase.registerAttributes() {
     ShapesDatabase.main.entity("address").instanceAttributes.rowAttribute<ShapesDatabase.MainSchema.Country>("country", setOf("code"), ShapesDatabase.MainSchema.Country)
     // reverse foreign key attribute
     ShapesDatabase.main.entity("country").instanceAttributes.rowSetAttribute<ShapesDatabase.MainSchema.Address>("addresses", setOf("code"), ShapesDatabase.MainSchema.Address)
+    // forward foreign key attribute
+    ShapesDatabase.main.entity("lesson").instanceAttributes.rowAttribute<ShapesDatabase.MainSchema.Course>("course", setOf("course_id"), ShapesDatabase.MainSchema.Course)
+    // reverse foreign key attribute
+    ShapesDatabase.main.entity("course").instanceAttributes.rowSetAttribute<ShapesDatabase.MainSchema.Lesson>("lessons", setOf("id"), ShapesDatabase.MainSchema.Lesson)
     // left to right n-n join attribute
     ShapesDatabase.main.entity("person").instanceAttributes.rowSetAttribute<ShapesDatabase.MainSchema.Address>("addresses", setOf("person_id"), ShapesDatabase.MainSchema.Address)
     // right to left n-n join attribute
     ShapesDatabase.main.entity("address").instanceAttributes.rowSetAttribute<ShapesDatabase.MainSchema.Person>("persons", setOf("address_id"), ShapesDatabase.MainSchema.Person)
+    // left to right n-n join attribute
+    ShapesDatabase.main.entity("student").instanceAttributes.rowSetAttribute<ShapesDatabase.MainSchema.Course>("courses", setOf("id"), ShapesDatabase.MainSchema.Course)
+    // right to left n-n join attribute
+    ShapesDatabase.main.entity("course").instanceAttributes.rowSetAttribute<ShapesDatabase.MainSchema.Student>("students", setOf("id"), ShapesDatabase.MainSchema.Student)
     // forward foreign key attribute
     ShapesDatabase.other.entity("badge").instanceAttributes.rowAttribute<ShapesDatabase.MainSchema.Person>("person", setOf("person_id"), ShapesDatabase.MainSchema.Person)
     // reverse foreign key attribute

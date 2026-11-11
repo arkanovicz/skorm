@@ -43,11 +43,26 @@ database shapes {
       backup -> person?                    // field link, reference only
     }
 
+    table student {
+      *id serial                           // keyed like course and lesson: kddl names the link columns itself
+      name varchar(20)
+    }
+
+    table course {
+      *id serial
+    }
+
+    table lesson {
+      *id serial
+    }
+
     table vip : person                     // inheritance: Vip : Person, read polymorphically
 
     address *-- country                    // implicit column `code`, the country's key: Address.country()
     gift *-- friendship                    // multi-column foreign key
     person *-* address
+    student *-* course                     // join table columns student_id, course_id
+    lesson *-- course                      // implicit column course_id, where `id` is taken
   }
 
   schema other {

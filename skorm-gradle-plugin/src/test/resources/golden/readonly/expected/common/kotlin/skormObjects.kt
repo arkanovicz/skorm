@@ -46,8 +46,12 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
         MainSchema.Friendship.initialize()
         MainSchema.Gift.initialize()
         MainSchema.Address.initialize()
+        MainSchema.Student.initialize()
+        MainSchema.Course.initialize()
+        MainSchema.Lesson.initialize()
         MainSchema.Vip.initialize()
         MainSchema.PersonAddress.initialize()
+        MainSchema.StudentCourse.initialize()
         OtherSchema.Badge.initialize()
         super.initialize()
         registerAttributes()
@@ -315,6 +319,86 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
             @JvmName("persons")
             fun personsBlocking(): List<ShapesDatabase.MainSchema.Person> = blocking { persons().toList() }
         }
+        interface Student : Instance {
+            companion object: Entity("student", ShapesDatabase.main) {
+                override fun new(): Student = StudentImpl(this)
+                @Suppress("UNCHECKED_CAST")
+                override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Student?
+                suspend fun fetch(id: Int) = super.fetch(id) as Student?
+                @Suppress("UNCHECKED_CAST")
+                override suspend fun browse() = super.browse() as Flow<Student>
+                fun initialize() {
+                    if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
+                    addField(Field("id", "serial", true, true))
+                    addField(Field("name", "varchar(20)", false, false))
+                }
+            }
+            val id: Int
+                get() = getInt("id")!!
+            val name: String
+                get() = getString("name")!!
+            // left to right n-n join
+            suspend fun courses(): Flow<ShapesDatabase.MainSchema.Course> = query("courses")
+        }
+        open class StudentImpl(entity: Entity = Student): InstanceImpl(entity), Student {
+            // the blocking twin of `courses()`: what a reflection-driven caller reaches under that name
+            @JvmName("courses")
+            fun coursesBlocking(): List<ShapesDatabase.MainSchema.Course> = blocking { courses().toList() }
+        }
+        interface Course : Instance {
+            companion object: Entity("course", ShapesDatabase.main) {
+                override fun new(): Course = CourseImpl(this)
+                @Suppress("UNCHECKED_CAST")
+                override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Course?
+                suspend fun fetch(id: Int) = super.fetch(id) as Course?
+                @Suppress("UNCHECKED_CAST")
+                override suspend fun browse() = super.browse() as Flow<Course>
+                fun initialize() {
+                    if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
+                    addField(Field("id", "serial", true, true))
+                }
+            }
+            val id: Int
+                get() = getInt("id")!!
+            // reverse foreign key
+            suspend fun lessons(): Flow<ShapesDatabase.MainSchema.Lesson> = query("lessons")
+            // right to left n-n join
+            suspend fun students(): Flow<ShapesDatabase.MainSchema.Student> = query("students")
+        }
+        open class CourseImpl(entity: Entity = Course): InstanceImpl(entity), Course {
+            // the blocking twin of `lessons()`: what a reflection-driven caller reaches under that name
+            @JvmName("lessons")
+            fun lessonsBlocking(): List<ShapesDatabase.MainSchema.Lesson> = blocking { lessons().toList() }
+            // the blocking twin of `students()`: what a reflection-driven caller reaches under that name
+            @JvmName("students")
+            fun studentsBlocking(): List<ShapesDatabase.MainSchema.Student> = blocking { students().toList() }
+        }
+        interface Lesson : Instance {
+            companion object: Entity("lesson", ShapesDatabase.main) {
+                override fun new(): Lesson = LessonImpl(this)
+                @Suppress("UNCHECKED_CAST")
+                override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Lesson?
+                suspend fun fetch(id: Int) = super.fetch(id) as Lesson?
+                @Suppress("UNCHECKED_CAST")
+                override suspend fun browse() = super.browse() as Flow<Lesson>
+                fun initialize() {
+                    if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
+                    addField(Field("id", "serial", true, true))
+                    addField(Field("courseId", "integer", false, false))
+                }
+            }
+            val id: Int
+                get() = getInt("id")!!
+            val courseId: Int
+                get() = getInt("courseId")!!
+            // forward foreign key
+            suspend fun course(): ShapesDatabase.MainSchema.Course = retrieve("course")
+        }
+        open class LessonImpl(entity: Entity = Lesson): InstanceImpl(entity), Lesson {
+            // the blocking twin of `course()`: what a reflection-driven caller reaches under that name
+            @JvmName("course")
+            fun courseBlocking(): ShapesDatabase.MainSchema.Course = blocking { course() }
+        }
         interface Vip : Instance, ShapesDatabase.MainSchema.Person {
             companion object: Entity("vip", ShapesDatabase.main, ShapesDatabase.MainSchema.Person) {
                 override fun new(): Vip = VipImpl(this)
@@ -361,6 +445,24 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                 get() = getInt("addressId")!!
         }
         open class PersonAddressImpl(entity: Entity = PersonAddress): InstanceImpl(entity), PersonAddress {
+        }
+        interface StudentCourse : Instance {
+            companion object: Entity("studentCourse", ShapesDatabase.main) {
+                override fun new(): StudentCourse = StudentCourseImpl(this)
+                @Suppress("UNCHECKED_CAST")
+                override suspend fun browse() = super.browse() as Flow<StudentCourse>
+                fun initialize() {
+                    if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
+                    addField(Field("studentId", "integer", false, false))
+                    addField(Field("courseId", "integer", false, false))
+                }
+            }
+            val studentId: Int
+                get() = getInt("studentId")!!
+            val courseId: Int
+                get() = getInt("courseId")!!
+        }
+        open class StudentCourseImpl(entity: Entity = StudentCourse): InstanceImpl(entity), StudentCourse {
         }
         // attribute main.personCount
         suspend fun `personCount`() = eval<Int>("personCount")

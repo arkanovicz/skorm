@@ -61,6 +61,26 @@ CREATE TABLE address (
 );
 
 
+CREATE TABLE student (
+  id serial NOT NULL,
+  name varchar(20) NOT NULL,
+  PRIMARY KEY (id)
+);
+
+
+CREATE TABLE course (
+  id serial NOT NULL,
+  PRIMARY KEY (id)
+);
+
+
+CREATE TABLE lesson (
+  id serial NOT NULL,
+  course_id integer NOT NULL,
+  PRIMARY KEY (id)
+);
+
+
 CREATE TABLE base_vip (
   person_id serial NOT NULL,
   PRIMARY KEY (person_id)
@@ -110,14 +130,23 @@ CREATE TABLE person_address (
   address_id integer NOT NULL
 );
 
+
+CREATE TABLE student_course (
+  student_id integer NOT NULL,
+  course_id integer NOT NULL
+);
+
 ALTER TABLE friendship ADD CONSTRAINT a FOREIGN KEY (a_id) REFERENCES person (person_id);
 ALTER TABLE friendship ADD CONSTRAINT b FOREIGN KEY (b_id) REFERENCES person (person_id);
 ALTER TABLE gift ADD CONSTRAINT a_id_b FOREIGN KEY (a_id,b_id) REFERENCES friendship (a_id,b_id);
 ALTER TABLE address ADD CONSTRAINT owner FOREIGN KEY (owner) REFERENCES person (person_id);
 ALTER TABLE address ADD CONSTRAINT backup FOREIGN KEY (backup) REFERENCES person (person_id);
 ALTER TABLE address ADD CONSTRAINT code FOREIGN KEY (code) REFERENCES country (code);
+ALTER TABLE lesson ADD CONSTRAINT course FOREIGN KEY (course_id) REFERENCES course (id);
 ALTER TABLE person_address ADD CONSTRAINT person FOREIGN KEY (person_id) REFERENCES person (person_id) ON DELETE CASCADE;
 ALTER TABLE person_address ADD CONSTRAINT address FOREIGN KEY (address_id) REFERENCES address (address_id) ON DELETE CASCADE;
+ALTER TABLE student_course ADD CONSTRAINT student FOREIGN KEY (student_id) REFERENCES student (id) ON DELETE CASCADE;
+ALTER TABLE student_course ADD CONSTRAINT course FOREIGN KEY (course_id) REFERENCES course (id) ON DELETE CASCADE;
 ALTER TABLE base_vip ADD CONSTRAINT person FOREIGN KEY (person_id) REFERENCES person (person_id) ON DELETE CASCADE;
 
 
