@@ -93,6 +93,20 @@ class InheritanceTest {
                   *line_id bigserial              // generated like a serial, read back on insert
                   text varchar(50)
                 }
+                table student {                    // links between tables keyed alike: kddl names the columns
+                  *id serial
+                  name varchar(20)
+                }
+                table course {
+                  *id serial
+                  title varchar(20)
+                }
+                table lesson {
+                  *id serial
+                  topic varchar(20)
+                }
+                student *-* course
+                lesson *-- course
               }
             }
         """.trimIndent())
@@ -144,6 +158,12 @@ class InheritanceTest {
             typealias MutableCountry = MutableInhDatabase.MutableMainSchema.MutableCountry
             typealias MutableIdentity = MutableInhDatabase.MutableMainSchema.MutableIdentity
             typealias MutableLine = MutableInhDatabase.MutableMainSchema.MutableLine
+            typealias Student = InhDatabase.MainSchema.Student
+            typealias Course = InhDatabase.MainSchema.Course
+            typealias MutableStudent = MutableInhDatabase.MutableMainSchema.MutableStudent
+            typealias MutableCourse = MutableInhDatabase.MutableMainSchema.MutableCourse
+            typealias MutableLesson = MutableInhDatabase.MutableMainSchema.MutableLesson
+            typealias MutableStudentCourse = MutableInhDatabase.MutableMainSchema.MutableStudentCourse
 
             class InheritanceCheck {
                 @Test
@@ -217,6 +237,25 @@ class InheritanceTest {
                             // a bigserial key is generated: read back on insert
                             val line = MutableLine.new().apply { text = "hello" }.also { it.insert() }
                             assertEquals("hello", MutableLine.fetch(line.lineId)!!.text)
+
+                            // links between tables keyed alike: columns course_id, student_id, as kddl names them
+                            val carol = MutableStudent.new().apply { name = "Carol" }.also { it.insert() }
+                            val dave = MutableStudent.new().apply { name = "Dave" }.also { it.insert() }
+                            val maths = MutableCourse.new().apply { title = "Maths" }.also { it.insert() }
+                            val music = MutableCourse.new().apply { title = "Music" }.also { it.insert() }
+                            for ((student, course) in listOf(carol to maths, carol to music, dave to maths))
+                                MutableStudentCourse.new().apply { studentId = student.id; courseId = course.id }.insert()
+                            val lesson = MutableLesson.new().apply { topic = "Algebra"; courseId = maths.id }.also { it.insert() }
+                            assertEquals(listOf("Maths", "Music"), MutableStudent.fetch(carol.id)!!.courses().map { it.title }.toList().sorted())
+                            assertEquals(listOf("Maths"), MutableStudent.fetch(dave.id)!!.courses().map { it.title }.toList())
+                            assertEquals(listOf("Carol", "Dave"), MutableCourse.fetch(maths.id)!!.students().map { it.name }.toList().sorted())
+                            assertEquals(listOf("Carol"), MutableCourse.fetch(music.id)!!.students().map { it.name }.toList())
+                            assertEquals("Maths", MutableLesson.fetch(lesson.id)!!.course().title)
+                            assertEquals(listOf("Algebra"), MutableCourse.fetch(maths.id)!!.lessons().map { it.topic }.toList())
+                            assertEquals(emptyList(), MutableCourse.fetch(music.id)!!.lessons().map { it.topic }.toList())
+                            // and through the read-only sibling
+                            assertEquals(listOf("Maths", "Music"), Student.fetch(carol.id)!!.courses().map { it.title }.toList().sorted())
+                            assertEquals(listOf("Algebra"), Course.fetch(maths.id)!!.lessons().map { it.topic }.toList())
                         }
                     }
                 }
