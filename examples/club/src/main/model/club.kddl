@@ -1,0 +1,23 @@
+// A reading club over the bookshelf: its tables link to the bookshelf's, whose code the bookshelf module generates.
+import 'bookshelf.kddl'
+
+database club {
+
+  schema club {
+
+    table member {
+      *member_id serial
+      name varchar(100)
+      dude -> bookshelf.dude?       // nullable: a member need not borrow books
+    }
+
+    table review {
+      *review_id serial
+      book -> bookshelf.book        // a link to an imported table returns the bookshelf's Book
+      stars integer
+    }
+
+    review *-- member               // a link between the club's own tables
+  }
+
+}

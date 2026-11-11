@@ -4,7 +4,6 @@ import com.republicate.kson.Json
 import com.republicate.kson.toJsonObject
 import com.republicate.skorm.SkormException
 import com.republicate.skorm.core.CoreProcessor
-import com.republicate.skorm.core.mutationAttribute
 import com.republicate.skorm.jdbc.JdbcConnector
 import com.republicate.skorm.rest
 import io.ktor.http.*
@@ -57,8 +56,6 @@ fun Application.module() {
 // the server writes (creation script, test data, REST write routes), hence the mutable half
 val exampleDatabase = MutableExampleDatabase(CoreProcessor(JdbcConnector()))
 
-const val CREATION_SCRIPT = "META-INF/skorm/bookshelf.sql"
-
 fun Application.configureDatabase() {
 
     println("Configuring...")
@@ -68,20 +65,8 @@ fun Application.configureDatabase() {
     exampleDatabase.initialize()
 
     println("Creating database...")
-    val creationScript = Application::class.java.getResource("/${CREATION_SCRIPT}").readText()
-    // @@@
-    //exampleDatabase.mutationAttribute("create", creationScript)
-
-    val tst = creationScript + """
-    SELECT * FROM book;;
-    SELECT * FROM bookshelf.book;;
-    SELECT * FROM BOOKSHELF.book;;
-    """.trimIndent()
-
-    exampleDatabase.mutationAttribute("create", tst)
-
     runBlocking {
-        exampleDatabase.perform("create") // or execute attribute directly...
+        exampleDatabase.createMissingSchemas()
 
         println("@@@@@@@@@@@@@ DATABASE STRUCTURE CREATED")
         val authors = Author.browse().toList()

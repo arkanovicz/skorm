@@ -1,6 +1,6 @@
 rootProject.name = "skorm-examples"
 includeBuild("..")
-include("bookshelf")
+include("bookshelf", "club")
 
 pluginManagement {
     repositories {

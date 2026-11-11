@@ -1,0 +1,15 @@
+database club {
+  schema club {
+
+    // an imported entity, qualified by its schema
+    attr Member.reviewedBooks: bookshelf.Book* =
+      SELECT book.* FROM bookshelf.book
+        JOIN club.review ON review.book = book.book_id
+        WHERE review.member_id = {member_id}
+        ORDER BY book.title;
+
+    // unqualified names resolve in the club schema
+    attr reviewsCount: Int =
+      SELECT count(*) FROM review;
+  }
+}
