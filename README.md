@@ -183,7 +183,7 @@ database.configure(mapOf(
     )
 ))
 database.initialize()   // registers the entities, the navigations and the ksql attributes (pendingCount, toggle)
-// the tables must exist: run the generated creation script first, `META-INF/skorm/<model>.sql` on the classpath (the bookshelf example does it with a "create" mutation)
+database.createMissingSchemas()   // runs the generated creation script when the schema is not there yet
 
 // Create a task
 val task = MutableTask.new().apply {
@@ -558,6 +558,66 @@ attr topBorrowers: (dude_id: Long, borrow_count: Int)* =
 
 All generated functions are coroutine-based (`suspend`) and type-safe, providing compile-time checking of parameters and return types.
 
+### Importing a kddl schema
+
+A module can build on the tables of another: its kddl schema imports the other's, links to its tables, and gets
+the other module's generated classes back from the navigations. Both describe parts of one physical database.
+The bookshelf example has such a neighbour, `examples/club`:
+
+```
+import 'bookshelf.kddl'
+
+database club {
+  schema club {
+    table review {
+      *review_id serial
+      book -> bookshelf.book        // a link to an imported table
+      stars integer
+    }
+  }
+}
+```
+
+```kotlin
+dependencies { implementation(project(":bookshelf")) }   // or the artifact of the module that owns it
+
+skorm {
+    model.set(file("src/main/model/club.kddl"))
+    destPackage.set("com.republicate.skorm.club")
+    dialect.set("hypersql")
+    imports.from(configurations.runtimeClasspath)        // directories and jars where imported kddl schemas are found
+}
+```
+
+```kotlin
+val club = MutableClubDatabase(CoreProcessor(JdbcConnector()))
+club.configure(config)
+club.initialize()                 // brings up the bookshelf's database too, on the same processor
+club.createMissingSchemas()       // the bookshelf's schema first, then the club's, each only if it is not there
+
+val book: MutableBook = review.book()        // the bookshelf's own class
+club.transaction { /* writes to both, one transaction */ }
+```
+
+What the importer gets:
+
+- Nothing is generated for the imported schemas: no classes, and no DDL in its creation script, which only
+  references their tables.
+- A link to an imported table is one way (kddl refuses the reverse side) and returns the owner's class,
+  the mutable one from the mutable half.
+- Its database holds the imported one as a property named after it (`club.example`, the bookshelf's database
+  being named `example`): the one the app already created on the same processor, or a new one. The app
+  configures and initializes the importer alone.
+- A ksql attribute may return an imported entity by its qualified name, `attr Member.reviewedBooks: bookshelf.Book*`.
+  It cannot be declared on an imported entity or schema.
+
+What the owner provides, without doing anything: every generation ships, in the module's resources and named
+after its kddl file, the kddl schema in one file (`META-INF/kddl/bookshelf.kddl`), where its generated code is
+(`META-INF/skorm/bookshelf.properties`) and its creation script (`META-INF/skorm/bookshelf.sql`). An importer
+needs the first two on its `imports` path, and the owner's classes on its classpath.
+
+Migrations follow the same order as creation: the imported kddl schemas' first, then the importer's.
+
 ## Complete Example
 
 Let's build a complete bookshelf application that tracks books and borrowings, demonstrating both JVM backend and JS frontend using the same business logic.
@@ -655,8 +715,10 @@ fun Application.configureDatabase() {
     database.configure(environment.config.config("skorm").toMap())
     database.initialize()
 
-    // Create test data
     runBlocking {
+        database.createMissingSchemas()
+
+        // Create test data
         val author = MutableAuthor.new().apply {
             name = "Isaac Asimov"
             insert()
