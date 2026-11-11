@@ -9,8 +9,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
 
-/** A model split over several files: the included ones are found beside the including one, and watched. */
-class IncludeTest {
+/** The model as the input of generation: found with the files it includes, read again on every run, watched. */
+class ModelInputsTest {
 
     @TempDir
     lateinit var dir: File
@@ -74,5 +74,16 @@ class IncludeTest {
         assertContains(sql, "CREATE TABLE doc (")
         assertContains(objects, "interface Person")
         assertContains(objects, "interface Doc")
+    }
+
+    @Test
+    fun `under the configuration cache the model is read again, not kept as first parsed`() {
+        assertEquals(TaskOutcome.SUCCESS, generate("--configuration-cache"))
+        write("model/root.kddl", File(dir, "model/root.kddl").readText().replace("table doc {", "table memo { *id serial }\n    table doc {"))
+        val run = runner("--configuration-cache").build()
+        assertContains(run.output, "Reusing configuration cache.")
+        assertEquals(TaskOutcome.SUCCESS, run.task(":$GEN_TASK_NAME")?.outcome)
+        assertContains(sql, "CREATE TABLE memo (")
+        assertContains(objects, "interface Memo")
     }
 }

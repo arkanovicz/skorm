@@ -67,9 +67,7 @@ abstract class GenerateSkormCodeTask : BaseModelGenerationTask() {
     abstract val outputDirectory: DirectoryProperty
 
     @get:Internal
-    protected val attributeModel: RMDatabase? by lazy {
-        attributes.orNull?.let { parseRuntimeModel(Utils.getFile(it.asFile.absolutePath), it.asFile.path) }
-    }
+    protected var attributeModel: RMDatabase? = null
 
     @get:Internal
     protected lateinit var resolved: ResolvedModel
@@ -90,6 +88,8 @@ abstract class GenerateSkormCodeTask : BaseModelGenerationTask() {
         val out = outputDirectory.get().asFile
         // a file that stops being emitted (a dropped table, a flag flipped) must not linger and get compiled
         out.deleteRecursively()
+        database = readModel()
+        attributeModel = attributes.orNull?.let { parseRuntimeModel(Utils.getFile(it.asFile.absolutePath), it.asFile.path) }
         if (attributeModel != null) checkAttributeParameters()
         resolved = Resolver(KotlinTool()).resolve(database, attributeModel, readOnly.get())
         val withCore = generateCore()

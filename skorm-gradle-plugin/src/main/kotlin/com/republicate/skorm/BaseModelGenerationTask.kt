@@ -38,21 +38,18 @@ abstract class BaseModelGenerationTask: BaseGenerationTask() {
     @get:Optional
     abstract val datasource: Property<String>
 
+    // read by the action, on every run: a field set any earlier is stored with the cached configuration,
+    // and the next run would generate from the model as it was then
     @get:Internal
-    protected val database: ASTDatabase by lazy {
+    protected lateinit var database: ASTDatabase
+
+    protected fun readModel(): ASTDatabase {
         val foundModel = model.orNull
         val foundDatasource = datasource.orNull
         if ((foundModel == null) == (foundDatasource == null)) {
             throw RuntimeException("$tag expecting exactly one of skorm.model or skorm.datasource parameter")
         }
-        val db = when {
-            foundModel != null -> parse(Utils.getFile(foundModel.asFile.absolutePath))
-            foundDatasource != null -> {
-                reverse(foundDatasource)
-            }
-            else -> throw RuntimeException("this cannot happen")
-        }
-        db
+        return if (foundModel != null) parse(Utils.getFile(foundModel.asFile.absolutePath)) else reverse(foundDatasource!!)
     }
 
     override fun populateContext(context: VelocityContext) {
