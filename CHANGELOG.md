@@ -2,6 +2,11 @@
 
 All notable changes to Skorm are documented in this file.
 
+## [0.33] - unreleased
+
+### Changed
+- kddl 0.35: a model split over several files (`include 'shared.kddl'`) finds the included ones beside the including one. The path was looked up from the working directory, the project's in a Gradle build, so an include next to a model in `src/main/model` was not found. Schemas declared on both sides now merge
+
 ## [0.32] - 2026-11-08
 
 ### Fixed
