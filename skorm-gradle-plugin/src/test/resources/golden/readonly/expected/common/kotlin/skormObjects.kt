@@ -519,11 +519,19 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                 get() = getInt("personId")!!
             // forward foreign key
             suspend fun person(): ShapesDatabase.MainSchema.Person = retrieve("person")
+            // attribute Badge.holder
+            suspend fun `holder`() = retrieve<ShapesDatabase.MainSchema.Person>("holder")
+            // attribute Badge.bearers
+            suspend fun `bearers`() = query<Bearers>("bearers")
         }
         open class BadgeImpl(entity: Entity = Badge): InstanceImpl(entity), Badge {
             // the blocking twin of `person()`: what a reflection-driven caller reaches under that name
             @JvmName("person")
             fun personBlocking(): ShapesDatabase.MainSchema.Person = blocking { person() }
+            @JvmName("holder")
+            fun holderBlocking() = blocking { `holder`() }
+            @JvmName("bearers")
+            fun bearersBlocking() = blocking { `bearers`().toList() }
         }
     }
 }

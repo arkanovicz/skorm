@@ -2,6 +2,7 @@ package com.republicate.skorm
 
 import com.republicate.skorm.model.RMCompositeType
 import com.republicate.skorm.model.RMDatabase
+import com.republicate.skorm.model.RMEntityRef
 import com.republicate.skorm.model.RMField
 import com.republicate.skorm.model.RMItem
 import com.republicate.skorm.model.RMSchema
@@ -46,13 +47,13 @@ private fun digestAST(databaseContext: ksqlParser.DatabaseContext): RMDatabase {
             item.transaction = item.action && itemContext.sql_spec().queries != null
             val type = itemContext.type()
             when {
-                type?.simple_type() != null -> item.type = RMSimpleType(type.simple_type()?.text ?: nullerr(), false)
-                type?.json_object_type() != null -> item.type = RMSimpleType(type.json_object_type()?.text ?: nullerr(), false)
-                type?.out_entity() != null -> item.type = RMSimpleType(type.out_entity()?.text ?: nullerr(), true)
+                type?.simple_type() != null -> item.type = RMSimpleType(type.simple_type()?.text ?: nullerr())
+                type?.json_object_type() != null -> item.type = RMSimpleType(type.json_object_type()?.text ?: nullerr())
+                type?.out_entity() != null -> entityRef(type.out_entity()!!.entity_name()).let { item.type = RMSimpleType(it.table, it) }
                 type?.complex_type() != null -> {
                     val composite = type.complex_type()?.complex_type_spec() ?: nullerr()
                     item.type = RMCompositeType(name.withCapital()).also { itemType ->
-                        itemType.parent = composite.entity?.text
+                        itemType.parent = composite.entity?.let { entityRef(it) }
                         composite.composite_field().mapTo(itemType.fields) { RMField(it.name!!.text!!, it.simple_type().text, it.optional != null) }
                     }
                 }
@@ -68,6 +69,8 @@ private fun digestAST(databaseContext: ksqlParser.DatabaseContext): RMDatabase {
     }
     return database
 }
+
+private fun entityRef(ctx: ksqlParser.Entity_nameContext) = RMEntityRef(ctx.schemaName?.text, ctx.name?.text ?: nullerr())
 
 private fun nullerr(): Nothing {
     throw Error("unexpected null value")

@@ -9,6 +9,7 @@ import com.republicate.skorm.KotlinTool
 import com.republicate.skorm.SkormException
 import com.republicate.skorm.model.RMCompositeType
 import com.republicate.skorm.model.RMDatabase
+import com.republicate.skorm.model.RMEntityRef
 import com.republicate.skorm.model.RMItem
 import com.republicate.skorm.model.RMSimpleType
 import com.republicate.skorm.schemaNamed
@@ -39,7 +40,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
         fun entity(table: ASTTable) = "$prefix${kotlin.pascal(table.sqlName)}"
         fun entityClass(table: ASTTable) = "${schemaClass(table.schema)}.${entity(table)}"
         fun implClass(table: ASTTable) = "${schemaClass(table.schema)}.${entity(table)}Impl"
-        /** a ksql receiver or entity type, by its name in the ksql file */
+        /** a ksql receiver, by its name in the ksql file */
         fun entityClass(schema: ASTSchema, name: String) = "${schemaClass(schema)}.$prefix${kotlin.capitalize(name)}"
     }
 
@@ -260,10 +261,21 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
         for ((name, declared) in item.arguments ?: emptySet()) {
             val type = elementType(declared)
             if (type !in simpleTypes && type !in enums) throw SkormException(
-                "attribute ${item.receiver?.let { "$it." } ?: ""}${item.name}: argument $name has type $type, " +
+                "attribute ${label(item)}: argument $name has type $type, " +
                     "neither a simple type nor an enum of schema $schemaName" +
                     (if (enums.isEmpty()) "" else " (${enums.joinToString(", ")})"))
         }
+    }
+
+    private fun label(item: RMItem) = "${item.receiver?.let { "$it." } ?: ""}${item.name}"
+
+    /** the table a ksql entity type names, through the model: `main.Person`, `main.person`, `Main.Person` are one table */
+    private fun entityTable(block: ASTSchema, item: RMItem, ref: RMEntityRef): ASTTable {
+        val schema = ref.schema?.let {
+            block.db.schemaNamed(it) ?: throw SkormException("attribute ${label(item)}: type $ref: no schema $it in the model")
+        } ?: block
+        return schema.tableNamed(ref.table)
+            ?: throw SkormException("attribute ${label(item)}: type $ref: no table ${ref.table} in schema ${schema.sqlName}")
     }
 
     private fun receiver(schema: ASTSchema, name: String): ASTTable =
@@ -276,11 +288,12 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
         val composite = (type as? RMCompositeType)?.let { c ->
             CompositeClass(
                 className = kotlin.pascal(item.name),
-                parentClass = c.parent?.let { "${names.readOnly.schemaClass(schema)}.${kotlin.pascal(it)}Impl" } ?: "Json.MutableObject",
+                parentClass = c.parent?.let { names.readOnly.implClass(entityTable(schema, item, it)) } ?: "Json.MutableObject",
                 fields = c.fields.map { CompositeField(kotlin.camel(it.name), it.type, it.nullable) }
             )
         }
-        val isEntity = (type as? RMSimpleType)?.isEntity == true
+        val entityClass = (type as? RMSimpleType)?.entity?.let { names.entityClass(entityTable(schema, item, it)) }
+        val isEntity = entityClass != null
         val isJsonObject = type?.name == "Json.Object"
         val q = if (item.nullable) "?" else ""
 
@@ -295,7 +308,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
                         generics = "<${kotlin.capitalize(item.name)}$q>"
                         if (!item.multiple) cast = " as ${kotlin.capitalize(item.name)}$q"
                     }
-                    isEntity -> generics = "<${names.entityClass(schema, type!!.name)}$q>"
+                    isEntity -> generics = "<$entityClass$q>"
                     else -> generics = "<${type!!.name}$q>"
                 }
                 val rows = composite != null || isEntity || isJsonObject
@@ -314,7 +327,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
         when {
             item.action -> { itemClass = null; factory = null }
             composite != null -> { itemClass = kotlin.pascal(item.name); factory = "::$itemClass" }
-            isEntity -> { itemClass = names.entityClass(schema, type!!.name); factory = "$itemClass::new" }
+            isEntity -> { itemClass = entityClass; factory = "$itemClass::new" }
             else -> { itemClass = null; factory = null }
         }
         fun rows(cls: String) = if (item.multiple) "rowSetAttribute<$cls>" else if (item.nullable) "nullableRowAttribute<$cls>" else "rowAttribute<$cls>"

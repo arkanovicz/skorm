@@ -108,6 +108,12 @@ class InheritanceTest {
                 student *-* course
                 lesson *-- course
               }
+              schema club {                        // a second schema: its ksql types name main's tables qualified
+                table team {
+                  name varchar(20)
+                }
+                team *-- main.person               // column person_id: the captain
+              }
             }
         """.trimIndent())
         dir.resolve("src/main/model/inh.ksql").writeText("""
@@ -123,6 +129,12 @@ class InheritanceTest {
                   SELECT count(*) FROM person WHERE name = ANY({names});
                 attr identities(services: Service*): Int =
                   SELECT count(*) FROM identity WHERE service = ANY({services});
+              }
+              schema club {
+                attr Team.others: main.Person* =
+                  SELECT * FROM main.person WHERE person_id <> {person_id} ORDER BY name;
+                attr Team.captain: (main.Person, team: String) =
+                  SELECT person.*, team.name AS team FROM club.team JOIN main.person USING (person_id) WHERE team.name = {name};
               }
             }
         """.trimIndent())
@@ -164,6 +176,8 @@ class InheritanceTest {
             typealias MutableCourse = MutableInhDatabase.MutableMainSchema.MutableCourse
             typealias MutableLesson = MutableInhDatabase.MutableMainSchema.MutableLesson
             typealias MutableStudentCourse = MutableInhDatabase.MutableMainSchema.MutableStudentCourse
+            typealias Team = InhDatabase.ClubSchema.Team
+            typealias MutableTeam = MutableInhDatabase.MutableClubSchema.MutableTeam
 
             class InheritanceCheck {
                 @Test
@@ -256,6 +270,19 @@ class InheritanceTest {
                             // and through the read-only sibling
                             assertEquals(listOf("Maths", "Music"), Student.fetch(carol.id)!!.courses().map { it.title }.toList().sorted())
                             assertEquals(listOf("Algebra"), Course.fetch(maths.id)!!.lessons().map { it.topic }.toList())
+
+                            // an attribute of the club schema returning main's entities, mutable from the mutable half
+                            MutableTeam.new().apply { name = "Reds"; personId = alice.personId }.insert()
+                            val others = MutableTeam.browse().single().others().toList()
+                            assertEquals(listOf("Bob"), others.map { it.name })
+                            assertIs<MutablePerson>(others.single())
+                            val readOnlyOthers = Team.browse().single().others().toList()
+                            assertEquals(listOf("Bob"), readOnlyOthers.map { it.name })
+                            assertIsNot<com.republicate.skorm.MutableInstance>(readOnlyOthers.single())
+                            // a composite on main's entity
+                            val captain = Team.browse().single().captain()
+                            assertIs<Person>(captain)
+                            assertEquals("Alice" to "Reds", captain.name to captain.team)
                         }
                     }
                 }

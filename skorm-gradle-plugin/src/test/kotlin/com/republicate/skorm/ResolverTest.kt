@@ -507,6 +507,78 @@ class ResolverTest {
         assertEquals(everybody.coreRegistration, everybody.clientRegistration)
     }
 
+    private val twoSchemas = """
+        database d {
+          schema main { table person { name varchar(10) } }
+          schema other { table badge { label varchar(10) } badge *-- main.person }
+        }
+    """.trimIndent()
+
+    private fun attributesOf(ksql: String) = resolve(twoSchemas, "database d { schema other {\n$ksql\n} }").attributes
+
+    @Test
+    fun `an entity type qualified by its schema names that schema's class, single, nullable or multiple`() {
+        val (holder, maybe, all) = attributesOf("""
+            attr Badge.holder: main.Person = SELECT * FROM main.person WHERE person_id = {person_id};
+            attr Badge.maybe: main.Person? = SELECT * FROM main.person WHERE person_id = {person_id};
+            attr Badge.all: main.Person* = SELECT * FROM main.person;
+        """.trimIndent())
+        listOf(holder, maybe, all).forEach {
+            assertEquals("DDatabase.OtherSchema.Badge", it.receiverClass)
+            assertEquals("DDatabase.MainSchema.Person::new", it.factory)
+            assertTrue(it.entityRows)
+        }
+        assertEquals("<DDatabase.MainSchema.Person>" to "retrieve", holder.generics to holder.verb)
+        assertEquals("rowAttribute<DDatabase.MainSchema.Person>", holder.coreRegistration)
+        assertEquals("instanceAttribute<DDatabase.MainSchema.Person>", holder.clientRegistration)
+        assertEquals("<DDatabase.MainSchema.Person?>" to "retrieve", maybe.generics to maybe.verb)
+        assertEquals("nullableRowAttribute<DDatabase.MainSchema.Person>", maybe.coreRegistration)
+        assertEquals("nullableInstanceAttribute<DDatabase.MainSchema.Person>", maybe.clientRegistration)
+        assertEquals("<DDatabase.MainSchema.Person>" to "query", all.generics to all.verb)
+        assertEquals("rowSetAttribute<DDatabase.MainSchema.Person>", all.coreRegistration)
+        assertEquals(all.coreRegistration, all.clientRegistration)
+        // and the mutable half names the mutable class of that schema
+        val mutableAll = resolve(twoSchemas, "database d { schema other { attr all: main.Person* = SELECT * FROM main.person; } }")
+            .mutableTwin!!.attributes.single()
+        assertEquals("MutableDDatabase.MutableMainSchema.MutablePerson::new", mutableAll.factory)
+    }
+
+    @Test
+    fun `a composite may build on an entity of another schema, read-only like any composite`() {
+        val holder = attributesOf("""
+            attr Badge.holder: (main.Person, badges: Int)? = SELECT person.*, 1 AS badges FROM main.person WHERE person_id = {person_id};
+        """.trimIndent()).single()
+        assertEquals("DDatabase.MainSchema.PersonImpl", holder.composite!!.parentClass)
+        assertEquals("nullableRowAttribute<Holder>", holder.coreRegistration)
+    }
+
+    @Test
+    fun `a schema and a table are found by their SQL name, and qualifying by the block's own schema changes nothing`() {
+        val spellings = attributesOf("""
+            attr a: main.Person* = SELECT * FROM main.person;
+            attr b: Main.person* = SELECT * FROM main.person;
+            attr c: other.Badge* = SELECT * FROM other.badge;
+            attr d: Badge* = SELECT * FROM other.badge;
+        """.trimIndent())
+        // what the type decides
+        fun typed(a: com.republicate.skorm.resolve.QueryAttribute) =
+            listOf(a.verb, a.entityRows, a.generics, a.cast, a.coreRegistration, a.clientRegistration, a.factory, a.types)
+        val (a, b, c, d) = spellings.map { typed(it) }
+        assertEquals(a, b)
+        assertEquals(d, c)
+        assertEquals("rowSetAttribute<DDatabase.OtherSchema.Badge>", spellings[3].coreRegistration)
+    }
+
+    @Test
+    fun `an unknown schema or table in an entity type is refused, naming the attribute and what is missing`() {
+        val noSchema = assertThrows(SkormException::class.java) { attributesOf("attr Badge.holder: elsewhere.Person = SELECT 1;") }
+        assertTrue(noSchema.message!!.contains("Badge.holder") && noSchema.message!!.contains("no schema elsewhere"), noSchema.message)
+        val noTable = assertThrows(SkormException::class.java) { attributesOf("attr everybody: (main.Nobody, n: Int)* = SELECT 1;") }
+        assertTrue(noTable.message!!.contains("everybody") && noTable.message!!.contains("no table Nobody in schema main"), noTable.message)
+        val unqualified = assertThrows(SkormException::class.java) { attributesOf("attr everybody: Person* = SELECT 1;") }
+        assertTrue(unqualified.message!!.contains("no table Person in schema other"), unqualified.message)
+    }
+
     @Test
     fun `a block of statements is performed as one transaction, its statements handed over without the braces`() {
         val forget = resolve(shelf, """

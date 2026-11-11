@@ -25,3 +25,8 @@ open class LastSeen(): Json.MutableObject() {
         get() = getLocalDateTime("seen")
 }
 
+open class Bearers(): ShapesDatabase.MainSchema.PersonImpl() {
+    val label: String
+        get() = getString("label")!!
+}
+

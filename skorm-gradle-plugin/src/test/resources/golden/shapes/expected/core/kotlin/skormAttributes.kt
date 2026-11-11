@@ -106,6 +106,14 @@ internal actual fun ShapesDatabase.registerAttributes() {
     // attribute main.lastStamp
     ShapesDatabase.main.scalarAttribute<Instant?>("lastStamp", """
         SELECT max(stamp) FROM person;""".trimIndent())
+
+    // attribute Badge.holder
+    ShapesDatabase.other.entity("badge").instanceAttributes.rowAttribute<ShapesDatabase.MainSchema.Person>("holder", """
+        SELECT * FROM main.person WHERE person_id = {person_id};""".trimIndent(), ShapesDatabase.MainSchema.Person::new)
+
+    // attribute Badge.bearers
+    ShapesDatabase.other.entity("badge").instanceAttributes.rowSetAttribute<Bearers>("bearers", """
+        SELECT person.*, badge.label FROM main.person JOIN other.badge USING (person_id) WHERE badge.label = {label};""".trimIndent(), ::Bearers)
     if (!MutableShapesDatabase.isInstantiated()) return
     // forward foreign key attribute
     MutableShapesDatabase.main.entity("friendship").instanceAttributes.rowAttribute<MutableShapesDatabase.MutableMainSchema.MutablePerson>("a", "SELECT * FROM main.person LEFT JOIN main.base_vip USING (person_id) WHERE person.person_id = {a_id};", MutableShapesDatabase.MutableMainSchema.MutablePerson)
@@ -208,4 +216,12 @@ DELETE FROM person WHERE person_id = {person_id};""".trimIndent())
     // attribute main.lastStamp
     MutableShapesDatabase.main.scalarAttribute<Instant?>("lastStamp", """
         SELECT max(stamp) FROM person;""".trimIndent())
+
+    // attribute Badge.holder
+    MutableShapesDatabase.other.entity("badge").instanceAttributes.rowAttribute<MutableShapesDatabase.MutableMainSchema.MutablePerson>("holder", """
+        SELECT * FROM main.person WHERE person_id = {person_id};""".trimIndent(), MutableShapesDatabase.MutableMainSchema.MutablePerson::new)
+
+    // attribute Badge.bearers
+    MutableShapesDatabase.other.entity("badge").instanceAttributes.rowSetAttribute<Bearers>("bearers", """
+        SELECT person.*, badge.label FROM main.person JOIN other.badge USING (person_id) WHERE badge.label = {label};""".trimIndent(), ::Bearers)
 }

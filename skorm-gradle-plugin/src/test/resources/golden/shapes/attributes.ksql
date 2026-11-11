@@ -59,4 +59,15 @@ database shapes {
     attr lastStamp: Instant? =
       SELECT max(stamp) FROM person;
   }
+
+  schema other {
+
+    // an entity of another schema, qualified by it
+    attr Badge.holder: main.Person =
+      SELECT * FROM main.person WHERE person_id = {person_id};
+
+    // a composite built on an entity of another schema
+    attr Badge.bearers: (main.Person, label: String)* =
+      SELECT person.*, badge.label FROM main.person JOIN other.badge USING (person_id) WHERE badge.label = {label};
+  }
 }

@@ -90,4 +90,10 @@ internal actual fun ShapesDatabase.registerAttributes() {
 
     // attribute main.lastStamp
     ShapesDatabase.main.scalarAttribute<Instant?>("lastStamp", setOf())
+
+    // attribute Badge.holder
+    ShapesDatabase.other.entity("badge").instanceAttributes.instanceAttribute<ShapesDatabase.MainSchema.Person>("holder", setOf("person_id"), ShapesDatabase.MainSchema.Person::new)
+
+    // attribute Badge.bearers
+    ShapesDatabase.other.entity("badge").instanceAttributes.rowSetAttribute<Bearers>("bearers", setOf("label"), ::Bearers)
 }

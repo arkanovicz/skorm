@@ -90,6 +90,12 @@ internal actual fun ShapesDatabase.registerAttributes() {
 
     // attribute main.lastStamp
     ShapesDatabase.main.scalarAttribute<Instant?>("lastStamp", setOf())
+
+    // attribute Badge.holder
+    ShapesDatabase.other.entity("badge").instanceAttributes.instanceAttribute<ShapesDatabase.MainSchema.Person>("holder", setOf("person_id"), ShapesDatabase.MainSchema.Person::new)
+
+    // attribute Badge.bearers
+    ShapesDatabase.other.entity("badge").instanceAttributes.rowSetAttribute<Bearers>("bearers", setOf("label"), ::Bearers)
     if (!MutableShapesDatabase.isInstantiated()) return
     // forward foreign key attribute
     MutableShapesDatabase.main.entity("friendship").instanceAttributes.rowAttribute<MutableShapesDatabase.MutableMainSchema.MutablePerson>("a", setOf("a_id"), MutableShapesDatabase.MutableMainSchema.MutablePerson)
@@ -174,4 +180,10 @@ internal actual fun ShapesDatabase.registerAttributes() {
 
     // attribute main.lastStamp
     MutableShapesDatabase.main.scalarAttribute<Instant?>("lastStamp", setOf())
+
+    // attribute Badge.holder
+    MutableShapesDatabase.other.entity("badge").instanceAttributes.instanceAttribute<MutableShapesDatabase.MutableMainSchema.MutablePerson>("holder", setOf("person_id"), MutableShapesDatabase.MutableMainSchema.MutablePerson::new)
+
+    // attribute Badge.bearers
+    MutableShapesDatabase.other.entity("badge").instanceAttributes.rowSetAttribute<Bearers>("bearers", setOf("label"), ::Bearers)
 }

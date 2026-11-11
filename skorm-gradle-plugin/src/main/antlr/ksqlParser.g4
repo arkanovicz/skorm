@@ -41,12 +41,15 @@ simple_type:
 
 json_object_type: JSON DOT OBJECT ;
 
-out_entity: LABEL ;
+out_entity: entity_name ;
+
+// a table of the block's schema, unless qualified by another
+entity_name: ( schemaName=LABEL DOT )? name=LABEL ;
 
 complex_type: complex_type_spec | LP complex_type_spec RP ;
 
 complex_type_spec:
-  entity=LABEL ( CM composite_field )+
+  entity=entity_name ( CM composite_field )+
 | composite_field ( CM composite_field )*
 ;
 

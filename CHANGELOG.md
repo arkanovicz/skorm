@@ -4,6 +4,9 @@ All notable changes to Skorm are documented in this file.
 
 ## [0.33] - unreleased
 
+### Added
+- A ksql entity type may name its schema: `attr Badge.holder: main.Person` in a `schema other` block, as a returned entity (`main.Person?`, `main.Person*`) or as the entity a composite builds on (`(main.Person, since: LocalDate)`). Links already crossed schemas, ksql types could not: a bare name was always taken in the block's own schema. The schema and the table are found in the model by their SQL name, unqualified ones included, and an unknown one is refused at generation, naming the attribute, where it used to generate a class that did not compile
+
 ### Changed
 - kddl 0.35: a model split over several files (`include 'shared.kddl'`) finds the included ones beside the including one. The path was looked up from the working directory, the project's in a Gradle build, so an include next to a model in `src/main/model` was not found. Schemas declared on both sides now merge
 - kddl 0.35: a many-to-many between two tables keyed alike (two `id`s) works: its join table has both columns, `student_id` and `course_id` (it had a single `id`), and the navigations follow. A table linked to itself many-to-many (`a *-* a`) is refused: declare the join table, both collections are generated from it

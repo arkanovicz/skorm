@@ -40,13 +40,19 @@ sealed class RMType(val name: String) {
     abstract fun isComposite(): Boolean
 }
 
-class RMSimpleType(name: String, val isEntity: Boolean): RMType(name) {
+class RMSimpleType(name: String, val entity: RMEntityRef? = null): RMType(name) {
+    val isEntity get() = entity != null
     override fun isComposite() = false
+}
+
+/** an entity type as written: [schema] null means the block's own */
+data class RMEntityRef(val schema: String?, val table: String) {
+    override fun toString() = schema?.let { "$it.$table" } ?: table
 }
 
 class RMCompositeType(name: String): RMType(name) {
     override fun isComposite() = true
-    var parent: String? = null
+    var parent: RMEntityRef? = null
     val fields = mutableListOf<RMField>()
 }
 

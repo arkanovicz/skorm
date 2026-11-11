@@ -106,4 +106,12 @@ internal actual fun ShapesDatabase.registerAttributes() {
     // attribute main.lastStamp
     ShapesDatabase.main.scalarAttribute<Instant?>("lastStamp", """
         SELECT max(stamp) FROM person;""".trimIndent())
+
+    // attribute Badge.holder
+    ShapesDatabase.other.entity("badge").instanceAttributes.rowAttribute<ShapesDatabase.MainSchema.Person>("holder", """
+        SELECT * FROM main.person WHERE person_id = {person_id};""".trimIndent(), ShapesDatabase.MainSchema.Person::new)
+
+    // attribute Badge.bearers
+    ShapesDatabase.other.entity("badge").instanceAttributes.rowSetAttribute<Bearers>("bearers", """
+        SELECT person.*, badge.label FROM main.person JOIN other.badge USING (person_id) WHERE badge.label = {label};""".trimIndent(), ::Bearers)
 }

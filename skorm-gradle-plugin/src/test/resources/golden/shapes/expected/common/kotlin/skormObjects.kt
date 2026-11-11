@@ -522,11 +522,19 @@ open class ShapesDatabase(processor: Processor): Database("shapes", processor) {
                 get() = getInt("personId")!!
             // forward foreign key
             suspend fun person(): ShapesDatabase.MainSchema.Person = retrieve("person")
+            // attribute Badge.holder
+            suspend fun `holder`() = retrieve<ShapesDatabase.MainSchema.Person>("holder")
+            // attribute Badge.bearers
+            suspend fun `bearers`() = query<Bearers>("bearers")
         }
         open class BadgeImpl(entity: Entity = Badge): InstanceImpl(entity), Badge {
             // the blocking twin of `person()`: what a reflection-driven caller reaches under that name
             @JvmName("person")
             fun personBlocking(): ShapesDatabase.MainSchema.Person = blocking { person() }
+            @JvmName("holder")
+            fun holderBlocking() = blocking { `holder`() }
+            @JvmName("bearers")
+            fun bearersBlocking() = blocking { `bearers`().toList() }
         }
     }
 }
@@ -995,11 +1003,17 @@ class MutableShapesDatabase(processor: Processor): ShapesDatabase(processor), Mu
                 set(v) { put("personId", v) }
             // forward foreign key
             override suspend fun person(): MutableShapesDatabase.MutableMainSchema.MutablePerson = retrieve("person")
+            // attribute Badge.holder
+            override suspend fun `holder`() = retrieve<MutableShapesDatabase.MutableMainSchema.MutablePerson>("holder")
         }
         open class MutableBadgeImpl(entity: Entity = MutableBadge): MutableInstanceImpl(entity), MutableBadge {
             // the blocking twin of `person()`: what a reflection-driven caller reaches under that name
             @JvmName("person")
             fun personBlocking(): MutableShapesDatabase.MutableMainSchema.MutablePerson = blocking { person() }
+            @JvmName("holder")
+            fun holderBlocking() = blocking { `holder`() }
+            @JvmName("bearers")
+            fun bearersBlocking() = blocking { `bearers`().toList() }
         }
     }
 }
