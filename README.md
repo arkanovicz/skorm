@@ -183,7 +183,7 @@ database.configure(mapOf(
     )
 ))
 database.initialize()   // registers the entities, the navigations and the ksql attributes (pendingCount, toggle)
-// the tables must exist: run the generated create-script.sql first (the bookshelf example does it with a "create" mutation)
+// the tables must exist: run the generated creation script first, `META-INF/skorm/<model>.sql` on the classpath (the bookshelf example does it with a "create" mutation)
 
 // Create a task
 val task = MutableTask.new().apply {

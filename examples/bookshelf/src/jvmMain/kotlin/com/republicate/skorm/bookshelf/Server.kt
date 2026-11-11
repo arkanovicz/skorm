@@ -57,7 +57,7 @@ fun Application.module() {
 // the server writes (creation script, test data, REST write routes), hence the mutable half
 val exampleDatabase = MutableExampleDatabase(CoreProcessor(JdbcConnector()))
 
-const val CREATION_SCRIPT = "create-script.sql"
+const val CREATION_SCRIPT = "META-INF/skorm/bookshelf.sql"
 
 fun Application.configureDatabase() {
 

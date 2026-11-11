@@ -1,0 +1,63 @@
+database shapes {
+  schema main {
+    enum level('low', 'high')
+    table person {
+      *person_id serial
+      name varchar(50)
+      rank level
+      nature enum('a','b') as PersonNature
+      small smallint
+      tiny tinyint?
+      big bigint?
+      uid uuid?
+      meta json?
+      doc jsonb?
+      born date?
+      seen timestamp?
+      stamp timestamptz?
+    }
+    table country {
+      *code char(2)
+      label varchar(50)
+    }
+    table friendship {
+      *a_id -- person
+      *b_id -- person
+      since date
+    }
+    table gift {
+      label varchar(20)
+      a_id integer
+      b_id integer
+    }
+    table address {
+      *address_id serial
+      city varchar(50)
+      owner -- person
+      backup -> person?
+      code -- country
+    }
+    table student {
+      *id serial
+      name varchar(20)
+    }
+    table course {
+      *id serial
+    }
+    table lesson {
+      *id serial
+      course_id -- course
+    }
+    table vip : person {
+    }
+    gift *-- friendship
+    person *--* address
+    student *--* course
+  }
+  schema other {
+    table badge {
+      label varchar(20)
+      person_id -- main.person
+    }
+  }
+}

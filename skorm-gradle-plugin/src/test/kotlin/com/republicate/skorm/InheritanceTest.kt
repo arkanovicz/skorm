@@ -188,7 +188,7 @@ class InheritanceTest {
                         db.configure(mapOf("core" to mapOf("jdbc" to mapOf(
                             "url" to pg.jdbcUrl, "login" to pg.username, "password" to pg.password))).toJsonObject())
                         db.initialize()
-                        db.mutationAttribute("create", InheritanceCheck::class.java.getResource("/create-script.sql")!!.readText())
+                        db.mutationAttribute("create", InheritanceCheck::class.java.getResource("/META-INF/skorm/inh.sql")!!.readText())
                         runBlocking {
                             db.perform("create")
                             val seen = Instant.parse("2026-11-02T07:34:56.123456Z")

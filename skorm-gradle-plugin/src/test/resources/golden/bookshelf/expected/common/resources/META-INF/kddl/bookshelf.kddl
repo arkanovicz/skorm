@@ -1,0 +1,31 @@
+database example {
+  schema bookshelf {
+    table dude {
+      *dude_id serial
+      !name varchar(100)
+    }
+    table author {
+      *author_id serial
+      name varchar(100)
+    }
+    table book {
+      *book_id serial
+      title varchar(100)
+      genre enum('fiction','novel','essay','poetry')
+      acquired timestamptz?
+      donor -> dude?
+      author_id -- author
+    }
+    table borrowing {
+      borrowing_date date
+      restitution_date date?
+      book_id -> book
+      dude_id -> dude
+    }
+    table tag {
+      *tag_id serial
+      label varchar(30)
+    }
+    book *--* tag
+  }
+}

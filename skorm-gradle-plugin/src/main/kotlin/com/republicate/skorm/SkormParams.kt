@@ -1,6 +1,7 @@
 package com.republicate.skorm
 
 import org.gradle.api.Project
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
@@ -15,6 +16,9 @@ abstract class SkormParams @Inject constructor(project: Project) {
 
     /** The kddl model; exactly one of [model] or [datasource] is expected. */
     val model: RegularFileProperty = objects.fileProperty()
+
+    /** Directories and jars where an `import` is looked up, after the model's own directory: typically the artifacts of the modules that own the imported kddl schemas. */
+    val imports: ConfigurableFileCollection = objects.fileCollection()
 
     /** JDBC URL to reverse-engineer the model from, instead of [model]. */
     val datasource: Property<String> = objects.property(String::class.java)

@@ -25,7 +25,10 @@ internal object KotlinSourceWiring {
         val kotlin = project.extensions.getByName("kotlin")
         val sourceSets = kotlin.sourceSets()
         generate.configure { it.multiplatform.set(true) }
-        sourceSets.named("commonMain") { it.kotlinDir().srcDir(generate.dir(COMMON, "kotlin")) }
+        sourceSets.named("commonMain") {
+            it.kotlinDir().srcDir(generate.dir(COMMON, "kotlin"))
+            it.resourcesDir().srcDir(generate.dir(COMMON, "resources"))
+        }
         @Suppress("UNCHECKED_CAST")
         (kotlin.invoke("getTargets") as NamedDomainObjectCollection<Any>).all { target ->
             val platform = (target.invoke("getPlatformType") as Enum<*>).name
@@ -45,6 +48,7 @@ internal object KotlinSourceWiring {
         project.extensions.getByName("kotlin").sourceSets().named("main") {
             it.kotlinDir().srcDir(generate.dir(COMMON, "kotlin"))
             it.kotlinDir().srcDir(generate.dir(CORE, "kotlin"))
+            it.resourcesDir().srcDir(generate.dir(COMMON, "resources"))
             it.resourcesDir().srcDir(generate.dir(CORE, "resources"))
         }
     }

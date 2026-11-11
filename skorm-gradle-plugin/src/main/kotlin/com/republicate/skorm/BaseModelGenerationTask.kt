@@ -3,6 +3,7 @@ package com.republicate.skorm
 import com.republicate.kddl.ASTDatabase
 import com.republicate.kddl.ASTSchema
 import com.republicate.kddl.FieldType
+import com.republicate.kddl.SearchPathResolver
 import com.republicate.kddl.Utils
 import com.republicate.kddl.Utils.getFile
 import com.republicate.kddl.gradle.IncludedModels
@@ -10,10 +11,12 @@ import com.republicate.kddl.parse
 import com.republicate.kddl.reverse
 import org.apache.velocity.VelocityContext
 import org.apache.velocity.tools.generic.LogTool
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
+import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
@@ -36,11 +39,18 @@ abstract class BaseModelGenerationTask: BaseGenerationTask() {
     @get:Optional
     abstract val model: RegularFileProperty
 
-    /** The model files the root includes: editing one of them reruns the task. */
+    /** Directories and jars where an `import` is looked up, after the model's own directory. */
+    @get:Classpath
+    abstract val imports: ConfigurableFileCollection
+
+    /** The model files the root includes or imports: editing one of them reruns the task. */
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.NONE)
     val included: FileCollection = project.files(
-        project.providers.of(IncludedModels::class.java) { it.parameters.model.set(model) }
+        project.providers.of(IncludedModels::class.java) {
+            it.parameters.model.set(model)
+            it.parameters.imports.from(imports)
+        }
     )
 
     @get:Input
@@ -59,7 +69,7 @@ abstract class BaseModelGenerationTask: BaseGenerationTask() {
         if ((foundModel == null) == (foundDatasource == null)) {
             throw RuntimeException("$tag expecting exactly one of skorm.model or skorm.datasource parameter")
         }
-        return if (foundModel != null) parse(Utils.getFile(foundModel.asFile.absolutePath)) else reverse(foundDatasource!!)
+        return if (foundModel != null) parse(Utils.getFile(foundModel.asFile.absolutePath), resolver = SearchPathResolver(imports.files)) else reverse(foundDatasource!!)
     }
 
     override fun populateContext(context: VelocityContext) {

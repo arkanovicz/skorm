@@ -1,6 +1,7 @@
 package com.republicate.skorm
 
 import com.republicate.kddl.Formatter
+import com.republicate.kddl.SearchPathResolver
 import com.republicate.kddl.Utils
 import com.republicate.kddl.hypersql.HyperSQLFormatter
 import com.republicate.kddl.postgresql.PostgreSQLFormatter
@@ -23,8 +24,9 @@ import java.io.File
  * the project builds for, unless the build declares [core] / [client] explicitly.
  *
  *   <out>/common/kotlin    entity classes with their navigations and attributes, field interfaces, composites
+ *   <out>/common/resources the kddl schema in one file and its SchemaInfo, for another kddl schema to import it
  *   <out>/core/kotlin      server-side attribute registrations, called from initialize()
- *   <out>/core/resources   database creation script
+ *   <out>/core/resources   database creation script, SchemaInfo.script(base)
  *   <out>/client/kotlin    REST client attribute registrations, called from initialize()
  */
 @CacheableTask
@@ -102,7 +104,17 @@ abstract class GenerateSkormCodeTask : BaseModelGenerationTask() {
         if (withCore) generateCode("templates/skorm-attributes-core.vtl", File(out, "core/kotlin/skormAttributes.kt"))
         if (withClient) generateCode("templates/skorm-attributes-client.vtl", File(out, "client/kotlin/skormAttributes.kt"))
 
-        if (withCore) generateCreationScript(File(out, "core/resources/$CREATION_SCRIPT_FILE"))
+        // any kddl schema may be imported by another
+        val base = model.orNull?.asFile?.nameWithoutExtension ?: database.sqlName
+        val common = File(out, "common/resources")
+        File(common, "${SearchPathResolver.ARTIFACT_DIR}/$base.kddl").apply { parentFile.mkdirs() }.writeText(database.display().toString())
+        SchemaInfo(
+            base, destPackage.get(), database.sqlName,
+            database.schemas.values.filter { !it.external }.map { it.sqlName },
+            readOnly.get(), database.imports
+        ).write(common)
+
+        if (withCore) generateCreationScript(File(out, "core/resources/${SchemaInfo.script(base)}"))
     }
 
     /** An attribute's declared arguments must match the parameters its SQL actually needs. */
@@ -142,6 +154,5 @@ abstract class GenerateSkormCodeTask : BaseModelGenerationTask() {
     companion object {
         val JVM_PLATFORMS = setOf("jvm", "androidJvm")
         val CLIENT_PLATFORMS = setOf("js", "wasm", "native")
-        const val CREATION_SCRIPT_FILE = "create-script.sql"
     }
 }

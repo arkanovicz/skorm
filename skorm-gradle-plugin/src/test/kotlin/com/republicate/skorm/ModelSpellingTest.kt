@@ -1,5 +1,6 @@
 package com.republicate.skorm
 
+import com.republicate.kddl.SearchPathResolver
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -69,12 +70,14 @@ class ModelSpellingTest {
     """.trimIndent()
 
     private fun generate(name: String, model: String): Map<String, String> {
-        val source = dir.resolve("$name.kddl").apply { writeText(model) }
-        val ksql = dir.resolve("$name.ksql").apply { writeText(attributes) }
-        val out = dir.resolve(name)
+        // one file name for both: the shipped files are named after it
+        val source = dir.resolve("$name/shop.kddl").apply { parentFile.mkdirs(); writeText(model) }
+        val ksql = dir.resolve("$name/shop.ksql").apply { writeText(attributes) }
+        val out = dir.resolve("$name/out")
         generateInto(out, source, ksql, "shop.model", "postgresql")
-        // the creation script opens with a comment quoting the database as written
-        return out.filesByPath().mapValues { it.value.readLines().filterNot { line -> line.startsWith("-- database ") }.joinToString("\n") }
+        // the creation script opens with a comment quoting the database as written, the shipped kddl schema is the author's
+        return out.filesByPath().filterKeys { !it.startsWith("common/resources/${SearchPathResolver.ARTIFACT_DIR}/") }
+            .mapValues { it.value.readLines().filterNot { line -> line.startsWith("-- database ") }.joinToString("\n") }
     }
 
     @Test
