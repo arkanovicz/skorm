@@ -155,11 +155,7 @@ public class ConnectionPool
         Connection newconn = createConnection();
         if (!schema.isEmpty())
         {
-            switch (newconn.getVendor().getIdentifierInternalCase()) {
-                case 'L': schema = schema.toLowerCase(Locale.ROOT); break;
-                case 'U': schema = schema.toUpperCase(Locale.ROOT); break;
-            }
-            newconn.setSchema(schema);
+            newconn.enterSchema(schema);
         }
         newconn.enterBusyState();
         connections.add(newconn);

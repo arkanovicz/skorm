@@ -36,6 +36,10 @@ public class JdbcConnector implements Connector, Closeable
     {
         Connection txConnection;
         Deque<Savepoint> savepoints = new LinkedList<>();
+        /** the schema the connection is set to: the one it was pooled for, until a statement of another schema comes */
+        private String schema;
+        /** what the connection reported before its first move, to set it back before it returns to its pool */
+        private String home = null;
 
         TxConnector(@Nullable String schema) throws SkormException
         {
@@ -43,11 +47,32 @@ public class JdbcConnector implements Connector, Closeable
             {
                 // handed out busy: held exclusively until terminal commit/rollback
                 txConnection = txConnectionPool.getConnection(schema);
+                this.schema = schema;
             }
             catch (SQLException sqle)
             {
                 throw new SkormException("cannot start transaction", sqle);
             }
+        }
+
+        /**
+         * A statement resolves its unqualified names in its own schema, in a transaction as outside one:
+         * the transaction's single connection follows the statements across schemas.
+         */
+        private void enter(@Nullable String schema) throws SQLException
+        {
+            if (schema == null || schema.isEmpty() || schema.equals(this.schema)) return;
+            if (home == null) home = txConnection.getSchema();
+            txConnection.enterSchema(schema);
+            this.schema = schema;
+        }
+
+        /** back where the pool expects it; within the transaction when it commits, or the setting would wait for the next one */
+        private void goHome() throws SQLException
+        {
+            if (home == null) return;
+            txConnection.setSchema(home);
+            home = null;
         }
 
         /* TODO Kotlin default interface methods not seen?! */
@@ -104,6 +129,7 @@ public class JdbcConnector implements Connector, Closeable
             PooledStatement stmt = null;
             try
             {
+                enter(schema);
                 stmt = statementPool.prepareQuery(schema, query, txConnection);
                 if (streamed) stmt.setFetchSize(fetchSize);
                 PooledStatement opened = stmt;
@@ -125,6 +151,7 @@ public class JdbcConnector implements Connector, Closeable
         {
             try
             {
+                enter(schema);
                 PooledStatement stmt = statementPool.prepareUpdate(schema, query, txConnection);
                 try
                 {
@@ -169,6 +196,7 @@ public class JdbcConnector implements Connector, Closeable
                 Savepoint sp = savepoints.poll();
                 if (sp == null)
                 {
+                    goHome();
                     txConnection.commit();
                     txConnection.leaveBusyState();
                 }
@@ -190,9 +218,20 @@ public class JdbcConnector implements Connector, Closeable
                 if (sp == null)
                 {
                     txConnection.rollback();
+                    if (home != null)
+                    {
+                        // an engine may or may not undo the setting with the transaction
+                        goHome();
+                        txConnection.commit();
+                    }
                     txConnection.leaveBusyState();
                 }
-                else txConnection.rollback(sp);
+                else
+                {
+                    txConnection.rollback(sp);
+                    // PostgreSQL undoes a schema set since the savepoint: no longer known, set again by the next statement
+                    if (home != null) schema = null;
+                }
             }
             catch (SQLException sqle)
             {

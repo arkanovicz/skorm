@@ -168,6 +168,29 @@ class AmbientTransactionTest {
         assertEquals(2, f1.count("WHERE TITLE = 'cleared'"))
     }
 
+    /** Unqualified names: each statement resolves them in its own schema, whichever schema opened the transaction. */
+    @Test
+    fun statementsOfAnotherSchemaRunInTheirOwn() {
+        f1.connector.mutate(null, "CREATE SCHEMA IF NOT EXISTS OTHER")
+        f1.connector.mutate(null, "CREATE TABLE IF NOT EXISTS OTHER.NOTE (TEXT VARCHAR(20))")
+        f1.connector.mutate("other", "DELETE FROM NOTE")
+        for (commit in listOf(false, true)) {
+            val tx = f1.connector.begin("tx")
+            tx.mutate("other", "INSERT INTO NOTE VALUES ('n')")
+            tx.mutate("tx", "INSERT INTO BOOK (TITLE) VALUES ('b')")
+            assertEquals(1, scalarLong(tx.query("other", "SELECT COUNT(*) FROM NOTE")))
+            assertEquals(1, scalarLong(tx.query("tx", "SELECT COUNT(*) FROM BOOK")))
+            if (commit) tx.commit() else tx.rollback()
+            val kept = if (commit) 1L else 0L
+            assertEquals(kept, scalarLong(f1.connector.query("other", "SELECT COUNT(*) FROM NOTE")))
+            assertEquals(kept, f1.count())
+            // the pooled connection is the tx schema's again: the next transaction finds its tables first thing
+            val next = f1.connector.begin("tx")
+            assertEquals(kept, scalarLong(next.query("tx", "SELECT COUNT(*) FROM BOOK")))
+            next.rollback()
+        }
+    }
+
     @Test
     fun concurrentTransactionsGetDistinctConnections() = runTest {
         val tx1 = f1.connector.begin("tx")

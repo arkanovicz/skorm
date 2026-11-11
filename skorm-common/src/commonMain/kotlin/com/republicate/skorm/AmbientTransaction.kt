@@ -41,8 +41,9 @@ suspend fun AttributeHolder.currentProcessor(): Processor =
  * - a transaction holds a single connection, which is not safe for *parallel*
  *   use: sequential awaits are fine, concurrent fan-out inside the block is not;
  * - lazy [kotlin.sequences.Sequence] results must be iterated inside the block;
- * - [schema] selects the transaction connection; operations on the database's
- *   other schemas still join the transaction.
+ * - [schema] selects the transaction connection; operations on other schemas,
+ *   of this database or of another one on the same processor, join the
+ *   transaction, each statement resolving its unqualified names in its own schema.
  */
 suspend fun <T> Database.transaction(schema: String, block: suspend () -> T): T {
     val ambient = coroutineContext[AmbientTransaction]

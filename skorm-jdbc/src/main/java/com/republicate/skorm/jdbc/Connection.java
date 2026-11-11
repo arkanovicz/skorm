@@ -814,6 +814,16 @@ public class Connection
 		 * 1.7 API
 	 	*/
 
+    /** Sets the schema by its name as skorm knows it, in the case the engine stores unquoted identifiers. */
+    public void enterSchema(String schema) throws SQLException
+    {
+        switch (getVendor().getIdentifierInternalCase()) {
+            case 'L': schema = schema.toLowerCase(java.util.Locale.ROOT); break;
+            case 'U': schema = schema.toUpperCase(java.util.Locale.ROOT); break;
+        }
+        setSchema(schema);
+    }
+
     public void setSchema(String schema) throws SQLException
     {
         try
