@@ -37,6 +37,8 @@ open class RepublicateDatabase(processor: Processor): Database("republicate", pr
         republicate // the schema exists on this instance before the entities register
         RepublicateSchema.Decision.initialize()
         RepublicateSchema.Ballot.initialize()
+        RepublicateSchema.Tag.initialize()
+        RepublicateSchema.TagRoom.initialize()
         super.initialize()
         if (!arkad.populated) arkad.initialize() // after this one, which carries the processor's configuration
         if (this !is MutableRepublicateDatabase) registerAttributes() // once per store, after both databases exist
@@ -121,6 +123,53 @@ open class RepublicateDatabase(processor: Processor): Database("republicate", pr
             @JvmName("decision")
             fun decisionBlocking(): RepublicateDatabase.RepublicateSchema.Decision = blocking { decision() }
         }
+        interface Tag : Instance {
+            companion object: Entity("tag", RepublicateDatabase.republicate) {
+                override fun new(): Tag = TagImpl(this)
+                @Suppress("UNCHECKED_CAST")
+                override suspend fun fetch(vararg key: Any) = super.fetch(*key) as Tag?
+                suspend fun fetch(id: Int) = super.fetch(id) as Tag?
+                @Suppress("UNCHECKED_CAST")
+                override suspend fun browse() = super.browse() as Flow<Tag>
+                fun initialize() {
+                    if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
+                    addField(Field("id", "serial", true, true))
+                    addField(Field("name", "varchar(50)", false, false))
+                }
+            }
+            val id: Int
+                get() = getInt("id")!!
+            val name: String
+                get() = getString("name")!!
+            // left to right n-n join
+            suspend fun rooms(): Flow<net.arkad.model.ArkadDatabase.ArkadSchema.Room> = query("rooms")
+        }
+        open class TagImpl(entity: Entity = Tag): InstanceImpl(entity), Tag {
+            // the blocking twin of `rooms()`: what a reflection-driven caller reaches under that name
+            @JvmName("rooms")
+            fun roomsBlocking(): List<net.arkad.model.ArkadDatabase.ArkadSchema.Room> = blocking { rooms().toList() }
+        }
+        interface TagRoom : Instance {
+            companion object: Entity("tagRoom", RepublicateDatabase.republicate) {
+                override fun new(): TagRoom = TagRoomImpl(this)
+                @Suppress("UNCHECKED_CAST")
+                override suspend fun fetch(vararg key: Any) = super.fetch(*key) as TagRoom?
+                suspend fun fetch(tagId: Int, roomId: Int) = super.fetch(tagId, roomId) as TagRoom?
+                @Suppress("UNCHECKED_CAST")
+                override suspend fun browse() = super.browse() as Flow<TagRoom>
+                fun initialize() {
+                    if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
+                    addField(Field("tagId", "integer", true, false))
+                    addField(Field("roomId", "integer", true, false))
+                }
+            }
+            val tagId: Int
+                get() = getInt("tagId")!!
+            val roomId: Int
+                get() = getInt("roomId")!!
+        }
+        open class TagRoomImpl(entity: Entity = TagRoom): InstanceImpl(entity), TagRoom {
+        }
     }
 }
 
@@ -143,6 +192,8 @@ class MutableRepublicateDatabase(processor: Processor): RepublicateDatabase(proc
         republicate // the schema exists on this instance before the entities register
         MutableRepublicateSchema.MutableDecision.initialize()
         MutableRepublicateSchema.MutableBallot.initialize()
+        MutableRepublicateSchema.MutableTag.initialize()
+        MutableRepublicateSchema.MutableTagRoom.initialize()
         super.initialize()
         readOnly.initialize()
     }
@@ -224,6 +275,50 @@ class MutableRepublicateDatabase(processor: Processor): RepublicateDatabase(proc
             // the blocking twin of `decision()`: what a reflection-driven caller reaches under that name
             @JvmName("decision")
             fun decisionBlocking(): MutableRepublicateDatabase.MutableRepublicateSchema.MutableDecision = blocking { decision() }
+        }
+        interface MutableTag : RepublicateDatabase.RepublicateSchema.Tag, MutableInstance {
+            companion object: Entity("tag", MutableRepublicateDatabase.republicate), MutableEntity {
+                override fun new(): MutableTag = MutableTagImpl(this)
+                @Suppress("UNCHECKED_CAST")
+                override suspend fun fetch(vararg key: Any) = super.fetch(*key) as MutableTag?
+                suspend fun fetch(id: Int) = super.fetch(id) as MutableTag?
+                @Suppress("UNCHECKED_CAST")
+                override suspend fun browse() = super.browse() as Flow<MutableTag>
+                fun initialize() {
+                    if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
+                    addField(Field("id", "serial", true, true))
+                    addField(Field("name", "varchar(50)", false, false))
+                }
+            }
+            override var name: String
+                get() = getString("name")!!
+                set(v) { put("name", v) }
+            // left to right n-n join
+            override suspend fun rooms(): Flow<net.arkad.model.MutableArkadDatabase.MutableArkadSchema.MutableRoom> = query("rooms")
+        }
+        open class MutableTagImpl(entity: Entity = MutableTag): MutableInstanceImpl(entity), MutableTag {
+            // the blocking twin of `rooms()`: what a reflection-driven caller reaches under that name
+            @JvmName("rooms")
+            fun roomsBlocking(): List<net.arkad.model.MutableArkadDatabase.MutableArkadSchema.MutableRoom> = blocking { rooms().toList() }
+        }
+        interface MutableTagRoom : RepublicateDatabase.RepublicateSchema.TagRoom, MutableInstance {
+            companion object: Entity("tagRoom", MutableRepublicateDatabase.republicate), MutableEntity {
+                override fun new(): MutableTagRoom = MutableTagRoomImpl(this)
+                @Suppress("UNCHECKED_CAST")
+                override suspend fun fetch(vararg key: Any) = super.fetch(*key) as MutableTagRoom?
+                suspend fun fetch(tagId: Int, roomId: Int) = super.fetch(tagId, roomId) as MutableTagRoom?
+                // a row's identity is given at birth, never set: a rekeyed row would shadow a persisted one
+                fun new(tagId: Int, roomId: Int): MutableTagRoom = new().apply { put("tagId", tagId); put("roomId", roomId) }
+                @Suppress("UNCHECKED_CAST")
+                override suspend fun browse() = super.browse() as Flow<MutableTagRoom>
+                fun initialize() {
+                    if (fields.isNotEmpty()) return // the mutable database initializes its read-only sibling too
+                    addField(Field("tagId", "integer", true, false))
+                    addField(Field("roomId", "integer", true, false))
+                }
+            }
+        }
+        open class MutableTagRoomImpl(entity: Entity = MutableTagRoom): MutableInstanceImpl(entity), MutableTagRoom {
         }
     }
 }

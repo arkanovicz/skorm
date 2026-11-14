@@ -4,8 +4,10 @@ package com.republicate.skorm.club
 
 typealias Member = ClubDatabase.ClubSchema.Member
 typealias Review = ClubDatabase.ClubSchema.Review
+typealias Wish = ClubDatabase.ClubSchema.Wish
 
 // the writing half
 
 typealias MutableMember = MutableClubDatabase.MutableClubSchema.MutableMember
 typealias MutableReview = MutableClubDatabase.MutableClubSchema.MutableReview
+typealias MutableWish = MutableClubDatabase.MutableClubSchema.MutableWish

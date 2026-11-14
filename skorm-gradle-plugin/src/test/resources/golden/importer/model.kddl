@@ -16,6 +16,16 @@ database republicate {
       choice varchar(20)
     }
 
+    table tag {
+      *id serial
+      name varchar(50)
+    }
+
+    table tag_room {                       // a join table with an imported table: tag.rooms(), nothing on the room
+      *tag_id --> tag cascade
+      *room_id -> arkad.room cascade
+    }
+
     ballot *-- decision                    // links between own tables are untouched
   }
 }

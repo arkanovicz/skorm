@@ -15,6 +15,8 @@ internal actual fun RepublicateDatabase.registerAttributes() {
     RepublicateDatabase.republicate.entity("ballot").instanceAttributes.rowAttribute<RepublicateDatabase.RepublicateSchema.Decision>("decision", setOf("decision_id"), RepublicateDatabase.RepublicateSchema.Decision)
     // reverse foreign key attribute
     RepublicateDatabase.republicate.entity("decision").instanceAttributes.rowSetAttribute<RepublicateDatabase.RepublicateSchema.Ballot>("ballots", setOf("id"), RepublicateDatabase.RepublicateSchema.Ballot)
+    // left to right n-n join attribute
+    RepublicateDatabase.republicate.entity("tag").instanceAttributes.rowSetAttribute<net.arkad.model.ArkadDatabase.ArkadSchema.Room>("rooms", setOf("id"), net.arkad.model.ArkadDatabase.ArkadSchema.Room)
 
     // attribute Decision.thread
     RepublicateDatabase.republicate.entity("decision").instanceAttributes.rowSetAttribute<net.arkad.model.ArkadDatabase.ArkadSchema.Message>("thread", setOf("message"), net.arkad.model.ArkadDatabase.ArkadSchema.Message::new)
@@ -30,6 +32,8 @@ internal actual fun RepublicateDatabase.registerAttributes() {
     MutableRepublicateDatabase.republicate.entity("ballot").instanceAttributes.rowAttribute<MutableRepublicateDatabase.MutableRepublicateSchema.MutableDecision>("decision", setOf("decision_id"), MutableRepublicateDatabase.MutableRepublicateSchema.MutableDecision)
     // reverse foreign key attribute
     MutableRepublicateDatabase.republicate.entity("decision").instanceAttributes.rowSetAttribute<MutableRepublicateDatabase.MutableRepublicateSchema.MutableBallot>("ballots", setOf("id"), MutableRepublicateDatabase.MutableRepublicateSchema.MutableBallot)
+    // left to right n-n join attribute
+    MutableRepublicateDatabase.republicate.entity("tag").instanceAttributes.rowSetAttribute<net.arkad.model.MutableArkadDatabase.MutableArkadSchema.MutableRoom>("rooms", setOf("id"), net.arkad.model.MutableArkadDatabase.MutableArkadSchema.MutableRoom)
 
     // attribute Decision.thread
     MutableRepublicateDatabase.republicate.entity("decision").instanceAttributes.rowSetAttribute<net.arkad.model.MutableArkadDatabase.MutableArkadSchema.MutableMessage>("thread", setOf("message"), net.arkad.model.MutableArkadDatabase.MutableArkadSchema.MutableMessage::new)

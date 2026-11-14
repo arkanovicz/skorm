@@ -17,6 +17,11 @@ database club {
       stars integer
     }
 
+    table wish {                    // a join table with an imported table: member.books(), nothing on the book
+      *member_id --> member cascade
+      *book_id -> bookshelf.book cascade
+    }
+
     review *-- member               // a link between the club's own tables
   }
 

@@ -605,6 +605,9 @@ What the importer gets:
   references their tables.
 - A link to an imported table is one way (kddl refuses the reverse side) and returns the owner's class,
   the mutable one from the mutable half.
+- A many-to-many with an imported table is a join table you declare (`table wish { *member_id --> member`,
+  `*book_id -> bookshelf.book }`): it gives the collection on your side, `member.books()`, and nothing on the
+  imported one.
 - Its database holds the imported one as a property named after it (`club.example`, the bookshelf's database
   being named `example`): the one the app already created on the same processor, or a new one. The app
   configures and initializes the importer alone.

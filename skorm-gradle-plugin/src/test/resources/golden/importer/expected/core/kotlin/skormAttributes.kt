@@ -17,6 +17,8 @@ internal actual fun RepublicateDatabase.registerAttributes() {
     RepublicateDatabase.republicate.entity("ballot").instanceAttributes.rowAttribute<RepublicateDatabase.RepublicateSchema.Decision>("decision", "SELECT * FROM republicate.decision WHERE decision.id = {decision_id};", RepublicateDatabase.RepublicateSchema.Decision)
     // reverse foreign key attribute
     RepublicateDatabase.republicate.entity("decision").instanceAttributes.rowSetAttribute<RepublicateDatabase.RepublicateSchema.Ballot>("ballots", "SELECT * FROM republicate.ballot WHERE ballot.decision_id = {id};", RepublicateDatabase.RepublicateSchema.Ballot)
+    // left to right n-n join attribute
+    RepublicateDatabase.republicate.entity("tag").instanceAttributes.rowSetAttribute<net.arkad.model.ArkadDatabase.ArkadSchema.Room>("rooms", "SELECT towards_table.* FROM republicate.tag_room AS join_table JOIN arkad.room AS towards_table ON towards_table.id = join_table.room_id WHERE join_table.tag_id = {id};", net.arkad.model.ArkadDatabase.ArkadSchema.Room)
 
     // attribute Decision.thread
     RepublicateDatabase.republicate.entity("decision").instanceAttributes.rowSetAttribute<net.arkad.model.ArkadDatabase.ArkadSchema.Message>("thread", """
@@ -35,6 +37,8 @@ internal actual fun RepublicateDatabase.registerAttributes() {
     MutableRepublicateDatabase.republicate.entity("ballot").instanceAttributes.rowAttribute<MutableRepublicateDatabase.MutableRepublicateSchema.MutableDecision>("decision", "SELECT * FROM republicate.decision WHERE decision.id = {decision_id};", MutableRepublicateDatabase.MutableRepublicateSchema.MutableDecision)
     // reverse foreign key attribute
     MutableRepublicateDatabase.republicate.entity("decision").instanceAttributes.rowSetAttribute<MutableRepublicateDatabase.MutableRepublicateSchema.MutableBallot>("ballots", "SELECT * FROM republicate.ballot WHERE ballot.decision_id = {id};", MutableRepublicateDatabase.MutableRepublicateSchema.MutableBallot)
+    // left to right n-n join attribute
+    MutableRepublicateDatabase.republicate.entity("tag").instanceAttributes.rowSetAttribute<net.arkad.model.MutableArkadDatabase.MutableArkadSchema.MutableRoom>("rooms", "SELECT towards_table.* FROM republicate.tag_room AS join_table JOIN arkad.room AS towards_table ON towards_table.id = join_table.room_id WHERE join_table.tag_id = {id};", net.arkad.model.MutableArkadDatabase.MutableArkadSchema.MutableRoom)
 
     // attribute Decision.thread
     MutableRepublicateDatabase.republicate.entity("decision").instanceAttributes.rowSetAttribute<net.arkad.model.MutableArkadDatabase.MutableArkadSchema.MutableMessage>("thread", """

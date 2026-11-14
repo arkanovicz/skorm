@@ -20,5 +20,5 @@ suspend fun MutableClubDatabase.tables(): List<String> = club.harvest<String>("t
 
 val ALL_TABLES = listOf(
     "bookshelf.author", "bookshelf.book", "bookshelf.book_tag", "bookshelf.borrowing", "bookshelf.dude", "bookshelf.tag",
-    "club.member", "club.review"
+    "club.member", "club.review", "club.wish"
 )

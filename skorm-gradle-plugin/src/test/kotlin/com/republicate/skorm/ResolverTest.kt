@@ -69,6 +69,29 @@ class ResolverTest {
     }
 
     @Test
+    fun `a join table with an imported table gives the collection on the importer's side only`() {
+        val model = importing("""
+            import 'arkad.kddl'
+            database republicate {
+              schema republicate {
+                table tag { *id serial }
+                table tag_message {
+                  *tag_id --> tag cascade
+                  *message_id -> arkad.message cascade
+                }
+              }
+            }
+        """.trimIndent())
+        val messages = model.joins.single()
+        assertEquals("RepublicateDatabase.RepublicateSchema.Tag", messages.receiverClass)
+        assertEquals("messages", messages.name)
+        assertEquals("net.arkad.model.ArkadDatabase.ArkadSchema.Message", messages.targetClass)
+        assertTrue(messages.sql.endsWith("ON towards_table.id = join_table.message_id WHERE join_table.tag_id = {id};"), messages.sql)
+        val mutable = model.mutableTwin!!.joins.single()
+        assertEquals("net.arkad.model.MutableArkadDatabase.MutableArkadSchema.MutableMessage", mutable.targetClass)
+    }
+
+    @Test
     fun `the importer's database holds its imports' databases, each half its own`() {
         val model = importing()
         val imported = model.imports.single()

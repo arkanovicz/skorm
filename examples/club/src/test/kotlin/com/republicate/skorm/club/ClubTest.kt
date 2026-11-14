@@ -89,6 +89,14 @@ class ClubTest {
         assertEquals("Alice", review.member().name)
         assertEquals(2, alice.reviews().count())
 
+        // the join table with an imported table: the collection is on the club's side, of the bookshelf's rows
+        MutableWish.new(alice.memberId, dispossessed.bookId).insert()
+        assertIs<MutableBook>(alice.books().toList().single())
+        val wished = Member.fetch(alice.memberId)!!.books().toList()
+        assertTrue(wished.all { it is Book && it !is MutableInstance })
+        assertEquals(listOf("The Dispossessed"), wished.map { it.title })
+        assertEquals(0, bobby.books().count())
+
         // the ksql attribute returning the bookshelf's rows
         val reviewed = Member.fetch(alice.memberId)!!.reviewedBooks().toList()
         assertTrue(reviewed.all { it is Book && it !is MutableInstance })

@@ -261,7 +261,8 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
         // the collection on each side is named after the far side's column, or its table for a multi-column key
         val rightToLeftBase = if (leftFk.fields.size == 1) navigationName(leftFk.fields.first().sqlName, left) else kotlin.camel(left.sqlName)
         val leftToRightBase = if (rightFk.fields.size == 1) navigationName(rightFk.fields.first().sqlName, right) else kotlin.camel(right.sqlName)
-        return listOf(
+        // nothing is declared on an imported table: its side of the join has no collection
+        return listOfNotNull(
             JoinAttribute(
                 label = "left to right n-n join",
                 ownerSchema = kotlin.camel(left.schema.sqlName), ownerEntity = kotlin.camel(left.sqlName),
@@ -269,7 +270,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
                 nullable = false, multiple = true,
                 sql = kotlin.joinTableQuery(join, false, sourceOf(right)),
                 params = left.getPrimaryKey().map { it.sqlName }
-            ),
+            ).takeUnless { left.schema.external },
             JoinAttribute(
                 label = "right to left n-n join",
                 ownerSchema = kotlin.camel(right.schema.sqlName), ownerEntity = kotlin.camel(right.sqlName),
@@ -277,7 +278,7 @@ class Resolver(private val kotlin: KotlinTool = KotlinTool()) {
                 nullable = false, multiple = true,
                 sql = kotlin.joinTableQuery(join, true, sourceOf(left)),
                 params = right.getPrimaryKey().map { it.sqlName }
-            )
+            ).takeUnless { right.schema.external }
         )
     }
 

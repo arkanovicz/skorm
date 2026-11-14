@@ -12,5 +12,13 @@ database republicate {
       choice varchar(20)
       decision_id -- decision
     }
+    table tag {
+      *id serial
+      name varchar(50)
+    }
+    table tag_room {
+      *tag_id -> tag cascade
+      *room_id -> arkad.room cascade
+    }
   }
 }

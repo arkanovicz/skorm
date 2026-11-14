@@ -2,6 +2,11 @@
 
 All notable changes to Skorm are documented in this file.
 
+## [0.34] - unreleased
+
+### Fixed
+- A table joining one of the model's tables to an imported one (`tag_room` with `*tag_id --> tag` and `*room_id -> arkad.room`) generated code that did not compile, "Unresolved reference 'arkad'": the join was given a collection on both sides, and the imported side's was registered on an entity this model does not generate. The collection is now declared on the model's own side only (`tag.rooms()`, returning the owner's class), like any link to an imported table. kddl refuses `*-*` with an imported table and asks for the join table to be declared, so every such join took this path
+
 ## [0.33] - 2026-11-11
 
 ### Added
